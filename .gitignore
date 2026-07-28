@@ -2,19 +2,23 @@
 .env
 
 # ── Client data / input files (do not commit — copy manually on each machine) ──
-input/
+input/*
+!input/.gitkeep
 
 # ── Generated outputs ─────────────────────────────────────────────────────────
-output/
+output/*
+!output/.gitkeep
 
 # ── Oracle PL/SQL source files (client IP) ────────────────────────────────────
-All_Metadata/
+All_Metadata/*
+!All_Metadata/.gitkeep
 
 # ── TIDAL shell scripts (client IP) ───────────────────────────────────────────
-shell_scripts/
+shell_scripts/*
+!shell_scripts/.gitkeep
 
-# ── Gudu SQLFlow tool (third-party JARs + binaries) ───────────────────────────
-python_data_lineage/
+# ── Gudu SQLFlow tool — committed in full (dlineage.py + JARs needed at runtime) ──
+# python_data_lineage/ is included
 
 # ── Python cache ──────────────────────────────────────────────────────────────
 __pycache__/
