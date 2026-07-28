@@ -1,0 +1,17 @@
+# RSLI Data Lineage — Python Dependencies
+# Install with: pip install -r requirements.txt
+#
+# Python >= 3.10 required (scripts use match/case syntax and X | Y type hints)
+#
+# ── Core pipeline (always required) ─────────────────────────────────────────
+openpyxl==3.1.5          # Excel read/write — tidal_shell_combiner, analyze_hop_reduction_merged, etc.
+
+# ── LLM lineage extraction (Stages 3 & 4) ───────────────────────────────────
+# Required only if running llm_lineage_extractor.py or summarize_scripts.py
+openai==2.41.0            # Azure OpenAI client — llm_lineage_extractor, summarize_scripts
+python-dotenv==1.2.2      # Load API keys from .env file — summarize_scripts
+
+# ── Gudu SQLFlow (Stage 2) ───────────────────────────────────────────────────
+# Required only if running clean_and_run_gudu.py with --run-gudu flag
+# Also requires Java Runtime Environment (JRE 8+) to be installed on the machine
+jpype1==1.5.0             # Python-Java bridge for Gudu JAR — python_data_lineage/dlineage.py

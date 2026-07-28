@@ -1,0 +1,33 @@
+# ── Secrets ──────────────────────────────────────────────────────────────────
+.env
+
+# ── Client data / input files (do not commit — copy manually on each machine) ──
+input/
+
+# ── Generated outputs ─────────────────────────────────────────────────────────
+output/
+
+# ── Oracle PL/SQL source files (client IP) ────────────────────────────────────
+All_Metadata/
+
+# ── TIDAL shell scripts (client IP) ───────────────────────────────────────────
+shell_scripts/
+
+# ── Gudu SQLFlow tool (third-party JARs + binaries) ───────────────────────────
+python_data_lineage/
+
+# ── Python cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── OS / editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
