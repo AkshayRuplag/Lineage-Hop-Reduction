@@ -140,6 +140,28 @@ def _split_jobs(raw: str) -> list[str]:
     return [j.strip() for j in re.split(r'[\n,;]', raw or "") if j.strip()]
 
 
+# ── SQL object type classifier ─────────────────────────────────────────────────
+# PKG/PROC check runs FIRST so e.g. PRC_..._INTERMEDIATE_MV_TBL is CODE, not MV.
+_CODE_PREFIXES = ("PKG_", "PRC_", "PROC_", "SP_", "USP_", "FN_", "FUNC_")
+
+def _classify_sql_object(name: str) -> str:
+    """
+    'CODE' — PKG or standalone PROC/FUNC: open script, edit SQL, raise PR
+    'MV'   — Materialized view: DDL DROP + remove Tidal refresh job (no code edit)
+    'VIEW' — Logical view: DDL RENAME/ALTER (naming convention fix)
+    Conservative default is 'CODE' so nothing is silently dropped.
+    """
+    u = name.upper().strip()
+    left = u.split(".")[0] if "." in u else u
+    if any(left.startswith(p) for p in _CODE_PREFIXES):
+        return "CODE"
+    if "_MV" in u or u.startswith(("MV_", "MVW_")):
+        return "MV"
+    if "_VW" in u or "_VIEW" in u:
+        return "VIEW"
+    return "CODE"
+
+
 # ── Validation status helpers ─────────────────────────────────────────────────
 # Canonical status labels (with emoji prefix for quick visual scanning in Excel)
 VS_CONSIDER  = "✅ Consider"
@@ -1187,9 +1209,13 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
       Phase 4 items are flagged in 'Wave 4 Awareness' so the developer knows a
       second (DBA-gated) PR is coming.
 
-    Scripts with NO SQL objects (pure Tidal schedule changes like D. Serial Chain
-    or M. Orchestration Edge) are grouped under a synthetic
-    '[TIDAL-SCHEDULE-ONLY]' entry.
+    Scripts where ALL SQL objects are DDL targets (MVs, views) or which have no
+    SQL objects at all — i.e. no PL/SQL package/procedure to open — are grouped
+    under a synthetic '[NO-CODE-CHANGE]' entry.  Actions for this row are:
+      Phase 0 items  : review the constraint decision and document it.
+      Phase 1 items  : DDL RENAME VIEW (listed in column O).
+      Phase 4 items  : DBA — DROP MV objects (column O) + remove Tidal
+                       MV_REFRESH jobs after parity validation.
     """
     ws = wb.create_sheet("Script-Centric Work Orders")
     ws.sheet_view.showGridLines = False
@@ -1226,16 +1252,27 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
         return [s.strip() for s in re.split(r'[\n,;]', raw) if s.strip()]
 
     def _mv_only_removals(rec: dict) -> list[str]:
-        """MV refresh jobs that need Tidal removal only — no SQL script change."""
-        cat = (rec.get("Category", "") or "").upper()
-        is_mv = any(x in cat for x in (
-            "MV ELIMINATION", "DEAD MV", "MV INDICATOR",
-            "INDICATOR-CHAIN", "ORCHESTRATION EDGE",
-        ))
-        if not is_mv:
-            return []
-        return [j for j in _split_jobs(rec.get("Affected Jobs", "") or "")
-                if "MV_REFRESH" in j.upper()]
+        """
+        Returns items for the 'DDL & Tidal Actions Required' column, using the
+        module-level _classify_sql_object classifier uniformly for ALL recs:
+          MV  SQL objects → 'DROP MV: <name>'
+          VIEW SQL objects → 'RENAME VIEW: <name>'
+          Tidal MV_REFRESH jobs → 'Remove from Tidal: <job>'
+        """
+        removals = []
+        for obj in re.split(r'[\n,;]', rec.get("SQL Objects Called", "") or ""):
+            obj = obj.strip()
+            if not obj:
+                continue
+            cls = _classify_sql_object(obj)
+            if cls == "MV":
+                removals.append(f"DROP MV: {obj}")
+            elif cls == "VIEW":
+                removals.append(f"RENAME VIEW: {obj}")
+        for j in _split_jobs(rec.get("Affected Jobs", "") or ""):
+            if "MV_REFRESH" in j.upper():
+                removals.append(f"Remove from Tidal: {j}")
+        return removals
 
     def _assign_wave(phases: set) -> int:
         """Return implementation wave (1–5) for a script given its set of phases."""
@@ -1247,7 +1284,7 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
         if 1 in non_special: return 1
         return 5  # phase-5 only → parallel LLM track
 
-    TIDAL_ONLY = "[TIDAL-SCHEDULE-ONLY]"   # sentinel for recs with no SQL script
+    TIDAL_ONLY = "[NO-CODE-CHANGE]"   # sentinel: no PL/SQL package to open; DDL/Tidal/decisions only
 
     def _pkg_key(script: str) -> str:
         """
@@ -1280,9 +1317,16 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
 
     for rec in records:
         scripts_for_rec = _parse_scripts(rec)
-        # Recs with no SQL objects are Tidal-schedule-only changes
+        # Recs with no CODE-type SQL objects: no package to open — goes into NO-CODE-CHANGE row
         if not scripts_for_rec:
             scripts_for_rec = [TIDAL_ONLY]
+
+        # Classify every SQL object — CODE only becomes a script row.
+        # MV and VIEW objects are DDL targets captured by _mv_only_removals().
+        # Applied uniformly to ALL recs regardless of category.
+        code_scripts = [s for s in scripts_for_rec
+                        if s == TIDAL_ONLY or _classify_sql_object(s) == "CODE"]
+        scripts_for_rec = code_scripts if code_scripts else [TIDAL_ONLY]
 
         mv_removals = set(_mv_only_removals(rec))
         mid  = f"M-{id_map[id(rec)]:04d}"
@@ -1317,6 +1361,8 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
 
     # Deduplicate recs within each package entry (a rec may have contributed
     # via multiple PROC names that all normalized to the same PKG key).
+    # Also recompute hop_savings/est_min from the deduped list so that
+    # PKG.PROC1 + PKG.PROC2 → same PKG doesn't double-count savings.
     for entry in script_map.values():
         seen_mids: set = set()
         deduped = []
@@ -1325,7 +1371,9 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
             if mid_val not in seen_mids:
                 seen_mids.add(mid_val)
                 deduped.append(item)
-        entry["recs"] = deduped
+        entry["recs"]        = deduped
+        entry["hop_savings"] = sum(r["global_hop_savings"] for _, r in deduped)
+        entry["est_min"]     = sum(r["global_est_min"]     for _, r in deduped)
 
     # ── Sort: wave asc, then GLOBAL before LOCAL, then script name ────────────
     def _sort_key(item):
@@ -1374,8 +1422,33 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
     _rpt_rank:   dict[str, int] = {rpt: i for i, rpt in enumerate(_ranked_rpts)}
 
     def _primary_rpt(data: dict) -> str:
-        """Return the highest-priority (lowest rank) RPT for this script."""
-        return min(data["rpts"], key=lambda r: _rpt_rank.get(r, 999))
+        """
+        Return the most relevant RPT for section grouping.
+        Prefers the RPT whose name matches the target table(s) of bundled recs
+        (e.g. PKG loading RPT_CLAIM_DTL_R should group under RPT_CLAIM_DTL_R, not
+        RPT_CLIENT_DTL_R just because that happens to have a lower complexity rank).
+        Falls back to lowest-ranked RPT when no target-table match is found.
+        """
+        rpts = data["rpts"]
+        if len(rpts) == 1:
+            return next(iter(rpts))
+        # Score each RPT by how many bundled rec target tables mention its name
+        rpt_scores: dict[str, int] = {rpt: 0 for rpt in rpts}
+        for _mid, rec in data["recs"]:
+            tgt = (rec.get("Target Table", "") or "").upper().strip()
+            if not tgt:
+                continue
+            for rpt in rpts:
+                rpt_up = rpt.upper()
+                if rpt_up == tgt or rpt_up in tgt or tgt in rpt_up:
+                    rpt_scores[rpt] += 1
+        best = max(rpt_scores.values(), default=0)
+        if best > 0:
+            # Among those with the highest match score, use lowest rank as tiebreaker
+            candidates = [r for r, s in rpt_scores.items() if s == best]
+            return min(candidates, key=lambda r: _rpt_rank.get(r, 999))
+        # No target-table match — fall back to lowest-ranked RPT
+        return min(rpts, key=lambda r: _rpt_rank.get(r, 999))
 
     # Re-sort: primary_rpt_rank → wave → global_before_local → name
     sorted_scripts = sorted(
@@ -1411,7 +1484,7 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
         "Combined Hop Savings",              # L
         "Est. Min Saved",                    # M
         "Max Risk",                          # N
-        "Also Remove from Tidal (after parity)", # O  MV refresh / dead jobs
+        "Also Remove from Tidal / DDL DROP (after parity)", # O  DROP MV + RENAME VIEW + Remove Tidal jobs
         "Wave 4 Awareness",                  # P  Phase 4 pending for this package
         "Prerequisites",                     # Q
         "Validation Status",                 # R  ← from validated workbooks
@@ -1587,13 +1660,19 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
             data["hop_savings"],             # L
             round(data["est_min"], 1),       # M
             max_risk,                        # N
-            "\n".join(mv_removals) if mv_removals else "(none — no Tidal-only job removal needed)",  # O
+            "\n".join(mv_removals) if mv_removals else "(none — no Tidal or DDL removals needed)",  # O
             ph4_text,                        # P
             "; ".join(prereq_parts) if prereq_parts else "See wave prerequisites in Implementation Roadmap",  # Q
             vs_summary,                      # R  Validation Status
             ("Implement ALL changes in this row in a SINGLE PR — do not split across sprints."
              if script != TIDAL_ONLY else
-             "No SQL code change. These are Tidal schedule/dependency changes only."),  # S
+             ("No SQL package/procedure to open.  Actions required (see change blocks + column O):\n"
+             "  Phase 0 items  : Review the constraint/decision and document it.\n"
+             "  Phase 1 items  : DDL RENAME VIEW objects listed in column O.\n"
+             "  Phase 2/3 items: Tidal schedule changes only (no code edit).\n"
+             "  Phase 4 items  : DBA work — DROP MV objects in column O, THEN\n"
+             "                   remove Tidal MV_REFRESH jobs after 3 parity cycles.\n"
+             "  Sequence: Phase 0 first, then Phase 1 DDL renames, then Phase 4 (DBA gate).")),  # S
         ]
         for col, v in enumerate(vals, 1):
             c = ws.cell(row=nr, column=col, value=v)
@@ -1619,7 +1698,7 @@ def write_script_centric_work_orders(wb: openpyxl.Workbook,
         "LEGEND:  GLOBAL = script is called across >1 RPT (co-ordinate ownership before starting)  "
         "|  LOCAL = only 1 RPT owns this script  "
         "|  Wave 4 Awareness = Phase 4 MV elimination also touches this script (separate DBA PR)  "
-        "|  'Also Remove from Tidal' = MV refresh jobs to drop after SQL parity  "
+        "|  'Also Remove from Tidal / DDL DROP' = DROP MV (after parity) + RENAME VIEW + Remove Tidal MV_REFRESH jobs  "
         "|  Validation Status: ✅ Consider = validated as actionable  "
         "⏸ Not to Consider = validated as low-priority  "
         "❌ Not a Good Rec = validated as incorrect  "
@@ -1698,7 +1777,7 @@ def write_rpt_pipeline_summary(wb: openpyxl.Workbook,
     ws.freeze_panes = "A3"
 
     risk_fill_hex = {"HIGH": "FFFFC7CE", "MEDIUM": "FFFFEB9C", "LOW": "FFC6EFCE"}
-    TIDAL_ONLY = "[TIDAL-SCHEDULE-ONLY]"
+    TIDAL_ONLY = "[NO-CODE-CHANGE]"
 
     # ── One row per RPT ───────────────────────────────────────────────────────
     for rpt in sorted(rpt_names):
@@ -2163,7 +2242,7 @@ def write_actionable_work_orders(wb: openpyxl.Workbook,
         if 1 in non_special: return 1
         return 5
 
-    TIDAL_ONLY = "[TIDAL-SCHEDULE-ONLY]"
+    TIDAL_ONLY = "[NO-CODE-CHANGE]"
 
     WAVE_FILLS_AWO = {
         0: "FFE5CCF5", 1: "FFFCE4EC", 2: "FFE8F5E9",
@@ -2225,11 +2304,21 @@ def write_actionable_work_orders(wb: openpyxl.Workbook,
     for rec in records:
         raw = rec.get("SQL Objects Called", "") or ""
         scripts_for_rec = [s.strip() for s in re.split(r'[\n,;]', raw) if s.strip()] or [TIDAL_ONLY]
-        mv_rems = {j for j in _split_jobs(rec.get("Affected Jobs","") or "")
-                   if "MV_REFRESH" in j.upper()
-                   and any(x in (rec.get("Category","") or "").upper()
-                           for x in ("MV ELIMINATION","DEAD MV","MV INDICATOR",
-                                     "INDICATOR-CHAIN","ORCHESTRATION EDGE"))}
+        # Classify every SQL object uniformly — CODE only becomes a script row.
+        code_scripts = [s for s in scripts_for_rec
+                        if s == TIDAL_ONLY or _classify_sql_object(s) == "CODE"]
+        scripts_for_rec = code_scripts if code_scripts else [TIDAL_ONLY]
+        # DDL & Tidal removals using the same classifier
+        mv_rems: set[str] = set()
+        for obj in re.split(r'[\n,;]', raw):
+            obj = obj.strip()
+            if not obj: continue
+            cls = _classify_sql_object(obj)
+            if cls == "MV":   mv_rems.add(f"DROP MV: {obj}")
+            elif cls == "VIEW": mv_rems.add(f"RENAME VIEW: {obj}")
+        for j in _split_jobs(rec.get("Affected Jobs", "") or ""):
+            if "MV_REFRESH" in j.upper():
+                mv_rems.add(f"Remove from Tidal: {j}")
         mid  = f"M-{id_map[id(rec)]:04d}"
         ph   = rec["phase"]
         rpts = set(rec["appears_in_rpts"])
@@ -2254,10 +2343,12 @@ def write_actionable_work_orders(wb: openpyxl.Workbook,
             e["hop_savings"] += rec["global_hop_savings"]
             e["est_min"]     += rec["global_est_min"]
 
-    # Dedup per package
+    # Dedup per package; recompute savings from the deduped list
     for e in script_map.values():
         seen: set = set()
-        e["recs"] = [(m, r) for m, r in e["recs"] if m not in seen and not seen.add(m)]
+        e["recs"]        = [(m, r) for m, r in e["recs"] if m not in seen and not seen.add(m)]
+        e["hop_savings"] = sum(r["global_hop_savings"] for _, r in e["recs"])
+        e["est_min"]     = sum(r["global_est_min"]     for _, r in e["recs"])
 
     # RPT ranking (same score formula as Sheet 9)
     _all_rpts = sorted({rpt for _, d in script_map.items() for rpt in d["rpts"]})
@@ -2282,7 +2373,28 @@ def write_actionable_work_orders(wb: openpyxl.Workbook,
     _rpt_rank: dict[str, int] = {rpt: i for i, rpt in enumerate(_ranked)}
 
     def _prim(data: dict) -> str:
-        return min(data["rpts"], key=lambda r: _rpt_rank.get(r, 999))
+        """
+        Return the most relevant RPT for section grouping.
+        Prefers the RPT whose name matches the target table(s) of bundled recs;
+        falls back to lowest-ranked RPT when no target-table match is found.
+        """
+        rpts = data["rpts"]
+        if len(rpts) == 1:
+            return next(iter(rpts))
+        rpt_scores: dict[str, int] = {rpt: 0 for rpt in rpts}
+        for _mid, rec in data["recs"]:
+            tgt = (rec.get("Target Table", "") or "").upper().strip()
+            if not tgt:
+                continue
+            for rpt in rpts:
+                rpt_up = rpt.upper()
+                if rpt_up == tgt or rpt_up in tgt or tgt in rpt_up:
+                    rpt_scores[rpt] += 1
+        best = max(rpt_scores.values(), default=0)
+        if best > 0:
+            candidates = [r for r, s in rpt_scores.items() if s == best]
+            return min(candidates, key=lambda r: _rpt_rank.get(r, 999))
+        return min(rpts, key=lambda r: _rpt_rank.get(r, 999))
 
     sorted_scripts = sorted(
         script_map.items(),
@@ -2341,9 +2453,23 @@ def write_actionable_work_orders(wb: openpyxl.Workbook,
             ws.row_dimensions[ban_row].height = 20
 
         phases      = {r["phase"] for _, r in actionable_recs}
-        rpts        = sorted(data["rpts"])
-        tidal_jobs  = sorted(data["tidal_jobs"])
-        mv_removals = sorted(data["mv_removals"])
+        # Derive rpts, tidal_jobs AND mv_removals from ACTIONABLE recs only —
+        # excluded recs must not leak RPTs, jobs, or DDL targets into this view.
+        rpts        = sorted({rpt for _, r in actionable_recs for rpt in r["appears_in_rpts"]})
+        tidal_jobs  = sorted({j for _, r in actionable_recs
+                              for j in _split_jobs(r.get("Affected Jobs", "") or "")})
+        _mv_rem_set: set[str] = set()
+        for _, _r in actionable_recs:
+            for _obj in re.split(r'[\n,;]', _r.get("SQL Objects Called", "") or ""):
+                _obj = _obj.strip()
+                if not _obj: continue
+                _cls = _classify_sql_object(_obj)
+                if _cls == "MV":   _mv_rem_set.add(f"DROP MV: {_obj}")
+                elif _cls == "VIEW": _mv_rem_set.add(f"RENAME VIEW: {_obj}")
+            for _j in _split_jobs(_r.get("Affected Jobs", "") or ""):
+                if "MV_REFRESH" in _j.upper():
+                    _mv_rem_set.add(f"Remove from Tidal: {_j}")
+        mv_removals = sorted(_mv_rem_set)
         wave        = _assign_wave(phases)
         scope       = "GLOBAL" if len(rpts) > 1 else "LOCAL"
         has_ph4     = 4 in phases and wave != 4
