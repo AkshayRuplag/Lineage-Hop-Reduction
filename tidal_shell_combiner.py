@@ -316,6 +316,171 @@ def build_recursive_depths(tidal: dict) -> dict:
     return result
 
 
+def build_forward_depths(tidal: dict) -> dict:
+    """Run BFS from each RPT root job FORWARD through consumer jobs (the inverse
+    direction of build_recursive_depths) to compute how many hops downstream each
+    job is from the RPT root — i.e. jobs/objects that consume the root job's
+    output, directly or indirectly. Same _DL_/MONTH_END exclusion rules as the
+    backward BFS. The root job itself (depth 0) is skipped since it's already
+    captured as the depth-0 entry by the backward pipeline.
+
+    Returns:
+        dict of (root_job, consumer_job) -> {
+            'depth': int,           # 1 = direct consumer, 2+ = indirect consumer
+            'category': str,        # inferred layer category
+            'inferred_table': str,  # table name inferred from job name
+        }
+    """
+    # Build reverse dependency map: job -> set of jobs that consume it (depend on it)
+    reverse_map = defaultdict(set)
+    for job_name, entries in tidal.items():
+        for entry in entries:
+            dj = entry.get('DEPENDENT_JOB')
+            if dj:
+                reverse_map[dj].add(job_name)
+
+    result = {}  # (root_job, consumer_job) -> info dict
+
+    for rpt_table, root_job in RPT_ROOT_JOBS.items():
+        visited = {}
+        seen = set()
+        queue = deque([(root_job, 0)])
+        while queue:
+            jn, d = queue.popleft()
+            if jn in seen:
+                continue
+            seen.add(jn)
+            is_dl = '_DL_' in jn.upper()
+            is_month_end = 'MONTH_END' in jn.upper()
+            if d > 0 and not is_dl and not is_month_end:
+                visited[jn] = d
+            if is_month_end:
+                continue
+            for consumer in reverse_map.get(jn, []):
+                if consumer not in seen:
+                    next_d = d if is_dl else d + 1
+                    queue.append((consumer, next_d))
+
+        for jn, d in visited.items():
+            inferred = _infer_table_from_job(jn)
+            result[(root_job, jn)] = {
+                'depth': d,
+                'category': _classify_job_category(jn, inferred),
+                'inferred_table': inferred or '',
+            }
+
+    return result
+
+
+def build_forward_rows(depth_map: dict, tidal: dict, shell_parsed: dict,
+                        orphaned_jobs: frozenset) -> list[dict]:
+    """Build FORWARD-direction rows for each (root_job, consumer_job) pair found
+    by build_forward_depths(). Mirrors the backward RECURSIVE_BFS row-building
+    logic (shell-parser resolution + LINEAGE_STATUS tiering), tagged with
+    DIRECTION='FORWARD' so the graph builder renders them as downstream
+    (left-of-root) nodes instead of upstream ones.
+    """
+    new_rows = []
+    for (root_job, dep_job), info in depth_map.items():
+        if dep_job in _EXCLUDED_JOB_NAMES or dep_job in orphaned_jobs:
+            continue
+
+        tidal_entries = tidal.get(dep_job, [])
+        cmd = ''
+        tidal_params = ''
+        for e in tidal_entries:
+            if e.get('CMD'):
+                cmd = str(e['CMD']).strip()
+            if e.get('PARAMS'):
+                tidal_params = str(e['PARAMS']).strip()
+            if cmd:
+                break
+        sh_filename = extract_shell_filename(cmd)
+        if sh_filename in _EXCLUDED_SHELL_SCRIPTS:
+            continue
+
+        shell_refs = shell_parsed.get(sh_filename, [])
+        base_row = {
+            'ROOT_JOB': root_job,
+            'RPT_TABLE': _root_to_rpt(root_job),
+            'DEPENDENT_JOB': dep_job,
+            'DEPTH': info['depth'],
+            'JOB_CATEGORY': info['category'],
+            'DIRECTION': 'FORWARD',
+            'CMD': cmd,
+            'SHELL_SCRIPT': sh_filename,
+            'PARENT_CALLER': sh_filename,
+            'LINEAGE_SOURCE': 'FORWARD_BFS',
+            'TIDAL_PARAMS': tidal_params,
+        }
+
+        if shell_refs:
+            for ref in shell_refs:
+                obj_name = ref.get('object_name', '')
+                is_param = ref.get('is_parameterized', 'False') == 'True'
+                resolved_name = obj_name
+                if (is_param or obj_name.startswith('(')) and tidal_params:
+                    resolved_name = _resolve_param_from_tidal(
+                        obj_name, ref.get('pattern_type', ''), tidal_params)
+                obj_type = ref.get('object_type', '')
+                if obj_type in ('UNKNOWN', 'ERROR'):
+                    status = 'NEEDS_INVESTIGATION'
+                elif obj_type == 'MATERIALIZED_VIEW':
+                    status = 'MV_REFRESH_ONLY'
+                else:
+                    status = 'SQL_OBJECT_IDENTIFIED'
+                sub_raw = ref.get('sub_object', '')
+                if obj_type == 'MATERIALIZED_VIEW':
+                    pkg_name_val, proc_name_val = 'DBMS_MVIEW', 'REFRESH'
+                elif obj_type in ('PACKAGE', 'PKG_PROCEDURE'):
+                    pkg_name_val, proc_name_val = resolved_name, sub_raw
+                else:
+                    pkg_name_val, proc_name_val = '', resolved_name
+
+                new_row = dict(base_row)
+                new_row.update({
+                    'SQL_OBJECT_TYPE': obj_type,
+                    'SQL_OBJECT_SCHEMA': ref.get('schema', ''),
+                    'PACKAGE_NAME': pkg_name_val,
+                    'PROC_NAME': proc_name_val,
+                    'FULL_OBJECT': resolved_name if obj_type == 'MATERIALIZED_VIEW' else '',
+                    'PATTERN_TYPE': ref.get('pattern_type', ''),
+                    'SHELL_TABLE_REFS': ref.get('table_references', ''),
+                    'IN_TYPE_PARAM': '',
+                    'SRC_TABLE': '',
+                    'TGT_TABLE': ref.get('table_references', '') if obj_type in ('MATERIALIZED_VIEW', 'UNKNOWN', 'ERROR') else '',
+                    'SOURCE_COL': '',
+                    'TARGET_COL': '',
+                    'IS_PARAMETERIZED': is_param,
+                    'LINEAGE_STATUS': status,
+                    'NOTES': f"Downstream consumer of {root_job} \u2014 {info['depth']} hop(s) away (forward BFS)",
+                })
+                new_row['FULL_OBJECT'] = new_row.get('FULL_OBJECT') or _resolve_sql_object(new_row)
+                new_rows.append(new_row)
+        else:
+            new_row = dict(base_row)
+            new_row.update({
+                'SQL_OBJECT_TYPE': '',
+                'SQL_OBJECT_SCHEMA': '',
+                'PACKAGE_NAME': '',
+                'PROC_NAME': '',
+                'FULL_OBJECT': '',
+                'PATTERN_TYPE': _classify_unresolved_cmd(cmd),
+                'SHELL_TABLE_REFS': '',
+                'IN_TYPE_PARAM': '',
+                'SRC_TABLE': '',
+                'TGT_TABLE': '',
+                'SOURCE_COL': '',
+                'TARGET_COL': '',
+                'IS_PARAMETERIZED': False,
+                'LINEAGE_STATUS': 'RECURSIVE_ONLY',
+                'NOTES': f"Downstream consumer of {root_job} \u2014 {info['depth']} hop(s) away; shell not in parser output",
+            })
+            new_rows.append(new_row)
+
+    return new_rows
+
+
 def _infer_table_from_job(job_name: str) -> str:
     """Infer table/object name from a TIDAL job name."""
     name = job_name.upper()
@@ -1683,7 +1848,7 @@ def _classify_unresolved_cmd(cmd: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 COMBINED_FIELDS = [
-    'ROOT_JOB', 'RPT_TABLE', 'DEPENDENT_JOB', 'DEPTH', 'JOB_CATEGORY',
+    'ROOT_JOB', 'RPT_TABLE', 'DEPENDENT_JOB', 'DEPTH', 'JOB_CATEGORY', 'DIRECTION',
     'UPSTREAM_JOBS', 'DOWNSTREAM_JOBS',
     'Avg_runtime_Duration (Sec)',
     'CMD', 'SHELL_SCRIPT', 'PARENT_CALLER',
@@ -2128,7 +2293,10 @@ def write_gaps(combined: list[dict], output_path: Path):
 
 
 def write_summary(combined: list[dict], output_path: Path):
-    """Write per-RPT-table summary statistics."""
+    """Write per-RPT-table summary statistics (BACKWARD/upstream lineage only —
+    FORWARD downstream-consumer rows are a different concept and are excluded
+    so historical completion-% tracking stays consistent)."""
+    combined = [r for r in combined if r.get('DIRECTION', 'BACKWARD') != 'FORWARD']
     summary = defaultdict(lambda: {
         'total_jobs': 0,
         'complete': 0,
@@ -2189,11 +2357,13 @@ def write_summary(combined: list[dict], output_path: Path):
 
 
 def print_summary(combined: list[dict]):
-    """Print summary to console."""
+    """Print summary to console (BACKWARD/upstream lineage only — see write_summary)."""
     print("\n" + "=" * 90)
     print("TIDAL + SHELL PARSER COMBINED LINEAGE — SUMMARY")
     print("=" * 90)
 
+    forward_count = sum(1 for r in combined if r.get('DIRECTION', 'BACKWARD') == 'FORWARD')
+    combined = [r for r in combined if r.get('DIRECTION', 'BACKWARD') != 'FORWARD']
     total = len(combined)
     by_status = defaultdict(int)
     by_source = defaultdict(int)
@@ -2204,7 +2374,9 @@ def print_summary(combined: list[dict]):
         by_source[row.get('LINEAGE_SOURCE', '')] += 1
         by_rpt[row.get('RPT_TABLE', '')][row.get('LINEAGE_STATUS', '')] += 1
 
-    print(f"\nTotal combined rows: {total}")
+    print(f"\nTotal combined rows (backward/upstream): {total}")
+    if forward_count:
+        print(f"Total FORWARD (downstream-consumer) rows: {forward_count} (excluded from stats below)")
 
     print("\n--- By Lineage Source ---")
     for src, cnt in sorted(by_source.items(), key=lambda x: -x[1]):
@@ -2251,6 +2423,9 @@ def main():
     parser.add_argument('--tidal-supplement', type=str,
                         default='',
                         help="Optional supplementary TIDAL file to fill CMD/PARAMS for jobs missing from primary")
+    parser.add_argument('--tidal-supplement2', type=str,
+                        default='',
+                        help="Optional second supplementary TIDAL file, merged after --tidal-supplement")
     parser.add_argument('--shell-parsed', type=str,
                         default=str(OUTPUT_DIR / "shell_parsed_objects.csv"),
                         help="Path to shell_parsed_objects.csv")
@@ -2279,6 +2454,8 @@ def main():
     print(f"  TIDAL Deps:    {args.tidal}")
     if args.tidal_supplement:
         print(f"  TIDAL Suppl:   {args.tidal_supplement}")
+    if args.tidal_supplement2:
+        print(f"  TIDAL Suppl2:  {args.tidal_supplement2}")
     print(f"  Shell Parsed:  {args.shell_parsed}")
     print(f"  LLM Lineage:   {args.llm_lineage}")
     print(f"  Gudu Lineage:  {args.gudu_lineage}")
@@ -2297,6 +2474,13 @@ def main():
         tidal_supp = load_tidal_deps(tidal_supp_path)
         tidal = merge_tidal_dicts(tidal, tidal_supp)
     print(f"  -> TIDAL merged:  {len(tidal)} unique jobs")
+
+    # Merge second supplement (e.g. a newer export, added only where still missing)
+    tidal_supp2_path = Path(args.tidal_supplement2) if args.tidal_supplement2 else None
+    if tidal_supp2_path and tidal_supp2_path.exists():
+        tidal_supp2 = load_tidal_deps(tidal_supp2_path)
+        tidal = merge_tidal_dicts(tidal, tidal_supp2)
+    print(f"  -> TIDAL merged (final): {len(tidal)} unique jobs")
 
     shell_parsed = load_shell_parsed(Path(args.shell_parsed))
     print(f"  -> Shell Parsed: {len(shell_parsed)} shell scripts")
@@ -2359,6 +2543,50 @@ def main():
         else:
             row['DEPTH'] = ''
             row['JOB_CATEGORY'] = ''
+
+    # ── Fallback depth for DIFW-confirmed jobs missing a TIDAL BFS edge ───
+    # RPT_ALL_Schema/DIFW_Query_Results.xlsx sometimes lists a job as part of an
+    # RPT's DIFW load chain even though the TIDAL scheduler dump has no
+    # dependency edge connecting it to that root (e.g. EDP_EDW_CV_SHINKA_LOAD_
+    # FCT_GRP_PARTY_ADDRESS_R — TIDAL only records it as a prerequisite of an
+    # unrelated job, EDP_EDW_GRP_LOAD_REINSURANCE_PREMIUM_VW_TBL, not anything
+    # in the RPT chain). Without a depth these rows get DEPTH='' and are
+    # rendered as unlinked/"Other" and hidden from the graph by default, even
+    # though they carry complete, confirmed SRC/TGT column lineage.
+    # Borrow the depth from a sibling loader that targets the same table
+    # within the same root chain — these are near-duplicate multi-source-
+    # system loaders (e.g. the APS/PACS/CV variants of a FCT/DIM load) that
+    # are always scheduled at the same depth.
+    fallback_fixed = 0
+    for row in combined:
+        if row.get('DEPTH', '') != '' or row.get('LINEAGE_SOURCE') != 'DIFW_QUERY':
+            continue
+        tgt = (row.get('TGT_TABLE') or '').strip()
+        root = row.get('ROOT_JOB', '')
+        if not tgt:
+            continue
+        sibling_depth, sibling_category = None, ''
+        for other in combined:
+            if (other is not row
+                    and other.get('ROOT_JOB') == root
+                    and (other.get('TGT_TABLE') or '').strip() == tgt
+                    and other.get('DEPTH', '') != ''):
+                sibling_depth = other['DEPTH']
+                sibling_category = other.get('JOB_CATEGORY', '')
+                break
+        if sibling_depth is not None:
+            row['DEPTH'] = sibling_depth
+            row['JOB_CATEGORY'] = sibling_category
+            row['NOTES'] = (
+                (row.get('NOTES') or '').rstrip('; ')
+                + ('; ' if row.get('NOTES') else '')
+                + f"DEPTH inferred from sibling loader of {tgt} "
+                  f"(no TIDAL dependency edge found from this job to {root} — verify with TIDAL scheduler team)"
+            ).strip('; ')
+            fallback_fixed += 1
+    if fallback_fixed:
+        print(f"  -> Fallback DEPTH inference: fixed {fallback_fixed} DIFW-confirmed job(s) "
+              f"missing a TIDAL BFS edge (borrowed depth from sibling loader of the same table)")
 
     # Find jobs in the recursive chain that aren't in RPT_ALL_Schema.
     # NOTE: dep_job == root_job is the depth-0 seed row (the root job itself).
@@ -2486,6 +2714,15 @@ def main():
           f"({root_entry_count} root-job depth-0 entries)")
     print(f"  -> Total combined: {len(combined)} rows")
 
+    # ── FORWARD (downstream consumer) BFS — "who consumes this RPT table?" ──
+    print("\nComputing FORWARD depths (BFS from RPT roots through consumer jobs, excluding _DL_)...")
+    forward_depth_map = build_forward_depths(tidal)
+    print(f"  -> {len(forward_depth_map)} (root_job, consumer_job) pairs with forward depth")
+    forward_rows = build_forward_rows(forward_depth_map, tidal, shell_parsed, orphaned_jobs)
+    combined.extend(forward_rows)
+    print(f"  -> Added {len(forward_rows)} FORWARD-direction downstream-consumer rows")
+    print(f"  -> Total combined: {len(combined)} rows")
+
     # ── Expand PKG.main orchestrator rows into child proc rows ───────────
     if pkg_analysis:
         print("\nExpanding PKG.main orchestrator rows into child proc rows...")
@@ -2573,6 +2810,12 @@ def main():
         total_rows = len(combined)
         print(f"  -> Runtime duration: filled {filled}/{total_rows} rows "
               f"({filled/total_rows*100:.1f}% match rate)")
+
+    # Safety net: any row that never got an explicit DIRECTION (e.g. VIEW
+    # expansion rows, or any future row type) defaults to BACKWARD. FORWARD
+    # rows already have DIRECTION set explicitly and are left untouched.
+    for row in combined:
+        row.setdefault('DIRECTION', 'BACKWARD')
 
     # Write outputs
     csv_path = output_dir / "combined_lineage_latest.csv"

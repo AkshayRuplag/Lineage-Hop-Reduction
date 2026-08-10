@@ -9,7 +9,8 @@ Generates an interactive HTML showing the dependency graph in three modes:
 
 Reads:
   output/tidal_dependency_graph.json
-  output/hop_reduction_recommendations_validated/*.xlsx
+  output/MASTER_Hop_Reduction_Recommendations.xlsx  (data-team-validated source of truth,
+                                                     "Master Recommendations" sheet)
 
 Writes:
   output/before_after_hop_reduction.html
@@ -19,19 +20,21 @@ Usage:
 """
 
 import json
+import re
 from collections import defaultdict, deque
 from pathlib import Path
 
 import openpyxl
 
-SCRIPT_DIR    = Path(__file__).resolve().parent
-OUTPUT_DIR    = SCRIPT_DIR / "output"
-VALIDATED_DIR = OUTPUT_DIR / "hop_reduction_recommendations_validated"
-GRAPH_JSON    = OUTPUT_DIR / "tidal_dependency_graph.json"
-OUTPUT_HTML   = OUTPUT_DIR / "before_after_hop_reduction.html"
-D3_PATH       = OUTPUT_DIR / "d3.v7.min.js"
+SCRIPT_DIR  = Path(__file__).resolve().parent
+OUTPUT_DIR  = SCRIPT_DIR / "output"
+MASTER_XLSX = OUTPUT_DIR / "MASTER_Hop_Reduction_Recommendations.xlsx"
+GRAPH_JSON  = OUTPUT_DIR / "tidal_dependency_graph.json"
+OUTPUT_HTML = OUTPUT_DIR / "before_after_hop_reduction.html"
+D3_PATH     = OUTPUT_DIR / "d3.v7.min.js"
 
-STATUS_CONSIDER = "Good Recommendation - Consider"
+# Canonical "Validation Status" label written by generate_master_recommendations.py
+VS_CONSIDER = "\u2705 Consider"
 
 
 # ── Simulation (tracks which rec removed each job) ────────────────────────────
@@ -94,89 +97,82 @@ def simulate_with_tracking(recommendations: list, graph: dict) -> dict:
     }
 
 
-# ── Read validated XLSX ───────────────────────────────────────────────────────
+# ── Read MASTER recommendations workbook ──────────────────────────────────────
 
-def read_validated_xlsx(path: Path) -> tuple:
-    """
-    Return (rpt_table, consider_recs) from a validated XLSX.
-    consider_recs are minimal dicts containing fields needed by simulate_with_tracking.
-    """
-    stem   = path.stem
-    prefix = "hop_reduction_recommendations_"
-    rpt_table = stem[len(prefix):] if stem.startswith(prefix) else stem
+def _safe_int(v) -> int:
+    """Parse leading int, tolerating annotated cells like '0 (see overlap note)'."""
+    m = re.match(r"\s*(-?\d+)", str(v or ""))
+    return int(m.group(1)) if m else 0
 
+
+def _safe_float(v) -> float:
+    m = re.match(r"\s*(-?\d+(?:\.\d+)?)", str(v or ""))
+    return float(m.group(1)) if m else 0.0
+
+
+def read_master_recommendations(path: Path) -> list:
+    """
+    Read the "Master Recommendations" sheet of MASTER_Hop_Reduction_Recommendations.xlsx
+    (data-team-validated, consolidated across all per-RPT recs — the source of truth).
+    Returns a flat list of recommendation dicts, each tagged with 'appears_in_rpts' so
+    build_enhanced_data() can scope them to the RPT graph(s) they actually apply to.
+    """
     wb = openpyxl.load_workbook(str(path), read_only=True, data_only=True)
-    if "Hop Recommendations" not in wb.sheetnames:
-        wb.close()
-        return rpt_table, []
-
-    ws   = wb["Hop Recommendations"]
+    ws = wb["Master Recommendations"]
     rows = list(ws.iter_rows(values_only=True))
     wb.close()
 
-    if not rows:
-        return rpt_table, []
+    if len(rows) < 3:
+        return []
 
-    col = {str(h).strip(): i for i, h in enumerate(rows[0]) if h is not None}
+    # Row 0 is a banner, row 1 is the header row, data starts at row 2
+    col = {str(h).strip(): i for i, h in enumerate(rows[1]) if h is not None}
 
     def _get(row, name, default=None):
         idx = col.get(name)
         return row[idx] if idx is not None and idx < len(row) else default
 
-    consider_recs = []
-    for row in rows[1:]:
-        if all(v is None for v in row):
-            continue
-        status = str(_get(row, "Recommendation Status") or "").strip()
-        if status != STATUS_CONSIDER:
+    records = []
+    for row in rows[2:]:
+        if not row or not _get(row, "Master ID"):
             continue
 
+        category = str(_get(row, "Category") or "").strip()
         raw_jobs = str(_get(row, "Affected Jobs") or "")
-        affected_jobs = [j.strip() for j in raw_jobs.split("\n") if j.strip()]
+        raw_rpts = str(_get(row, "Appears in RPTs") or "")
 
-        try:
-            hop_savings = int(_get(row, "Verified Hop Savings") or 0)
-        except (ValueError, TypeError):
-            hop_savings = 0
-
-        try:
-            rt_saved = float(_get(row, "Estimated Runtime Saved (min)") or 0.0)
-        except (ValueError, TypeError):
-            rt_saved = 0.0
-
-        consider_recs.append({
-            "id":                    str(_get(row, "ID") or ""),
-            "category":              str(_get(row, "Category") or ""),
-            "target_table":          str(_get(row, "Target Table") or ""),
-            "risk":                  str(_get(row, "Risk") or ""),
-            "affected_jobs":         affected_jobs,
-            "verified_hop_savings":  hop_savings,
-            "est_runtime_saved_minutes": rt_saved,
-            "recommendation_type":   str(_get(row, "Recommendation Type") or ""),
+        records.append({
+            "id":                        str(_get(row, "Master ID") or ""),
+            "category":                  category,
+            "target_table":              str(_get(row, "Target Table") or ""),
+            "risk":                      str(_get(row, "Risk") or ""),
+            "affected_jobs":             [j.strip() for j in raw_jobs.split("\n") if j.strip()],
+            "appears_in_rpts":           {r.strip() for r in raw_rpts.split("\n") if r.strip()},
+            "verified_hop_savings":      _safe_int(_get(row, "Verified Hop Savings")),
+            "est_runtime_saved_minutes": _safe_float(_get(row, "Est. Time Saved (min)")),
+            # F. recs are LLM-only PL/SQL review notes, not graph-verified hop reductions
+            "recommendation_type":       "PLSQL_OPTIMISATION_REVIEW" if category.upper().startswith("F.") else "HOP_REDUCTION",
+            "validation_status":         str(_get(row, "Validation Status") or "").strip(),
         })
 
-    return rpt_table, consider_recs
+    return records
 
 
 # ── Build enhanced graph data ─────────────────────────────────────────────────
 
-def build_enhanced_data(all_graphs: dict, validated_dir: Path) -> dict:
+def build_enhanced_data(all_graphs: dict, master_recs: list) -> dict:
     """
-    For each validated XLSX, merge the graph JSON with simulation results.
+    For each RPT graph, scope the master's '✅ Consider' recommendations via their
+    'appears_in_rpts' tag and run the removal simulation.
     Returns enhanced_data[rpt] = {nodes, links, removed_jobs, job_to_rec,
                                    consider_recs, sim_stats}
     """
-    xlsx_files = sorted(validated_dir.glob("hop_reduction_recommendations_*.xlsx"))
+    consider_recs_all = [r for r in master_recs if r["validation_status"] == VS_CONSIDER]
     enhanced = {}
 
-    for path in xlsx_files:
-        rpt_table, consider_recs = read_validated_xlsx(path)
+    for rpt_table, graph in sorted(all_graphs.items()):
+        consider_recs = [r for r in consider_recs_all if rpt_table in r["appears_in_rpts"]]
 
-        if rpt_table not in all_graphs:
-            print(f"  WARNING: '{rpt_table}' not in graph JSON — skipping")
-            continue
-
-        graph = all_graphs[rpt_table]
         hop_recs = [r for r in consider_recs if r.get("recommendation_type") == "HOP_REDUCTION"]
         sim      = simulate_with_tracking(hop_recs, graph)
 
@@ -1038,21 +1034,16 @@ def main() -> None:
     print("=" * 65)
     print("Before vs After Hop Reduction Visualizer")
     print("=" * 65)
-    print(f"Graph JSON    : {GRAPH_JSON}")
-    print(f"Validated dir : {VALIDATED_DIR}")
-    print(f"Output HTML   : {OUTPUT_HTML}\n")
+    print(f"Graph JSON  : {GRAPH_JSON}")
+    print(f"Master XLSX : {MASTER_XLSX}")
+    print(f"Output HTML : {OUTPUT_HTML}\n")
 
     if not GRAPH_JSON.exists():
         print(f"ERROR: {GRAPH_JSON} not found. Run generate_tidal_graph.py first.")
         return
 
-    if not VALIDATED_DIR.exists():
-        print(f"ERROR: Validated directory not found:\n  {VALIDATED_DIR}")
-        return
-
-    xlsx_files = sorted(VALIDATED_DIR.glob("hop_reduction_recommendations_*.xlsx"))
-    if not xlsx_files:
-        print("No validated XLSX files found.")
+    if not MASTER_XLSX.exists():
+        print(f"ERROR: Master recommendations file not found:\n  {MASTER_XLSX}")
         return
 
     print(f"Loading graph JSON ({GRAPH_JSON.name}) ...")
@@ -1060,11 +1051,16 @@ def main() -> None:
         all_graphs = json.load(fh)
     print(f"  {len(all_graphs)} RPT graph(s) loaded\n")
 
-    print(f"Building enhanced graph data ({len(xlsx_files)} validated file(s))...")
-    enhanced_data = build_enhanced_data(all_graphs, VALIDATED_DIR)
+    print(f"Loading master recommendations ({MASTER_XLSX.name}) ...")
+    master_recs = read_master_recommendations(MASTER_XLSX)
+    n_consider = sum(1 for r in master_recs if r["validation_status"] == VS_CONSIDER)
+    print(f"  {len(master_recs)} total recs, {n_consider} marked '{VS_CONSIDER}'\n")
+
+    print("Building enhanced graph data ...")
+    enhanced_data = build_enhanced_data(all_graphs, master_recs)
 
     if not enhanced_data:
-        print("No data to visualize — check that RPT table names in filenames match the graph JSON.")
+        print("No data to visualize — check that RPT table names in 'Appears in RPTs' match the graph JSON keys.")
         return
 
     print(f"\nGenerating HTML ({len(enhanced_data)} RPT(s)) ...")

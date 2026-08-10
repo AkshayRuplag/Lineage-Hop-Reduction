@@ -54,25 +54,42 @@ def load_combined_lineage(path):
 
 
 def load_tidal_edges():
-    """Load TidalDeps to get actual job-to-job dependency edges."""
-    import openpyxl
-    tidal_path = _copy_if_locked(TIDAL_FILE)
-    wb = openpyxl.load_workbook(str(tidal_path), read_only=True)
-    ws = wb[wb.sheetnames[0]]
-    rows = list(ws.iter_rows(values_only=True))
-    wb.close()
-    headers = [str(h).strip() for h in rows[0]]
+    """Load TIDAL job dependency edges from the same merged sources used by
+    tidal_shell_combiner.py (primary + both supplements), so graph edges stay
+    consistent with the BFS depths (backward and forward) already computed
+    into combined_lineage_latest.csv.
+    """
+    from tidal_shell_combiner import load_tidal_deps, merge_tidal_dicts
+    base = Path(SCRIPT_DIR)
+    tidal = load_tidal_deps(base.parent / "TIDAL_15_April_updated.xlsx")
+    supp1 = base / "input" / "Tidal_Deps_Last30days_as_of_20270617.csv"
+    if supp1.exists():
+        tidal = merge_tidal_dicts(tidal, load_tidal_deps(supp1))
+    supp2 = base.parent / "Tidal Deps 20270713.xlsx"
+    if supp2.exists():
+        tidal = merge_tidal_dicts(tidal, load_tidal_deps(supp2))
+
     dep_map = defaultdict(set)
-    for row in rows[1:]:
-        rec = {headers[i]: (row[i] if i < len(headers) else None) for i in range(len(headers))}
-        jn = rec.get('JOB_NAME', '')
-        dj = rec.get('DEPENDENT_JOB')
-        if jn and dj:
-            dep_map[jn].add(dj)
+    for job_name, entries in tidal.items():
+        for entry in entries:
+            dj = entry.get('DEPENDENT_JOB')
+            if dj:
+                dep_map[job_name].add(dj)
     return dep_map
 
 
 def build_graph_per_rpt(rows_by_rpt, dep_map):
+    # Map each RPT table to its root job (from ROOT_JOB column, consistent per RPT)
+    # so we can flag when one RPT's chain includes another RPT's root loader —
+    # i.e. a cross-RPT dependency (e.g. RPT_CLAIM_SUM_R depends on RPT_CLAIM_PAYMENT_DTL_R).
+    root_job_to_rpt = {}
+    for rpt_table, rows in rows_by_rpt.items():
+        for row in rows:
+            root_job = row.get('ROOT_JOB', '')
+            if root_job:
+                root_job_to_rpt[root_job] = rpt_table
+                break
+
     all_graphs = {}
 
     for rpt_table, rows in rows_by_rpt.items():
@@ -89,6 +106,7 @@ def build_graph_per_rpt(rows_by_rpt, dep_map):
                 depth = int(float(depth_str)) if depth_str else None
             except (ValueError, TypeError):
                 depth = None
+            direction = (row.get('DIRECTION') or 'BACKWARD').strip().upper()
 
             sql_obj = row.get('FULL_OBJECT', '') or ''
             status = row.get('LINEAGE_STATUS', '')
@@ -115,7 +133,8 @@ def build_graph_per_rpt(rows_by_rpt, dep_map):
             if dep_job not in job_info:
                 job_info[dep_job] = {
                     'category': category,
-                    'depth': depth,
+                    'depth': depth if direction != 'FORWARD' else None,
+                    'forward_depth': depth if direction == 'FORWARD' else None,
                     'sql_objects': [],
                     'status': status,
                     'source': source,
@@ -153,14 +172,22 @@ def build_graph_per_rpt(rows_by_rpt, dep_map):
                     if t and t not in ('None', 'N/A', '-'):
                         job_info[dep_job]['tgt_tables'].add(t.upper())
 
+            # BACKWARD depth (upstream distance from root) and FORWARD depth
+            # (downstream distance — consumer hops from root) are tracked in
+            # separate fields since a job is normally only one or the other.
             if depth is not None:
-                existing = job_info[dep_job]['depth']
-                if existing is None or depth < existing:
-                    job_info[dep_job]['depth'] = depth
+                if direction == 'FORWARD':
+                    existing_fwd = job_info[dep_job]['forward_depth']
+                    if existing_fwd is None or depth < existing_fwd:
+                        job_info[dep_job]['forward_depth'] = depth
+                else:
+                    existing = job_info[dep_job]['depth']
+                    if existing is None or depth < existing:
+                        job_info[dep_job]['depth'] = depth
 
             if root_job and root_job not in job_info:
                 job_info[root_job] = {
-                    'category': 'RPT', 'depth': 0, 'sql_objects': [],
+                    'category': 'RPT', 'depth': 0, 'forward_depth': None, 'sql_objects': [],
                     'status': 'ROOT', 'source': '', 'cmd': '',
                     'shell_script': '', 'params': '',
                     'src_tables': set(), 'tgt_tables': {rpt_table},
@@ -232,10 +259,11 @@ def build_graph_per_rpt(rows_by_rpt, dep_map):
             # Only the real root (depth=0 from BFS) stays at 0.
             # Jobs with no BFS depth get -1 ("unlinked" column).
             depth_val = info['depth'] if info['depth'] is not None else -1
-            nodes.append({
+            node = {
                 'id': jn,
                 'category': info['category'],
                 'depth': depth_val,
+                'forward_depth': info.get('forward_depth'),
                 'sql_objects': sql_objs,
                 'primary_sql': sql_objs[0]['name'] if sql_objs else '',
                 'status': info['status'],
@@ -249,7 +277,14 @@ def build_graph_per_rpt(rows_by_rpt, dep_map):
                 'avg_runtime': info.get('avg_runtime'),
                 'src_tables': sorted(info.get('src_tables', set())),
                 'tgt_tables': sorted(info.get('tgt_tables', set())),
-            })
+            }
+            # Flag this node if it's the root loader job for a DIFFERENT RPT
+            # table — meaning the current RPT's chain depends (directly or
+            # transitively) on that other RPT being loaded first.
+            other_rpt = root_job_to_rpt.get(jn)
+            if other_rpt and other_rpt != rpt_table:
+                node['cross_rpt'] = other_rpt
+            nodes.append(node)
 
         all_graphs[rpt_table] = {
             'nodes': nodes,
@@ -368,6 +403,8 @@ svg { flex: 1; width: 100%; min-height: 0; }
 .link-path { fill: none; stroke: #5a6aaa; stroke-width: 1.8; stroke-opacity: 0.45; }
 .link-path.highlighted { stroke: #8b9fff; stroke-width: 3; stroke-opacity: 0.9; }
 .link-path.dimmed { stroke-opacity: 0.06; }
+.link-path.critical-edge { stroke: #fbbf24; stroke-width: 3.5; stroke-opacity: 0.95; }
+.link-path.samedepth-edge { stroke: #f97316; stroke-width: 3; stroke-opacity: 0.9; stroke-dasharray: 2,3; }
 .node-group { cursor: pointer; }
 .node-group .node-box { rx: 6; ry: 6; }
 .node-group .node-box.highlighted { stroke-width: 3px; stroke: #fff; }
@@ -378,6 +415,9 @@ svg { flex: 1; width: 100%; min-height: 0; }
 .node-group .runtime-badge { font-size: 7px; fill: #ffa94d; pointer-events: none; font-weight: 600; }
 .node-group .difw-badge { font-size: 7px; fill: #f59e0b; pointer-events: none; font-weight: 700; }
 .node-group .disabled-badge { font-size: 7px; fill: #9ca3af; pointer-events: none; font-weight: 700; }
+.node-group .critical-badge { font-size: 7px; fill: #fbbf24; pointer-events: none; font-weight: 700; }
+.node-group .samedepth-badge { font-size: 7px; fill: #f97316; pointer-events: none; font-weight: 700; }
+.node-group .crossrpt-badge { font-size: 10px; fill: #a78bfa; pointer-events: none; font-weight: 700; }
 .depth-col-label { font-size: 11px; fill: #5a5a8a; font-weight: 600; text-anchor: middle; }
 
 #detail-panel { position: absolute; top: 12px; right: 12px; width: 380px; background: #15152e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 16px; display: none; font-size: 12px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 10; }
@@ -401,7 +441,7 @@ svg { flex: 1; width: 100%; min-height: 0; }
 .status-ORCHESTRATOR_ONLY { background: #2e2e1a; color: #ffe066; }
 .status-DIFW_MISSING_LINEAGE { background: #3d2a1a; color: #ffa94d; }
 
-#legend { position: absolute; bottom: 12px; left: 12px; background: #15152eee; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px 16px; font-size: 11px; z-index: 5; }
+#legend { position: absolute; bottom: 12px; left: 12px; background: #15152eee; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px 16px; font-size: 11px; z-index: 5; max-width: 240px; }
 #legend .leg-item { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
 #legend .leg-dot { width: 10px; height: 10px; border-radius: 2px; }
 
@@ -464,6 +504,28 @@ svg { flex: 1; width: 100%; min-height: 0; }
 .node-group.col-dim { opacity:0.18; pointer-events:none; }
 .col-flow-edge { stroke:#ffd43b !important; stroke-width:3 !important; stroke-opacity:0.85 !important; }
 .node-group.col-dim-tbl { opacity:0.18; }
+
+/* ── Runbook (Sequential Execution Order) View ── */
+#runbook-panel { display:none; flex:1; overflow-y:auto; padding:16px 20px; background:#0a0a1a; }
+#runbook-panel.active { display:block; }
+.rb-banner { border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:12px; }
+.rb-step-header { font-size:12px; font-weight:700; color:#7b8cff; text-transform:uppercase; letter-spacing:0.5px; margin:18px 0 8px; padding-bottom:4px; border-bottom:1px solid #2a2a4a; }
+.rb-fwd-divider { font-size:12px; font-weight:700; color:#22d3ee; text-transform:uppercase; letter-spacing:0.5px; margin:26px 0 10px; padding:8px 12px; border-top:2px solid #22d3ee55; border-bottom:2px solid #22d3ee55; background:#0d2a2e; border-radius:6px; }
+.rb-row { display:flex; align-items:center; gap:10px; padding:8px 12px; margin:4px 0; background:#12122a; border-left:4px solid #3a3a5a; border-radius:6px; cursor:pointer; font-size:12px; }
+.rb-row:hover { background:#1a1a3a; }
+.rb-row.rb-selected { outline:2px solid #7b8cff; }
+.rb-row.rb-critical { border-left-color:#fbbf24; background:#1a1608; }
+.rb-row.rb-samedepth { border-left-color:#f97316; }
+.rb-num { min-width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.rb-main { flex:1; min-width:0; }
+.rb-job { font-weight:600; color:#e0e0e0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rb-sql { font-size:10px; color:#69db7c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rb-tbl { font-size:10px; color:#74c0fc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rb-meta { display:flex; gap:8px; align-items:center; flex-shrink:0; }
+.rb-runtime { font-size:10px; color:#ffa94d; }
+.rb-flag-critical { color:#fbbf24; font-size:11px; font-weight:700; }
+.rb-flag-samedepth { color:#f97316; font-size:11px; font-weight:700; }
+.rb-flag-crossrpt { color:#a78bfa; font-size:11px; font-weight:700; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -481,11 +543,15 @@ svg { flex: 1; width: 100%; min-height: 0; }
 <div id="graph-container">
   <div id="toolbar">
     <label class="toolbar-toggle"><input type="checkbox" id="toggle-unlinked"> Show Unlinked Nodes</label>
+    <label class="toolbar-toggle"><input type="checkbox" id="toggle-forward"> &#8630; Forward View (Downstream Consumers)</label>
     <label class="toolbar-toggle"><input type="checkbox" id="toggle-table-view"> Table Lineage</label>
+    <label class="toolbar-toggle"><input type="checkbox" id="toggle-runbook"> Runbook View</label>
     <button class="toolbar-btn" id="btn-stats">Stats</button>
     <button class="toolbar-btn" id="btn-col" onclick="toggleColMode()">&#9670; Column Lineage</button>
     <button class="toolbar-btn" id="btn-difw" onclick="cycleDifwMode()">&#11041; DIFW Loads</button>
     <button class="toolbar-btn" id="btn-disabled" onclick="cycleDisabledMode()">&#8856; Disabled Jobs</button>
+    <button class="toolbar-btn" id="btn-samedepth" onclick="cycleSameDepthMode()">&#8646; Same-Depth Deps</button>
+    <button class="toolbar-btn" id="btn-critical" onclick="toggleCriticalPath()">&#9733; Critical Path</button>
   </div>
   <div id="col-bar">
     <div id="col-input-wrap">
@@ -496,6 +562,7 @@ svg { flex: 1; width: 100%; min-height: 0; }
   </div>
   <div id="col-flow"></div>
   <svg id="graph-svg"></svg>
+  <div id="runbook-panel"></div>
   <div id="stats-modal" onclick="if(event.target===this)this.classList.remove('show')">
     <div id="stats-content" style="position:relative"></div>
   </div>
@@ -551,9 +618,19 @@ var zoom = d3.zoom().scaleExtent([0.05, 5]).on("zoom", function(e){ gRoot.attr("
 svg.call(zoom);
 
 var showUnlinked = false;
+var forwardViewMode = false;
 var tableViewMode = false;
 var tableGraph = null;
+var tblNodeMap = new Map();
+var tblSameDepthNodeIds = new Set(), tblSameDepthEdgeKeys = new Set(), tblSameDepthPairs = [];
+var tblTopoOrderIndex = {}, tblTopoOrderList = [];
 var statsData = null;
+var runbookMode = false;
+var criticalPathMode = false;
+var criticalPathIds = new Set(), criticalPathEdges = new Set(), criticalPathChain = [], criticalPathTotal = 0;
+var sameDepthMode = 0;        // 0 = off | 1 = highlight | 2 = hide
+var sameDepthNodeIds = new Set(), sameDepthEdgeKeys = new Set(), sameDepthPairs = [];
+var topoOrderIndex = {}, topoOrderList = [];
 
 /* ---- Fixed horizontal layout constants ---- */
 var COL_WIDTH  = 320;   /* horizontal spacing between depth columns */
@@ -562,6 +639,131 @@ var NODE_W     = 260;   /* node box width */
 var NODE_H     = 58;    /* node box height */
 var PAD_LEFT   = 60;
 var PAD_TOP    = 50;
+
+/* Best-effort longest-runtime chain ending at the RPT root (depth 0), using
+   avg_runtime per job. Cycle-safe (a "visiting" guard breaks any back-edges). */
+function computeCriticalPath() {
+  criticalPathIds = new Set(); criticalPathEdges = new Set(); criticalPathChain = []; criticalPathTotal = 0;
+  if (!currentGraph) return;
+  var roots = currentGraph.nodes.filter(function(n){ return n.depth === 0; });
+  if (!roots.length) return;
+  var memo = {}, visiting = new Set();
+  function longestFrom(id) {
+    if (memo[id]) return memo[id];
+    if (visiting.has(id)) return { time: 0, next: null };
+    visiting.add(id);
+    var best = { time: 0, next: null };
+    (upstreamMap.get(id) || []).forEach(function(u){
+      var r = longestFrom(u);
+      var un = nodeMap.get(u);
+      var rt = (un && un.avg_runtime) ? un.avg_runtime : 0;
+      var total = r.time + rt;
+      if (total > best.time) best = { time: total, next: u };
+    });
+    visiting.delete(id);
+    memo[id] = best;
+    return best;
+  }
+  var overallBest = { time: -1, root: null };
+  roots.forEach(function(r){
+    var res = longestFrom(r.id);
+    var rn = nodeMap.get(r.id);
+    var rt = (rn && rn.avg_runtime) ? rn.avg_runtime : 0;
+    var total = res.time + rt;
+    if (total > overallBest.time) overallBest = { time: total, root: r.id };
+  });
+  if (!overallBest.root) return;
+  var cur = overallBest.root;
+  var chain = [cur];
+  while (memo[cur] && memo[cur].next) {
+    var nxt = memo[cur].next;
+    criticalPathEdges.add(nxt + '|||' + cur);
+    chain.push(nxt);
+    cur = nxt;
+  }
+  chain.forEach(function(id){ criticalPathIds.add(id); });
+  criticalPathTotal = overallBest.time;
+  criticalPathChain = chain.slice().reverse();   // earliest -> latest (root last)
+}
+
+/* Same-depth ("intra-level") dependencies: two jobs assigned the same BFS depth
+   that still have a direct dependency edge between them. BFS depth is only a
+   rough "how far upstream" measure — it does NOT guarantee same-depth jobs are
+   safe to treat as parallel/order-independent. Flag these so the true order is clear. */
+function computeSameDepthDeps() {
+  sameDepthNodeIds = new Set(); sameDepthEdgeKeys = new Set(); sameDepthPairs = [];
+  if (!currentGraph) return;
+  currentGraph.links.forEach(function(l){
+    var sid = typeof l.source === 'object' ? l.source.id : l.source;
+    var tid = typeof l.target === 'object' ? l.target.id : l.target;
+    var sn = nodeMap.get(sid), tn = nodeMap.get(tid);
+    if (!sn || !tn) return;
+    if (sn.depth === tn.depth && sn.depth !== -1 && sn.depth != null) {
+      sameDepthNodeIds.add(sid); sameDepthNodeIds.add(tid);
+      sameDepthEdgeKeys.add(sid + '|||' + tid);
+      sameDepthPairs.push({ source: sid, target: tid, depth: sn.depth });
+    } else if (sn.forward_depth != null && sn.forward_depth === tn.forward_depth) {
+      /* Same logic in the Forward View direction: two downstream consumers at
+         the same hop count that still have a direct edge between them. */
+      sameDepthNodeIds.add(sid); sameDepthNodeIds.add(tid);
+      sameDepthEdgeKeys.add(sid + '|||' + tid);
+      sameDepthPairs.push({ source: sid, target: tid, depth: sn.forward_depth, forward: true });
+    }
+  });
+}
+
+/* Full-graph topological order (Kahn's algorithm) across ALL dependency edges —
+   this is the TRUE execution sequence, correctly resolving same-depth dependencies
+   that BFS depth alone can't order. Any node left over from an unresolved real
+   cycle is appended last (best-effort, stable order). */
+function computeTopoOrder() {
+  topoOrderIndex = {}; topoOrderList = [];
+  if (!currentGraph) return;
+  var catOrder = {RPT:0, FCT:1, MV:2, DIM:3, STG:4, REF:5, SOURCE:6, MONTH_END:7, OTHER:8};
+  function sortKey(id) {
+    var n = nodeMap.get(id);
+    var d = n && n.depth != null ? n.depth : -1;
+    var c = n && catOrder[n.category] !== undefined ? catOrder[n.category] : 9;
+    return [-d, c, id];
+  }
+  function cmp(a, b) {
+    var ka = sortKey(a), kb = sortKey(b);
+    for (var i = 0; i < ka.length; i++) { if (ka[i] < kb[i]) return -1; if (ka[i] > kb[i]) return 1; }
+    return 0;
+  }
+  var inDegree = {};
+  currentGraph.nodes.forEach(function(n){ inDegree[n.id] = (upstreamMap.get(n.id) || []).length; });
+  var remaining = new Set(currentGraph.nodes.map(function(n){ return n.id; }));
+  var ready = currentGraph.nodes.filter(function(n){ return inDegree[n.id] === 0; }).map(function(n){ return n.id; });
+  var idx = 0;
+  while (ready.length) {
+    ready.sort(cmp);
+    var id = ready.shift();
+    if (!remaining.has(id)) continue;
+    remaining.delete(id);
+    topoOrderIndex[id] = idx++;
+    topoOrderList.push(id);
+    (downstreamMap.get(id) || []).forEach(function(nxt){
+      if (!remaining.has(nxt)) return;
+      inDegree[nxt]--;
+      if (inDegree[nxt] === 0) ready.push(nxt);
+    });
+  }
+  /* Leftover nodes belong to an unresolved real cycle — append in a stable order */
+  Array.from(remaining).sort(cmp).forEach(function(id){
+    topoOrderIndex[id] = idx++;
+    topoOrderList.push(id);
+  });
+}
+
+/* Switch the RPT dropdown to another RPT's graph — used by the "Cross-RPT
+   Dependency" detail-panel link so a user can jump straight to the RPT
+   that the currently-selected job's chain depends on. */
+function jumpToCrossRpt(otherRpt) {
+  var sel = document.getElementById('rpt-select');
+  if (sel) sel.value = otherRpt;
+  loadGraph(otherRpt);
+}
 
 function loadGraph(rpt) {
   var data = ALL_GRAPHS[rpt];
@@ -580,13 +782,24 @@ function loadGraph(rpt) {
   });
   rptTable = rpt;
   buildTableGraph();
+  computeTableSameDepthDeps();
+  computeTableTopoOrder();
+  computeSameDepthDeps();
+  computeTopoOrder();
+  computeCriticalPath();
   computeStats(rpt);
   document.getElementById("sidebar-title").textContent = rpt + " \u2014 Job Lineage";
   document.title = "Data Lineage \u2014 " + rpt;
   document.getElementById("stats").textContent =
     currentGraph.nodes.length + " jobs \u00b7 " + currentGraph.links.length + " dependencies";
   renderSidebar();
-  if (tableViewMode) { renderTableView(); } else { renderGraph(); }
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  if (runbookMode) { renderRunbook(); }
+  else if (tableViewMode) { renderTableView(); }
+  else { renderGraph(); }
 }
 
 function renderSidebar(filter) {
@@ -631,15 +844,23 @@ function renderGraph() {
   var height = document.getElementById("graph-container").clientHeight;
 
   /* --- Filter nodes based on toggle --- */
-  var visibleNodes = currentGraph.nodes;
-  if (!showUnlinked) {
-    visibleNodes = currentGraph.nodes.filter(function(n){ return n.depth !== -1; });
-  }
+  /* Forward-only nodes (no backward BFS depth, only reachable as a downstream
+     consumer) are hidden unless Forward View is on; genuinely unlinked nodes
+     (neither depth nor forward_depth) still follow the Show Unlinked toggle. */
+  var visibleNodes = currentGraph.nodes.filter(function(n){
+    var isForwardOnly = (n.depth === -1 && n.forward_depth != null);
+    if (isForwardOnly) return forwardViewMode;
+    if (n.depth === -1) return showUnlinked;
+    return true;
+  });
   if (difwMode === 2) {
     visibleNodes = visibleNodes.filter(function(n){ return !isDifwNode(n); });
   }
   if (disabledMode === 2) {
     visibleNodes = visibleNodes.filter(function(n){ return !isDisabledNode(n); });
+  }
+  if (sameDepthMode === 2) {
+    visibleNodes = visibleNodes.filter(function(n){ return !sameDepthNodeIds.has(n.id); });
   }
   var visibleIds = new Set(visibleNodes.map(function(n){ return n.id; }));
   var visibleLinks = currentGraph.links.filter(function(l){
@@ -652,34 +873,77 @@ function renderGraph() {
   var minDepth = d3.min(visibleNodes, function(d){ return d.depth; }) || 0;
   var maxDepth = d3.max(visibleNodes, function(d){ return d.depth; }) || 1;
 
-  /* Group nodes into depth buckets */
+  /* Forward View nodes use a distinct negative column key (offset by -1000)
+     so they never collide with the -1 "unlinked" sentinel; this places them
+     in their own columns to the LEFT of Depth 0 (root), ordered by hop count
+     (furthest downstream leftmost, adjacent to root = closest consumer). */
+  var FORWARD_COL_OFFSET = 1000;
+  function effCol(n){
+    return (forwardViewMode && n.forward_depth != null) ? -(FORWARD_COL_OFFSET + n.forward_depth) : n.depth;
+  }
+
+  /* Group nodes into depth buckets (keyed by effective column) */
   var columns = {};
   visibleNodes.forEach(function(n){
-    var d = n.depth;
+    var d = effCol(n);
     if (!columns[d]) columns[d] = [];
     columns[d].push(n);
   });
 
-  /* Sort within each column by category then name for stable layout */
+  /* Sort within each column by true topological sequence first (so a job that
+     depends on another job in the SAME depth column is placed after it, not
+     alphabetically), then category/name as a stable fallback. */
   var catOrder = {RPT:0, FCT:1, MV:2, DIM:3, STG:4, REF:5, SOURCE:6, MONTH_END:7, OTHER:8};
   Object.keys(columns).forEach(function(d){
     columns[d].sort(function(a,b){
+      var ta = topoOrderIndex[a.id] !== undefined ? topoOrderIndex[a.id] : 1e9;
+      var tb = topoOrderIndex[b.id] !== undefined ? topoOrderIndex[b.id] : 1e9;
+      if (ta !== tb) return ta - tb;
       var ca = catOrder[a.category] !== undefined ? catOrder[a.category] : 9;
       var cb = catOrder[b.category] !== undefined ? catOrder[b.category] : 9;
       return ca - cb || a.id.localeCompare(b.id);
     });
   });
 
-  /* Map each depth to a column index (0-based), handle -1 as rightmost column */
-  var depths = Object.keys(columns).map(Number).sort(function(a,b){return a-b;});
+  /* Map each effective column key to a display column index (0-based).
+     Order (left to right): Forward View columns (furthest downstream first,
+     so hop-1 consumers sit immediately left of root) → Depth 0 (RPT root) →
+     increasing depth (further upstream) → Unlinked (always last, rightmost). */
+  var allCols = Object.keys(columns).map(Number);
+  var forwardCols = allCols.filter(function(d){ return d <= -FORWARD_COL_OFFSET; }).sort(function(a,b){return a-b;});
+  var normalCols  = allCols.filter(function(d){ return d >= 0; }).sort(function(a,b){return a-b;});
   var depthToCol = {};
   var colIdx = 0;
-  depths.forEach(function(d){
-    if (d >= 0) { depthToCol[d] = colIdx; colIdx++; }
-  });
+  forwardCols.forEach(function(d){ depthToCol[d] = colIdx; colIdx++; });
+  normalCols.forEach(function(d){ depthToCol[d] = colIdx; colIdx++; });
+  var depths = allCols;   /* used below for column header labels */
   /* Put -1 (unlinked) as the last column on the right */
   if (columns[-1]) { depthToCol[-1] = colIdx; colIdx++; }
   var numCols = colIdx;
+
+  /* Nudge same-depth-dependent nodes horizontally so the true run order is
+     visible even though they share a depth column. A node that must complete
+     before another same-depth node (per sameDepthPairs) is shifted right
+     (further "upstream", matching the depth convention); the node(s) it feeds
+     stay at the column's base x. Rank = longest same-depth chain to a sink,
+     capped so nudged nodes never encroach on the next column. */
+  var sameDepthSucc = {};
+  sameDepthPairs.forEach(function(p){
+    (sameDepthSucc[p.source] = sameDepthSucc[p.source] || []).push(p.target);
+  });
+  var nudgeRankMemo = {}, nudgeVisiting = new Set();
+  function nudgeRank(id) {
+    if (nudgeRankMemo[id] !== undefined) return nudgeRankMemo[id];
+    if (nudgeVisiting.has(id)) return 0;   // cycle guard
+    nudgeVisiting.add(id);
+    var succs = sameDepthSucc[id] || [];
+    var best = 0;
+    succs.forEach(function(s){ best = Math.max(best, nudgeRank(s) + 1); });
+    nudgeVisiting.delete(id);
+    nudgeRankMemo[id] = best;
+    return best;
+  }
+  var NUDGE_STEP = 18, NUDGE_MAX_RANKS = 2;
 
   /* Assign x,y to each node */
   Object.keys(columns).forEach(function(d){
@@ -687,7 +951,8 @@ function renderGraph() {
     var ci = depthToCol[parseInt(d)];
     var x = PAD_LEFT + ci * COL_WIDTH;
     col.forEach(function(n, i){
-      n._x = x + NODE_W / 2;
+      var nudge = sameDepthNodeIds.has(n.id) ? Math.min(nudgeRank(n.id), NUDGE_MAX_RANKS) * NUDGE_STEP : 0;
+      n._x = x + NODE_W / 2 + nudge;
       n._y = PAD_TOP + 24 + i * ROW_HEIGHT + NODE_H / 2;
     });
   });
@@ -702,7 +967,15 @@ function renderGraph() {
     .attr("x", function(d){ return PAD_LEFT + depthToCol[d] * COL_WIDTH + NODE_W/2; })
     .attr("y", PAD_TOP)
     .text(function(d){
-      var label = d === -1 ? "Unlinked" : "Depth " + d;
+      var label;
+      if (d <= -FORWARD_COL_OFFSET) {
+        var hops = -d - FORWARD_COL_OFFSET;
+        label = hops + " hop" + (hops === 1 ? "" : "s") + " downstream";
+      } else if (d === -1) {
+        label = "Unlinked";
+      } else {
+        label = "Depth " + d;
+      }
       return label + " (" + columns[d].length + ")";
     });
 
@@ -720,7 +993,12 @@ function renderGraph() {
 
   var linkPaths = gRoot.append("g").selectAll("path")
     .data(linkData).join("path")
-    .attr("class","link-path")
+    .attr("class", function(l){
+      var sid = l.source.id, tid = l.target.id, key = sid + '|||' + tid;
+      if (criticalPathMode && criticalPathEdges.has(key)) return "link-path critical-edge";
+      if (sameDepthMode === 1 && sameDepthEdgeKeys.has(key)) return "link-path samedepth-edge";
+      return "link-path";
+    })
     .attr("marker-end","url(#arrow)")
     .attr("d", function(l){
       var sx = l.source._x - NODE_W/2;       /* left edge of source  */
@@ -744,11 +1022,17 @@ function renderGraph() {
     .attr("x", -NODE_W/2).attr("y", -NODE_H/2)
     .attr("fill", function(d){ var c = d3.color(COLORS[d.category]||COLORS.OTHER); c.opacity=0.18; return c; })
     .attr("stroke", function(d){
+      if (criticalPathMode && criticalPathIds.has(d.id)) return "#fbbf24";
+      if (sameDepthMode===1 && sameDepthNodeIds.has(d.id)) return "#f97316";
       if (disabledMode===1&&isDisabledNode(d)) return "#6b7280";
       if (difwMode===1&&isDifwNode(d)) return "#f59e0b";
+      if (d.cross_rpt) return "#a78bfa";
       return COLORS[d.category]||COLORS.OTHER;
     })
     .attr("stroke-width", function(d){
+      if (criticalPathMode && criticalPathIds.has(d.id)) return 3;
+      if (sameDepthMode===1 && sameDepthNodeIds.has(d.id)) return 3;
+      if (d.cross_rpt) return 2.5;
       return (difwMode===1&&isDifwNode(d)||(disabledMode===1&&isDisabledNode(d))) ? 2 : (d.depth===0 ? 2.5 : 1.2);
     })
     .attr("stroke-dasharray", function(d){ return (disabledMode===1&&isDisabledNode(d)) ? "5,3" : null; })
@@ -779,13 +1063,14 @@ function renderGraph() {
       return '';
     });
 
-  /* Depth badge circle */
-  nodeG.append("circle").attr("r",8)
-    .attr("cx", NODE_W/2 - 6).attr("cy", -NODE_H/2 + 6)
+  /* Sequence badge circle — shows the TRUE execution sequence number (unique
+     per job, from topoOrderIndex), not the shared depth value */
+  nodeG.append("circle").attr("r",10)
+    .attr("cx", NODE_W/2 - 8).attr("cy", -NODE_H/2 + 8)
     .attr("fill","#1a1a3a").attr("stroke","#666").attr("stroke-width",0.8);
   nodeG.append("text").attr("class","depth-badge").attr("text-anchor","middle")
-    .attr("x", NODE_W/2 - 6).attr("y", -NODE_H/2 + 10)
-    .text(function(d){ return d.depth != null ? d.depth : "?"; });
+    .attr("x", NODE_W/2 - 8).attr("y", -NODE_H/2 + 11)
+    .text(function(d){ return topoOrderIndex[d.id] !== undefined ? (topoOrderIndex[d.id] + 1) : "?"; });
 
   /* Runtime badge (bottom-right corner) */
   nodeG.filter(function(d){ return d.avg_runtime != null; })
@@ -814,6 +1099,34 @@ function renderGraph() {
       .text("\u2296 DISABLED");
   }
 
+  /* Critical path badge (top-left) */
+  if (criticalPathMode) {
+    nodeG.filter(function(d){ return criticalPathIds.has(d.id); })
+      .append("text").attr("class","critical-badge").attr("text-anchor","start")
+      .attr("x", -NODE_W/2 + 4).attr("y", -NODE_H/2 + 10)
+      .text("\u2605 CRITICAL");
+  }
+
+  /* Same-depth dependency badge (top-left, below critical badge) */
+  if (sameDepthMode === 1) {
+    nodeG.filter(function(d){ return sameDepthNodeIds.has(d.id); })
+      .append("text").attr("class","samedepth-badge").attr("text-anchor","start")
+      .attr("x", -NODE_W/2 + 4).attr("y", -NODE_H/2 + 20)
+      .text("\u21c6 SAME-DEPTH");
+  }
+
+  /* Cross-RPT dependency badge (top-left corner) — always visible when this
+     job is itself another RPT's root loader, meaning the current RPT depends
+     on that other RPT being loaded first (directly or indirectly). */
+  nodeG.filter(function(d){ return !!d.cross_rpt; })
+    .append("circle").attr("r",9)
+    .attr("cx", -NODE_W/2 + 9).attr("cy", -NODE_H/2 + 9)
+    .attr("fill","#241a3a").attr("stroke","#a78bfa").attr("stroke-width",1.3);
+  nodeG.filter(function(d){ return !!d.cross_rpt; })
+    .append("text").attr("class","crossrpt-badge").attr("text-anchor","middle")
+    .attr("x", -NODE_W/2 + 9).attr("y", -NODE_H/2 + 12.5)
+    .text("\u21d2");
+
   /* --- Tooltip on hover --- */
   var tooltip = document.getElementById("tooltip");
   nodeG.on("mouseover",function(e,d){
@@ -825,9 +1138,13 @@ function renderGraph() {
     var rtTip = d.avg_runtime != null ? "<br>Avg Runtime: "+fmtRuntime(d.avg_runtime) : "";
     var difwTip = isDifwNode(d) ? "<br><span style='color:#f59e0b;font-weight:bold;'>&#11041; DIFW Load (STG \u2192 DIM/FCT via PKG_GRP_LOAD_DIFW)</span>" : "";
     var disabledTip = isDisabledNode(d) ? "<br><span style='color:#9ca3af;font-weight:bold;'>&#8856; DISABLED in TIDAL — lineage cannot be traced</span>" : "";
+    var criticalTip = criticalPathIds.has(d.id) ? "<br><span style='color:#fbbf24;font-weight:bold;'>&#9733; On critical path (~"+fmtRuntime(criticalPathTotal)+" total)</span>" : "";
+    var sameDepthTip = sameDepthNodeIds.has(d.id) ? "<br><span style='color:#f97316;font-weight:bold;'>&#8646; Has a same-depth dependency — not safe to assume parallel with its depth peers</span>" : "";
+    var crossRptTip = d.cross_rpt ? "<br><span style='color:#a78bfa;font-weight:bold;'>&#8658; Root loader for "+d.cross_rpt+" — this RPT depends on it</span>" : "";
+    var seqTip = topoOrderIndex[d.id] !== undefined ? "<br>Sequence: #"+(topoOrderIndex[d.id]+1)+" of "+topoOrderList.length : "";
     tooltip.innerHTML = "<strong>"+d.id+"</strong><br>Category: "+d.category+
-      "<br>Depth: "+d.depth+"<br>Status: "+d.status+
-      "<br>Source: "+(d.source||"\u2014")+parentTip+rtTip+difwTip+disabledTip+
+      "<br>Depth: "+d.depth+seqTip+"<br>Status: "+d.status+
+      "<br>Source: "+(d.source||"\u2014")+parentTip+rtTip+difwTip+disabledTip+criticalTip+sameDepthTip+crossRptTip+
       (sl ? "<br><br><strong>SQL Objects:</strong><br>"+sl : "") + srcTip + tgtTip;
   }).on("mousemove",function(e){
     tooltip.style.left = (e.pageX+12)+"px"; tooltip.style.top = (e.pageY-12)+"px";
@@ -857,16 +1174,19 @@ function getConnected(jobId) {
 
 function selectJob(jobId) {
   var conn = getConnected(jobId);
-  var all = new Set([jobId, ...conn.upstream, ...conn.downstream]);
-  window._nodeG.select(".node-box").classed("highlighted",function(d){return d.id===jobId;})
-    .attr("opacity",function(d){return all.has(d.id)?1:0.08;});
-  window._nodeG.selectAll("text").attr("opacity",function(d){return all.has(d.id)?1:0.06;});
-  window._linkPaths.each(function(l){
-    var sid = l.source.id, tid = l.target.id;
-    var inChain = all.has(sid) && all.has(tid);
-    d3.select(this).classed("highlighted", inChain).classed("dimmed", !inChain);
-  });
+  if (!runbookMode && window._nodeG) {
+    var all = new Set([jobId, ...conn.upstream, ...conn.downstream]);
+    window._nodeG.select(".node-box").classed("highlighted",function(d){return d.id===jobId;})
+      .attr("opacity",function(d){return all.has(d.id)?1:0.08;});
+    window._nodeG.selectAll("text").attr("opacity",function(d){return all.has(d.id)?1:0.06;});
+    window._linkPaths.each(function(l){
+      var sid = l.source.id, tid = l.target.id;
+      var inChain = all.has(sid) && all.has(tid);
+      d3.select(this).classed("highlighted", inChain).classed("dimmed", !inChain);
+    });
+  }
   document.querySelectorAll(".job-item").forEach(function(el){ el.classList.toggle("selected",el.dataset.id===jobId); });
+  document.querySelectorAll(".rb-row").forEach(function(el){ el.classList.toggle("rb-selected",el.dataset.id===jobId); });
   showDetail(jobId, conn);
 }
 
@@ -884,8 +1204,40 @@ function showDetail(jobId, conn) {
   if(!n) return;
   var h = '<h3>'+n.id+'</h3>';
   h += '<div class="field"><span class="status-badge status-'+n.status+'">'+n.status+'</span></div>';
+  if (criticalPathIds.has(jobId)) {
+    h += '<div class="field" style="background:#1a1608;border-left:3px solid #fbbf24;border-radius:4px;padding:8px;">';
+    h += '<div class="label" style="color:#fde68a;">&#9733; Critical Path</div>';
+    h += '<div style="font-size:11px;margin-top:4px;">Longest runtime chain (~' + fmtRuntime(criticalPathTotal) + ' total): ' + criticalPathChain.join(' \u2192 ') + '</div>';
+    h += '</div>';
+  }
+  if (sameDepthNodeIds.has(jobId)) {
+    var sdPairs = sameDepthPairs.filter(function(p){ return p.source === jobId || p.target === jobId; });
+    h += '<div class="field" style="background:#2a1608;border-left:3px solid #f97316;border-radius:4px;padding:8px;">';
+    h += '<div class="label" style="color:#fdba74;">&#8646; Same-Depth Dependency</div>';
+    sdPairs.forEach(function(p){
+      var rel = p.source === jobId ? ('must complete before \u2192 ' + p.target) : (p.source + ' must complete before this job');
+      var lbl = p.forward ? (p.depth + ' hop' + (p.depth === 1 ? '' : 's') + ' downstream') : ('Depth ' + p.depth);
+      h += '<div style="font-size:11px;margin-top:4px;">(' + lbl + ') ' + rel + '</div>';
+    });
+    h += '</div>';
+  }
+  if (n.cross_rpt) {
+    h += '<div class="field" style="background:#241a3a;border-left:3px solid #a78bfa;border-radius:4px;padding:8px;">';
+    h += '<div class="label" style="color:#c4b5fd;">&#8658; Cross-RPT Dependency</div>';
+    h += '<div style="font-size:11px;margin-top:4px;">This job is the root loader for <strong>' + n.cross_rpt + '</strong> \u2014 '
+       + rptTable + ' depends on ' + n.cross_rpt + ' being loaded first (directly or indirectly).</div>';
+    h += '<div class="dep-item" onclick="jumpToCrossRpt(\'' + n.cross_rpt + '\')" style="border-left:3px solid #a78bfa;margin-top:6px;">'
+       + '\u2192 View ' + n.cross_rpt + ' graph</div>';
+    h += '</div>';
+  }
+  if (topoOrderIndex[jobId] !== undefined) {
+    h += field("True Execution Sequence", '#' + (topoOrderIndex[jobId] + 1) + ' of ' + topoOrderList.length);
+  }
   h += field("Category", n.category);
   h += field("Depth", n.depth);
+  if (n.forward_depth != null) {
+    h += field("Downstream Depth", n.forward_depth + " hop" + (n.forward_depth === 1 ? "" : "s") + " from root (Forward View)");
+  }
   h += field("Schema", n.schema || "\u2014");
   h += field("Parent Caller", n.parent_caller || "\u2014");
   h += field("Shell Script", n.shell_script || "\u2014");
@@ -995,29 +1347,37 @@ var legHtml = "<strong>Legend</strong><br>";
 Object.entries(CATEGORY_LABELS).forEach(function(pair){
   legHtml += '<div class="leg-item"><span class="leg-dot" style="background:'+COLORS[pair[0]]+'"></span>'+pair[1]+'</div>';
 });
-legHtml += '<br><div style="font-size:10px;color:#888">Badge = BFS depth from root<br>Green italic = SQL object called<br>Scroll/zoom to navigate</div>';
+legHtml += '<br><div style="font-size:10px;color:#888">Depth 0 (RPT root) is leftmost, further upstream jobs increase rightward<br>Badge (top-right) = true execution sequence (#1 runs first)<br>Green italic = SQL object called<br><span style="color:#f97316">&#8646; orange</span> = same-depth dependency<br><span style="color:#fbbf24">&#9733; gold</span> = critical path<br><span style="color:#a78bfa">&#8658; purple</span> = root loader for another RPT<br>&#8630; Forward View toggle adds downstream consumers to the LEFT of Depth 0<br>Scroll/zoom to navigate</div>';
 legend.innerHTML = legHtml;
 
 function buildTableGraph() {
   var tblMap = {};
   var tblEdges = new Set();
+  var tblEdgeJobs = {};
 
   currentGraph.nodes.forEach(function(n) {
     var srcTables = n.src_tables || [];
     var tgtTables = n.tgt_tables || [];
     srcTables.forEach(function(t) {
-      if (!tblMap[t]) tblMap[t] = { id: t, category: guessTableCategory(t), depths: [], jobs: new Set() };
+      if (!tblMap[t]) tblMap[t] = { id: t, category: guessTableCategory(t), depths: [], forwardDepths: [], jobs: new Set() };
       tblMap[t].jobs.add(n.id);
       if (n.depth != null && n.depth >= 0) tblMap[t].depths.push(n.depth + 1);
+      if (n.forward_depth != null) tblMap[t].forwardDepths.push(n.forward_depth - 1);
     });
     tgtTables.forEach(function(t) {
-      if (!tblMap[t]) tblMap[t] = { id: t, category: guessTableCategory(t), depths: [], jobs: new Set() };
+      if (!tblMap[t]) tblMap[t] = { id: t, category: guessTableCategory(t), depths: [], forwardDepths: [], jobs: new Set() };
       tblMap[t].jobs.add(n.id);
       if (n.depth != null && n.depth >= 0) tblMap[t].depths.push(n.depth);
+      if (n.forward_depth != null) tblMap[t].forwardDepths.push(n.forward_depth);
     });
     srcTables.forEach(function(s) {
       tgtTables.forEach(function(t) {
-        if (s !== t) tblEdges.add(s + '|||' + t);
+        if (s !== t) {
+          var ek = s + '|||' + t;
+          tblEdges.add(ek);
+          if (!tblEdgeJobs[ek]) tblEdgeJobs[ek] = new Set();
+          tblEdgeJobs[ek].add(n.id);
+        }
       });
     });
   });
@@ -1026,8 +1386,9 @@ function buildTableGraph() {
   Object.keys(tblMap).forEach(function(t) {
     var info = tblMap[t];
     var minD = info.depths.length > 0 ? Math.min.apply(null, info.depths) : -1;
+    var minFD = info.forwardDepths.length > 0 ? Math.min.apply(null, info.forwardDepths) : null;
     tblNodes.push({
-      id: info.id, category: info.category, depth: minD,
+      id: info.id, category: info.category, depth: minD, forward_depth: minFD,
       jobs: Array.from(info.jobs).sort(),
       sql_objects: [], primary_sql: '', status: '', src_tables: [], tgt_tables: [],
     });
@@ -1035,9 +1396,11 @@ function buildTableGraph() {
   var tblLinks = [];
   tblEdges.forEach(function(e) {
     var p = e.split('|||');
-    if (tblMap[p[0]] && tblMap[p[1]]) tblLinks.push({ source: p[0], target: p[1] });
+    if (tblMap[p[0]] && tblMap[p[1]]) tblLinks.push({ source: p[0], target: p[1], jobs: Array.from(tblEdgeJobs[e] || []) });
   });
   tableGraph = { nodes: tblNodes, links: tblLinks };
+  tblNodeMap = new Map();
+  tblNodes.forEach(function(n){ tblNodeMap.set(n.id, n); });
   tblUpstreamMap = new Map(); tblDownstreamMap = new Map();
   tblLinks.forEach(function(l){
     var s = l.source, t = l.target;
@@ -1045,6 +1408,67 @@ function buildTableGraph() {
     tblUpstreamMap.get(t).push(s);
     if (!tblDownstreamMap.has(s)) tblDownstreamMap.set(s, []);
     tblDownstreamMap.get(s).push(t);
+  });
+}
+
+/* Table-level equivalent of computeSameDepthDeps(): two tables sharing a depth
+   column that still have a direct table-to-table edge between them. */
+function computeTableSameDepthDeps() {
+  tblSameDepthNodeIds = new Set(); tblSameDepthEdgeKeys = new Set(); tblSameDepthPairs = [];
+  if (!tableGraph) return;
+  tableGraph.links.forEach(function(l){
+    var sn = tblNodeMap.get(l.source), tn = tblNodeMap.get(l.target);
+    if (!sn || !tn) return;
+    if (sn.depth === tn.depth && sn.depth !== -1 && sn.depth != null) {
+      tblSameDepthNodeIds.add(l.source); tblSameDepthNodeIds.add(l.target);
+      tblSameDepthEdgeKeys.add(l.source + '|||' + l.target);
+      tblSameDepthPairs.push({ source: l.source, target: l.target, depth: sn.depth });
+    } else if (sn.forward_depth != null && sn.forward_depth === tn.forward_depth) {
+      tblSameDepthNodeIds.add(l.source); tblSameDepthNodeIds.add(l.target);
+      tblSameDepthEdgeKeys.add(l.source + '|||' + l.target);
+      tblSameDepthPairs.push({ source: l.source, target: l.target, depth: sn.forward_depth, forward: true });
+    }
+  });
+}
+
+/* Table-level equivalent of computeTopoOrder(): true execution order across
+   ALL table-to-table edges (Kahn's algorithm), cycle-safe. */
+function computeTableTopoOrder() {
+  tblTopoOrderIndex = {}; tblTopoOrderList = [];
+  if (!tableGraph) return;
+  var catOrder = {RPT:0, FCT:1, MV:2, DIM:3, STG:4, REF:5, OTHER:8};
+  function sortKey(id) {
+    var n = tblNodeMap.get(id);
+    var d = n && n.depth != null ? n.depth : -1;
+    var c = n && catOrder[n.category] !== undefined ? catOrder[n.category] : 9;
+    return [-d, c, id];
+  }
+  function cmp(a, b) {
+    var ka = sortKey(a), kb = sortKey(b);
+    for (var i = 0; i < ka.length; i++) { if (ka[i] < kb[i]) return -1; if (ka[i] > kb[i]) return 1; }
+    return 0;
+  }
+  var inDegree = {};
+  tableGraph.nodes.forEach(function(n){ inDegree[n.id] = (tblUpstreamMap.get(n.id) || []).length; });
+  var remaining = new Set(tableGraph.nodes.map(function(n){ return n.id; }));
+  var ready = tableGraph.nodes.filter(function(n){ return inDegree[n.id] === 0; }).map(function(n){ return n.id; });
+  var idx = 0;
+  while (ready.length) {
+    ready.sort(cmp);
+    var id = ready.shift();
+    if (!remaining.has(id)) continue;
+    remaining.delete(id);
+    tblTopoOrderIndex[id] = idx++;
+    tblTopoOrderList.push(id);
+    (tblDownstreamMap.get(id) || []).forEach(function(nxt){
+      if (!remaining.has(nxt)) return;
+      inDegree[nxt]--;
+      if (inDegree[nxt] === 0) ready.push(nxt);
+    });
+  }
+  Array.from(remaining).sort(cmp).forEach(function(id){
+    tblTopoOrderIndex[id] = idx++;
+    tblTopoOrderList.push(id);
   });
 }
 
@@ -1087,8 +1511,14 @@ function showTableDetail(tblId, conn) {
   var n = tblNodeMap.get(tblId);
   if(!n) return;
   var h = '<h3>'+n.id+'</h3>';
+  if (tblTopoOrderIndex[n.id] !== undefined) {
+    h += field("True Execution Sequence", '#' + (tblTopoOrderIndex[n.id] + 1) + ' of ' + tblTopoOrderList.length);
+  }
   h += field("Category", n.category);
   h += field("Depth", n.depth);
+  if (n.forward_depth != null) {
+    h += field("Downstream Depth", n.forward_depth + " hop" + (n.forward_depth === 1 ? "" : "s") + " from root (Forward View)");
+  }
   if(n.jobs && n.jobs.length > 0) {
     h += '<div class="field"><div class="label">Used by Jobs ('+n.jobs.length+')</div>';
     n.jobs.forEach(function(j){
@@ -1134,6 +1564,7 @@ function computeStats(rptName) {
   if (!showUnlinked) nodes = nodes.filter(function(n){ return n.depth !== -1; });
   if (difwMode === 2)      nodes = nodes.filter(function(n){ return !isDifwNode(n); });
   if (disabledMode === 2) nodes = nodes.filter(function(n){ return !isDisabledNode(n); });
+  if (sameDepthMode === 2) nodes = nodes.filter(function(n){ return !sameDepthNodeIds.has(n.id); });
   var visNodeIds = new Set(nodes.map(function(n){ return n.id; }));
   /* Build active-filter label for the stats header */
   var filterLabels = [];
@@ -1141,6 +1572,9 @@ function computeStats(rptName) {
   if (difwMode === 1)      filterLabels.push('DIFW highlighted');
   if (disabledMode === 2) filterLabels.push('Disabled hidden');
   if (disabledMode === 1) filterLabels.push('Disabled highlighted');
+  if (criticalPathMode)   filterLabels.push('Critical path highlighted');
+  if (sameDepthMode === 2) filterLabels.push('Same-depth deps hidden');
+  if (sameDepthMode === 1) filterLabels.push('Same-depth deps highlighted');
   if (!showUnlinked)      filterLabels.push('Unlinked hidden');
   var uniqueJobs = new Set();
   var uniqueSqlObjs = new Set();
@@ -1152,10 +1586,12 @@ function computeStats(rptName) {
   var sourceBreakdown = {};
   var statusBreakdown = {};
   var runtimes = [];
+  var crossRptNodes = [];
 
   nodes.forEach(function(n) {
     uniqueJobs.add(n.id);
     if (n.avg_runtime != null) runtimes.push(n.avg_runtime);
+    if (n.cross_rpt) crossRptNodes.push({ id: n.id, rpt: n.cross_rpt });
     var src = n.source || 'UNKNOWN';
     sourceBreakdown[src] = (sourceBreakdown[src] || 0) + 1;
     var st = n.status || 'UNKNOWN';
@@ -1199,6 +1635,7 @@ function computeStats(rptName) {
     maxRuntime: runtimes.length > 0 ? Math.max.apply(null, runtimes) : 0,
     jobsWithRuntime: runtimes.length,
     activeFilters: filterLabels,
+    crossRptNodes: crossRptNodes,
     totalEdges: currentGraph.links.filter(function(l){
       var s=typeof l.source==='object'?l.source.id:l.source;
       var t=typeof l.target==='object'?l.target.id:l.target;
@@ -1236,6 +1673,37 @@ function showStatsPanel() {
     h += statCard(fmtRuntime(s.maxRuntime), 'Max Single Job');
     h += '</div></div>';
   }
+
+  // Critical Path
+  if (criticalPathChain.length) {
+    h += '<div class="stats-section"><h3 style="color:#fde68a;">&#9733; Critical Path (~' + fmtRuntime(criticalPathTotal) + ')</h3>';
+    h += '<div style="padding:4px 8px;margin:3px 0;background:#1a1608;border-left:3px solid #fbbf24;border-radius:4px;font-size:11px;">' + criticalPathChain.join(' \u2192 ') + '</div>';
+    h += '</div>';
+  }
+
+  // Same-Depth Dependencies
+  h += '<div class="stats-section"><h3 style="color:#fdba74;">&#8646; Same-Depth Dependencies (' + sameDepthPairs.length + ')</h3>';
+  if (sameDepthPairs.length) {
+    h += '<div style="font-size:11px;color:#aaa;margin-bottom:6px;">These job pairs share a BFS depth but still have a direct dependency \u2014 they are NOT safe to assume run in parallel. The true order is resolved via topological sort (see Runbook View / node detail).</div>';
+    sameDepthPairs.forEach(function(p){
+      h += '<div style="padding:4px 8px;margin:3px 0;background:#2a1608;border-left:3px solid #f97316;border-radius:4px;font-size:11px;">(Depth ' + p.depth + ') ' + p.source + ' \u2192 ' + p.target + '</div>';
+    });
+  } else {
+    h += '<div style="font-size:12px;color:#69db7c;">&#10003; None detected</div>';
+  }
+  h += '</div>';
+
+  // Cross-RPT Dependencies
+  h += '<div class="stats-section"><h3 style="color:#c4b5fd;">&#8658; Cross-RPT Dependencies (' + s.crossRptNodes.length + ')</h3>';
+  if (s.crossRptNodes.length) {
+    h += '<div style="font-size:11px;color:#aaa;margin-bottom:6px;">These jobs are the root loader for another main RPT table — meaning ' + s.rptName + ' depends on that RPT being loaded first (directly or indirectly).</div>';
+    s.crossRptNodes.forEach(function(c){
+      h += '<div class="dep-item" onclick="jumpToCrossRpt(\'' + c.rpt + '\')" style="padding:4px 8px;margin:3px 0;background:#241a3a;border-left:3px solid #a78bfa;border-radius:4px;font-size:11px;cursor:pointer;">' + c.id + ' → <strong>' + c.rpt + '</strong></div>';
+    });
+  } else {
+    h += '<div style="font-size:12px;color:#69db7c;">&#10003; None detected</div>';
+  }
+  h += '</div>';
 
   // Lineage Status breakdown
   h += '<div class="stats-section"><h3>Lineage Status</h3>';
@@ -1307,10 +1775,12 @@ function renderTableView() {
   var width  = document.getElementById("graph-container").clientWidth;
   var height = document.getElementById("graph-container").clientHeight;
 
-  var tNodes = tableGraph.nodes;
-  if (!showUnlinked) {
-    tNodes = tNodes.filter(function(n){ return n.depth !== -1; });
-  }
+  var tNodes = tableGraph.nodes.filter(function(n){
+    var isForwardOnly = (n.depth === -1 && n.forward_depth != null);
+    if (isForwardOnly) return forwardViewMode;
+    if (n.depth === -1) return showUnlinked;
+    return true;
+  });
   var tNodeIds = new Set(tNodes.map(function(n){ return n.id; }));
   var tLinks = tableGraph.links.filter(function(l){
     return tNodeIds.has(l.source) && tNodeIds.has(l.target);
@@ -1318,9 +1788,19 @@ function renderTableView() {
   var tNodeMap = new Map();
   tNodes.forEach(function(n){ tNodeMap.set(n.id, n); });
 
+  var TBL_FORWARD_COL_OFFSET = 1000;
+  function tblEffCol(n){
+    /* Unlike job nodes, a table is commonly linked BOTH backward (e.g. the RPT
+       root table itself, written by the depth-0 job) AND forward (read by a
+       hop-1 consumer) — only tables with no real backward link (depth===-1)
+       should be pulled into the forward columns, otherwise the root table
+       would render twice (once at Depth 0, once as a phantom "0 hops"). */
+    return (forwardViewMode && n.depth === -1 && n.forward_depth != null) ? -(TBL_FORWARD_COL_OFFSET + n.forward_depth) : n.depth;
+  }
+
   var columns = {};
   tNodes.forEach(function(n){
-    var d = n.depth;
+    var d = tblEffCol(n);
     if (!columns[d]) columns[d] = [];
     columns[d].push(n);
   });
@@ -1328,26 +1808,54 @@ function renderTableView() {
   var catOrder = {RPT:0, FCT:1, MV:2, DIM:3, STG:4, REF:5, OTHER:8};
   Object.keys(columns).forEach(function(d){
     columns[d].sort(function(a,b){
+      var ta = tblTopoOrderIndex[a.id] !== undefined ? tblTopoOrderIndex[a.id] : 1e9;
+      var tb = tblTopoOrderIndex[b.id] !== undefined ? tblTopoOrderIndex[b.id] : 1e9;
+      if (ta !== tb) return ta - tb;
       var ca = catOrder[a.category] !== undefined ? catOrder[a.category] : 9;
       var cb = catOrder[b.category] !== undefined ? catOrder[b.category] : 9;
       return ca - cb || a.id.localeCompare(b.id);
     });
   });
 
-  var depths = Object.keys(columns).map(Number).sort(function(a,b){return a-b;});
+  var allTblCols = Object.keys(columns).map(Number);
+  var tblForwardCols = allTblCols.filter(function(d){ return d <= -TBL_FORWARD_COL_OFFSET; }).sort(function(a,b){return a-b;});
+  var tblNormalCols  = allTblCols.filter(function(d){ return d >= 0; }).sort(function(a,b){return a-b;});
   var depthToCol = {};
   var colIdx = 0;
-  depths.forEach(function(d){ if (d >= 0) { depthToCol[d] = colIdx; colIdx++; } });
+  tblForwardCols.forEach(function(d){ depthToCol[d] = colIdx; colIdx++; });
+  tblNormalCols.forEach(function(d){ depthToCol[d] = colIdx; colIdx++; });
+  var depths = allTblCols;   /* used below for column header labels */
   if (columns[-1]) { depthToCol[-1] = colIdx; colIdx++; }
   var numCols = colIdx;
   var TBL_W = 240, TBL_H = 44, TBL_ROW = 56;
+
+  /* Same-depth nudge, mirroring renderGraph(): a table that must complete
+     before another same-depth table is shifted right; capped at 2 ranks. */
+  var tblSameDepthSucc = {};
+  tblSameDepthPairs.forEach(function(p){
+    (tblSameDepthSucc[p.source] = tblSameDepthSucc[p.source] || []).push(p.target);
+  });
+  var tblNudgeMemo = {}, tblNudgeVisiting = new Set();
+  function tblNudgeRank(id) {
+    if (tblNudgeMemo[id] !== undefined) return tblNudgeMemo[id];
+    if (tblNudgeVisiting.has(id)) return 0;
+    tblNudgeVisiting.add(id);
+    var succs = tblSameDepthSucc[id] || [];
+    var best = 0;
+    succs.forEach(function(s){ best = Math.max(best, tblNudgeRank(s) + 1); });
+    tblNudgeVisiting.delete(id);
+    tblNudgeMemo[id] = best;
+    return best;
+  }
+  var TBL_NUDGE_STEP = 18, TBL_NUDGE_MAX_RANKS = 2;
 
   Object.keys(columns).forEach(function(d){
     var col = columns[d];
     var ci = depthToCol[parseInt(d)];
     var x = PAD_LEFT + ci * COL_WIDTH;
     col.forEach(function(n, i){
-      n._x = x + TBL_W / 2;
+      var nudge = tblSameDepthNodeIds.has(n.id) ? Math.min(tblNudgeRank(n.id), TBL_NUDGE_MAX_RANKS) * TBL_NUDGE_STEP : 0;
+      n._x = x + TBL_W / 2 + nudge;
       n._y = PAD_TOP + 24 + i * TBL_ROW + TBL_H / 2;
     });
   });
@@ -1361,7 +1869,15 @@ function renderTableView() {
     .attr("x", function(d){ return PAD_LEFT + depthToCol[d] * COL_WIDTH + TBL_W/2; })
     .attr("y", PAD_TOP)
     .text(function(d){
-      var label = d === -1 ? "Unlinked" : "Depth " + d;
+      var label;
+      if (d <= -TBL_FORWARD_COL_OFFSET) {
+        var hops = -d - TBL_FORWARD_COL_OFFSET;
+        label = hops + " hop" + (hops === 1 ? "" : "s") + " downstream";
+      } else if (d === -1) {
+        label = "Unlinked";
+      } else {
+        label = "Depth " + d;
+      }
       return label + " (" + columns[d].length + ")";
     });
 
@@ -1373,12 +1889,15 @@ function renderTableView() {
   var linkData = tLinks.map(function(l){
     var sn = tNodeMap.get(l.source);
     var tn = tNodeMap.get(l.target);
-    return { source: sn, target: tn };
+    return { source: sn, target: tn, jobs: l.jobs || [] };
   }).filter(function(l){ return l.source && l.target; });
 
   gRoot.append("g").selectAll("path")
     .data(linkData).join("path")
-    .attr("class","link-path")
+    .attr("class", function(l){
+      var isCritical = criticalPathMode && l.jobs.some(function(j){ return criticalPathIds.has(j); });
+      return isCritical ? "link-path critical-edge" : "link-path";
+    })
     .attr("marker-end","url(#arrow-tbl)")
     .attr("d", function(l){
       var sx = l.source._x - TBL_W/2, sy = l.source._y;
@@ -1396,8 +1915,16 @@ function renderTableView() {
     .attr("width", TBL_W).attr("height", TBL_H)
     .attr("x", -TBL_W/2).attr("y", -TBL_H/2)
     .attr("fill", function(d){ var c = d3.color(COLORS[d.category]||COLORS.OTHER); c.opacity=0.22; return c; })
-    .attr("stroke", function(d){ return COLORS[d.category]||COLORS.OTHER; })
-    .attr("stroke-width", 1.5);
+    .attr("stroke", function(d){
+      if (criticalPathMode && d.jobs && d.jobs.some(function(j){ return criticalPathIds.has(j); })) return "#fbbf24";
+      if (sameDepthMode===1 && tblSameDepthNodeIds.has(d.id)) return "#f97316";
+      return COLORS[d.category]||COLORS.OTHER;
+    })
+    .attr("stroke-width", function(d){
+      if (criticalPathMode && d.jobs && d.jobs.some(function(j){ return criticalPathIds.has(j); })) return 3;
+      if (sameDepthMode===1 && tblSameDepthNodeIds.has(d.id)) return 3;
+      return 1.5;
+    });
 
   nodeG.append("text").attr("class","job-label").attr("text-anchor","middle").attr("dy", -2)
     .attr("fill", function(d){ return COLORS[d.category]||COLORS.OTHER; })
@@ -1412,12 +1939,26 @@ function renderTableView() {
     .style("font-size","8px").attr("fill","#888")
     .text(function(d){ return d.jobs.length + ' job' + (d.jobs.length > 1 ? 's' : ''); });
 
+  /* Sequence badge circle — true data-movement order across ALL tables
+     (tblTopoOrderIndex), mirroring the job graph's sequence badge. */
+  nodeG.append("circle").attr("r",9)
+    .attr("cx", TBL_W/2 - 8).attr("cy", -TBL_H/2 + 8)
+    .attr("fill","#1a1a3a").attr("stroke","#666").attr("stroke-width",0.8);
+  nodeG.append("text").attr("class","depth-badge").attr("text-anchor","middle")
+    .attr("x", TBL_W/2 - 8).attr("y", -TBL_H/2 + 11)
+    .text(function(d){ return tblTopoOrderIndex[d.id] !== undefined ? (tblTopoOrderIndex[d.id] + 1) : "?"; });
+
   var tooltip = document.getElementById("tooltip");
   nodeG.on("mouseover",function(e,d){
     tooltip.style.display = "block";
     var jobList = d.jobs ? d.jobs.join("<br>") : '';
+    var isCritical = criticalPathMode && d.jobs && d.jobs.some(function(j){ return criticalPathIds.has(j); });
+    var criticalTip = isCritical ? "<br><span style='color:#fbbf24;font-weight:bold;'>&#9733; On critical path</span>" : "";
+    var sameDepthTip = tblSameDepthNodeIds.has(d.id) ? "<br><span style='color:#f97316;font-weight:bold;'>&#8646; Has a same-depth dependency</span>" : "";
+    var seqTip = tblTopoOrderIndex[d.id] !== undefined ? "<br>Sequence: #"+(tblTopoOrderIndex[d.id]+1)+" of "+tblTopoOrderList.length : "";
+    var fwdTip = d.forward_depth != null ? "<br>Downstream: "+d.forward_depth+" hop"+(d.forward_depth===1?"":"s")+" from root" : "";
     tooltip.innerHTML = "<strong>"+d.id+"</strong><br>Category: "+d.category+
-      "<br>Depth: "+d.depth+
+      "<br>Depth: "+d.depth+fwdTip+seqTip+criticalTip+sameDepthTip+
       (jobList ? "<br><br><strong>Used by Jobs:</strong><br>"+jobList : "");
   }).on("mousemove",function(e){
     tooltip.style.left = (e.pageX+12)+"px"; tooltip.style.top = (e.pageY-12)+"px";
@@ -1436,14 +1977,129 @@ function renderTableView() {
   }, 100);
 }
 
+function renderRunbook() {
+  var panel = document.getElementById('runbook-panel');
+  if (!currentGraph) { panel.innerHTML = ''; return; }
+  /* Forward-only nodes (no backward BFS depth, only reachable as a downstream
+     consumer) are included only when Forward View is on — same rule as the
+     graph/table views. */
+  var nodes = currentGraph.nodes.filter(function(n){
+    var isForwardOnly = (n.depth === -1 && n.forward_depth != null);
+    if (isForwardOnly) return forwardViewMode;
+    if (n.depth === -1) return showUnlinked;
+    return true;
+  });
+  var byDepth = {};
+  var byForwardHop = {};
+  nodes.forEach(function(n){
+    var isForwardOnly = (n.depth === -1 && n.forward_depth != null);
+    if (forwardViewMode && isForwardOnly) {
+      if (!byForwardHop[n.forward_depth]) byForwardHop[n.forward_depth] = [];
+      byForwardHop[n.forward_depth].push(n);
+    } else {
+      if (!byDepth[n.depth]) byDepth[n.depth] = [];
+      byDepth[n.depth].push(n);
+    }
+  });
+
+  /* Chronological step order: earliest-executed (highest BFS depth) first,
+     root (depth 0) next — then, when Forward View is on, the downstream
+     consumer chain simply CONTINUES the same chronology past the root in
+     increasing hop order (this is the real execution sequence continuing
+     after the RPT table loads). Genuinely unlinked jobs stay last. */
+  var allDepths = Object.keys(byDepth).map(Number);
+  var posDepths = allDepths.filter(function(d){ return d >= 0; }).sort(function(a,b){ return b-a; });
+  var forwardHops = Object.keys(byForwardHop).map(Number).sort(function(a,b){ return a-b; });
+  var hasUnlinked = allDepths.indexOf(-1) !== -1;
+
+  var groups = [];
+  posDepths.forEach(function(d){ groups.push({ kind:'depth', key:d, nodes: byDepth[d] }); });
+  forwardHops.forEach(function(h){ groups.push({ kind:'forward', key:h, nodes: byForwardHop[h] }); });
+  if (hasUnlinked) groups.push({ kind:'unlinked', key:-1, nodes: byDepth[-1] });
+
+  var catOrder = {RPT:0, FCT:1, MV:2, DIM:3, STG:4, REF:5, SOURCE:6, MONTH_END:7, OTHER:8};
+  var stepNum = 0;
+  var stepIdx = 0;
+  var forwardDividerShown = false;
+  var body = '';
+  groups.forEach(function(g){
+    var grp = g.nodes.slice().sort(function(a,b){
+      var ta = topoOrderIndex[a.id] !== undefined ? topoOrderIndex[a.id] : 1e9;
+      var tb = topoOrderIndex[b.id] !== undefined ? topoOrderIndex[b.id] : 1e9;
+      if (ta !== tb) return ta - tb;
+      var ca = catOrder[a.category] !== undefined ? catOrder[a.category] : 9;
+      var cb = catOrder[b.category] !== undefined ? catOrder[b.category] : 9;
+      return ca - cb || a.id.localeCompare(b.id);
+    });
+    var label;
+    if (g.kind === 'unlinked') {
+      label = 'Unlinked Jobs';
+    } else {
+      if (g.kind === 'forward' && !forwardDividerShown) {
+        body += '<div class="rb-fwd-divider">&#8681; Downstream Consumers (Forward View) \u2014 jobs below consume '
+          + rptTable + ' after it loads, ordered by how far downstream they are</div>';
+        forwardDividerShown = true;
+      }
+      stepIdx++;
+      var stepDesc = g.kind === 'forward' ? (g.key + ' hop' + (g.key === 1 ? '' : 's') + ' downstream') : ('Depth ' + g.key);
+      label = 'Step ' + stepIdx + ' (' + stepDesc + ')';
+    }
+    body += '<div class="rb-step-header">' + label + ' \u2014 ' + grp.length + ' job(s)</div>';
+    grp.forEach(function(n){
+      stepNum++;
+      var isCrit = criticalPathIds.has(n.id);
+      var isSameDepth = sameDepthNodeIds.has(n.id);
+      var cls = 'rb-row' + (isCrit ? ' rb-critical' : '') + (isSameDepth ? ' rb-samedepth' : '');
+      var color = COLORS[n.category] || COLORS.OTHER;
+      var src = n.src_tables && n.src_tables.length ? n.src_tables.slice(0,2).join(', ') : '';
+      var tgt = n.tgt_tables && n.tgt_tables.length ? n.tgt_tables.slice(0,2).join(', ') : '';
+      var tblLine = (src || tgt) ? (src + (src && tgt ? ' \u2192 ' : '') + tgt) : '';
+      body += '<div class="' + cls + '" data-id="' + n.id.replace(/"/g,'&quot;') + '" onclick="selectJob(\'' + n.id.replace(/'/g,"\\'") + '\')">'
+        + '<div class="rb-num" style="background:' + color + '22;color:' + color + '">' + stepNum + '</div>'
+        + '<div class="rb-main"><div class="rb-job">' + n.id + '</div>'
+        + (n.primary_sql ? '<div class="rb-sql">\u2192 ' + n.primary_sql + '</div>' : '')
+        + (tblLine ? '<div class="rb-tbl">' + tblLine + '</div>' : '') + '</div>'
+        + '<div class="rb-meta">'
+        + (isCrit ? '<span class="rb-flag-critical" title="Critical path">&#9733;</span>' : '')
+        + (isSameDepth ? '<span class="rb-flag-samedepth" title="Has a same-depth dependency \u2014 see true order">&#8646;</span>' : '')
+        + (n.cross_rpt ? '<span class="rb-flag-crossrpt" title="Root loader for ' + n.cross_rpt + '" onclick="event.stopPropagation();jumpToCrossRpt(\'' + n.cross_rpt + '\')">&#8658; ' + n.cross_rpt + '</span>' : '')
+        + (n.avg_runtime != null ? '<span class="rb-runtime">' + fmtRuntime(n.avg_runtime) + '</span>' : '')
+        + '</div></div>';
+    });
+  });
+  var banners = '';
+  if (criticalPathChain.length) {
+    banners += '<div class="rb-banner" style="background:#1a1608;border:1px solid #fbbf2455;color:#fde68a;">&#9733; <strong>Critical path</strong> (longest runtime chain, ~' + fmtRuntime(criticalPathTotal) + '): flagged rows below.</div>';
+  }
+  if (sameDepthPairs.length) {
+    banners += '<div class="rb-banner" style="background:#2a1608;border:1px solid #f9731655;color:#fdba74;">&#8646; <strong>' + sameDepthPairs.length + ' same-depth dependenc' + (sameDepthPairs.length > 1 ? 'ies' : 'y') + '</strong> detected \u2014 rows within each Step are ordered by true sequence, not alphabetically.</div>';
+  }
+  var crossRptCount = nodes.filter(function(n){ return !!n.cross_rpt; }).length;
+  if (crossRptCount) {
+    banners += '<div class="rb-banner" style="background:#241a3a;border:1px solid #a78bfa55;color:#c4b5fd;">&#8658; <strong>' + crossRptCount + ' cross-RPT dependenc' + (crossRptCount > 1 ? 'ies' : 'y') + '</strong> detected \u2014 this RPT depends on other main RPT table(s) being loaded first (flagged rows below).</div>';
+  }
+  panel.innerHTML = banners + (body || '<div style="color:#888;padding:20px;">No jobs to display.</div>');
+}
+
 // Toggle event handlers
 document.getElementById("toggle-unlinked").addEventListener("change", function(e){
   showUnlinked = e.target.checked;
-  if (tableViewMode) { renderTableView(); } else { renderGraph(); }
+  renderCurrentView();
+});
+document.getElementById("toggle-forward").addEventListener("change", function(e){
+  forwardViewMode = e.target.checked;
+  renderCurrentView();
 });
 document.getElementById("toggle-table-view").addEventListener("change", function(e){
   tableViewMode = e.target.checked;
-  if (tableViewMode) { renderTableView(); } else { renderGraph(); }
+  renderCurrentView();
+});
+document.getElementById("toggle-runbook").addEventListener("change", function(e){
+  runbookMode = e.target.checked;
+  document.getElementById("graph-svg").style.display = runbookMode ? "none" : "";
+  document.getElementById("runbook-panel").classList.toggle("active", runbookMode);
+  document.getElementById("legend").style.display = runbookMode ? "none" : "";
+  renderCurrentView();
 });
 document.getElementById("btn-stats").addEventListener("click", function(){ showStatsPanel(); });
 
@@ -1467,7 +2123,7 @@ function cycleDifwMode() {
   btn.style.color      = fgColors[difwMode];
   btn.style.borderColor = difwMode ? bgs[difwMode] : '';
   computeStats(rptTable);
-  if (tableViewMode) { renderTableView(); } else { renderGraph(); }
+  renderCurrentView();
 }
 
 var disabledMode = 0; // 0 = off  |  1 = highlight  |  2 = hide
@@ -1485,7 +2141,30 @@ function cycleDisabledMode() {
   btn.style.color      = fgColors[disabledMode];
   btn.style.borderColor = disabledMode ? bgs[disabledMode] : '';
   computeStats(rptTable);
-  if (tableViewMode) { renderTableView(); } else { renderGraph(); }
+  renderCurrentView();
+}
+
+function toggleCriticalPath() {
+  criticalPathMode = !criticalPathMode;
+  var btn = document.getElementById('btn-critical');
+  btn.style.background = criticalPathMode ? '#fbbf24' : '';
+  btn.style.color      = criticalPathMode ? '#000' : '';
+  btn.style.borderColor = criticalPathMode ? '#fbbf24' : '';
+  renderCurrentView();
+}
+
+function cycleSameDepthMode() {
+  sameDepthMode = (sameDepthMode + 1) % 3;
+  var btn = document.getElementById('btn-samedepth');
+  var labels   = ['\u21c6 Same-Depth Deps', '\u21c6 Same-Depth: Highlighted', '\u21c6 Same-Depth: Hidden'];
+  var bgs      = ['', '#f97316',              '#7c2d12'];
+  var fgColors = ['', '#000',                 '#fdba74'];
+  btn.textContent      = labels[sameDepthMode];
+  btn.style.background = bgs[sameDepthMode];
+  btn.style.color      = fgColors[sameDepthMode];
+  btn.style.borderColor = sameDepthMode ? bgs[sameDepthMode] : '';
+  computeStats(rptTable);
+  renderCurrentView();
 }
 
 // Populate RPT dropdown
