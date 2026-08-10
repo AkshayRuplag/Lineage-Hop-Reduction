@@ -31,7 +31,7 @@ without a plan the developer has approved.
 ```
 REGISTRY  : RSLI-DataLineage-VDI/output/pipeline/pipeline_registry.json
 PIPELINE  : RSLI-DataLineage-VDI/output/pipeline/
-ALL_META  : SQLObjectParser/All_Metadata/
+ALL_META  : RSLI-DataLineage-VDI/All_Metadata/
 ```
 
 ---
