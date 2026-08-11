@@ -61,11 +61,11 @@ def load_tidal_edges():
     """
     from tidal_shell_combiner import load_tidal_deps, merge_tidal_dicts
     base = Path(SCRIPT_DIR)
-    tidal = load_tidal_deps(base.parent / "TIDAL_15_April_updated.xlsx")
+    tidal = load_tidal_deps(base / "input" / "TIDAL_15_April_updated.xlsx")
     supp1 = base / "input" / "Tidal_Deps_Last30days_as_of_20270617.csv"
     if supp1.exists():
         tidal = merge_tidal_dicts(tidal, load_tidal_deps(supp1))
-    supp2 = base.parent / "Tidal Deps 20270713.xlsx"
+    supp2 = base / "input" / "Tidal Deps 20270713.xlsx"
     if supp2.exists():
         tidal = merge_tidal_dicts(tidal, load_tidal_deps(supp2))
 
@@ -418,6 +418,8 @@ svg { flex: 1; width: 100%; min-height: 0; }
 .node-group .critical-badge { font-size: 7px; fill: #fbbf24; pointer-events: none; font-weight: 700; }
 .node-group .samedepth-badge { font-size: 7px; fill: #f97316; pointer-events: none; font-weight: 700; }
 .node-group .crossrpt-badge { font-size: 10px; fill: #a78bfa; pointer-events: none; font-weight: 700; }
+.node-group .root-badge { font-size: 8px; fill: #22d3ee; pointer-events: none; font-weight: 700; }
+.node-group .root-halo { fill: none; stroke: #22d3ee; stroke-width: 2px; stroke-dasharray: 4,3; pointer-events: none; }
 .depth-col-label { font-size: 11px; fill: #5a5a8a; font-weight: 600; text-anchor: middle; }
 
 #detail-panel { position: absolute; top: 12px; right: 12px; width: 380px; background: #15152e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 16px; display: none; font-size: 12px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 10; }
@@ -1017,6 +1019,14 @@ function renderGraph() {
     .data(visibleNodes).join("g").attr("class","node-group")
     .attr("transform", function(d){ return "translate("+d._x+","+d._y+")"; });
 
+  /* Dashed cyan halo behind the RPT root (depth 0) — makes the single node
+     where both the backward (upstream, right of it) and forward (downstream,
+     left of it) views originate unmistakable at a glance. */
+  nodeG.filter(function(d){ return d.depth === 0; }).append("rect").attr("class","root-halo")
+    .attr("width", NODE_W + 10).attr("height", NODE_H + 10)
+    .attr("x", -(NODE_W+10)/2).attr("y", -(NODE_H+10)/2)
+    .attr("rx", 10).attr("ry", 10);
+
   nodeG.append("rect").attr("class","node-box")
     .attr("width", NODE_W).attr("height", NODE_H)
     .attr("x", -NODE_W/2).attr("y", -NODE_H/2)
@@ -1027,16 +1037,26 @@ function renderGraph() {
       if (disabledMode===1&&isDisabledNode(d)) return "#6b7280";
       if (difwMode===1&&isDifwNode(d)) return "#f59e0b";
       if (d.cross_rpt) return "#a78bfa";
+      if (d.depth===0) return "#22d3ee";
       return COLORS[d.category]||COLORS.OTHER;
     })
     .attr("stroke-width", function(d){
       if (criticalPathMode && criticalPathIds.has(d.id)) return 3;
       if (sameDepthMode===1 && sameDepthNodeIds.has(d.id)) return 3;
       if (d.cross_rpt) return 2.5;
-      return (difwMode===1&&isDifwNode(d)||(disabledMode===1&&isDisabledNode(d))) ? 2 : (d.depth===0 ? 2.5 : 1.2);
+      if (difwMode===1&&isDifwNode(d)) return 2;
+      if (disabledMode===1&&isDisabledNode(d)) return 2;
+      return d.depth===0 ? 3 : 1.2;
     })
     .attr("stroke-dasharray", function(d){ return (disabledMode===1&&isDisabledNode(d)) ? "5,3" : null; })
     .attr("opacity", function(d){ return (disabledMode===1&&isDisabledNode(d)) ? 0.45 : 1; });
+
+  /* ROOT badge — always visible (not mode-gated), sits above the node so it
+     never collides with the job/sql/table labels drawn inside the box. */
+  nodeG.filter(function(d){ return d.depth === 0; })
+    .append("text").attr("class","root-badge").attr("text-anchor","middle")
+    .attr("x", 0).attr("y", -NODE_H/2 - 9)
+    .text("\u2691 ROOT \u2014 Backward/Forward View starts here");
 
   /* Job name label */
   nodeG.append("text").attr("class","job-label").attr("text-anchor","middle")
@@ -1141,10 +1161,11 @@ function renderGraph() {
     var criticalTip = criticalPathIds.has(d.id) ? "<br><span style='color:#fbbf24;font-weight:bold;'>&#9733; On critical path (~"+fmtRuntime(criticalPathTotal)+" total)</span>" : "";
     var sameDepthTip = sameDepthNodeIds.has(d.id) ? "<br><span style='color:#f97316;font-weight:bold;'>&#8646; Has a same-depth dependency — not safe to assume parallel with its depth peers</span>" : "";
     var crossRptTip = d.cross_rpt ? "<br><span style='color:#a78bfa;font-weight:bold;'>&#8658; Root loader for "+d.cross_rpt+" — this RPT depends on it</span>" : "";
+    var rootTip = d.depth === 0 ? "<br><span style='color:#22d3ee;font-weight:bold;'>&#9873; ROOT job — Depth 0. Backward View (upstream) reads right-to-left into this node; Forward View (downstream) reads left-to-right out of it.</span>" : "";
     var seqTip = topoOrderIndex[d.id] !== undefined ? "<br>Sequence: #"+(topoOrderIndex[d.id]+1)+" of "+topoOrderList.length : "";
     tooltip.innerHTML = "<strong>"+d.id+"</strong><br>Category: "+d.category+
       "<br>Depth: "+d.depth+seqTip+"<br>Status: "+d.status+
-      "<br>Source: "+(d.source||"\u2014")+parentTip+rtTip+difwTip+disabledTip+criticalTip+sameDepthTip+crossRptTip+
+      "<br>Source: "+(d.source||"\u2014")+parentTip+rtTip+difwTip+disabledTip+criticalTip+sameDepthTip+crossRptTip+rootTip+
       (sl ? "<br><br><strong>SQL Objects:</strong><br>"+sl : "") + srcTip + tgtTip;
   }).on("mousemove",function(e){
     tooltip.style.left = (e.pageX+12)+"px"; tooltip.style.top = (e.pageY-12)+"px";
@@ -1347,7 +1368,7 @@ var legHtml = "<strong>Legend</strong><br>";
 Object.entries(CATEGORY_LABELS).forEach(function(pair){
   legHtml += '<div class="leg-item"><span class="leg-dot" style="background:'+COLORS[pair[0]]+'"></span>'+pair[1]+'</div>';
 });
-legHtml += '<br><div style="font-size:10px;color:#888">Depth 0 (RPT root) is leftmost, further upstream jobs increase rightward<br>Badge (top-right) = true execution sequence (#1 runs first)<br>Green italic = SQL object called<br><span style="color:#f97316">&#8646; orange</span> = same-depth dependency<br><span style="color:#fbbf24">&#9733; gold</span> = critical path<br><span style="color:#a78bfa">&#8658; purple</span> = root loader for another RPT<br>&#8630; Forward View toggle adds downstream consumers to the LEFT of Depth 0<br>Scroll/zoom to navigate</div>';
+legHtml += '<br><div style="font-size:10px;color:#888">Depth 0 (RPT root) is leftmost, further upstream jobs increase rightward<br><span style="color:#22d3ee">&#9873; cyan dashed ring</span> = ROOT job — where Backward View (upstream, right) and Forward View (downstream, left) both start<br>Badge (top-right) = true execution sequence (#1 runs first)<br>Green italic = SQL object called<br><span style="color:#f97316">&#8646; orange</span> = same-depth dependency<br><span style="color:#fbbf24">&#9733; gold</span> = critical path<br><span style="color:#a78bfa">&#8658; purple</span> = root loader for another RPT<br>&#8630; Forward View toggle adds downstream consumers to the LEFT of Depth 0<br>Scroll/zoom to navigate</div>';
 legend.innerHTML = legHtml;
 
 function buildTableGraph() {
@@ -1911,6 +1932,13 @@ function renderTableView() {
     .data(tNodes).join("g").attr("class","node-group")
     .attr("transform", function(d){ return "translate("+d._x+","+d._y+")"; });
 
+  /* Dashed cyan halo behind the RPT root table (depth 0) — same convention
+     as the job graph, so the view-origin table is unmistakable here too. */
+  nodeG.filter(function(d){ return d.depth === 0; }).append("rect").attr("class","root-halo")
+    .attr("width", TBL_W + 10).attr("height", TBL_H + 10)
+    .attr("x", -(TBL_W+10)/2).attr("y", -(TBL_H+10)/2)
+    .attr("rx", 10).attr("ry", 10);
+
   nodeG.append("rect").attr("class","node-box")
     .attr("width", TBL_W).attr("height", TBL_H)
     .attr("x", -TBL_W/2).attr("y", -TBL_H/2)
@@ -1918,13 +1946,20 @@ function renderTableView() {
     .attr("stroke", function(d){
       if (criticalPathMode && d.jobs && d.jobs.some(function(j){ return criticalPathIds.has(j); })) return "#fbbf24";
       if (sameDepthMode===1 && tblSameDepthNodeIds.has(d.id)) return "#f97316";
+      if (d.depth===0) return "#22d3ee";
       return COLORS[d.category]||COLORS.OTHER;
     })
     .attr("stroke-width", function(d){
       if (criticalPathMode && d.jobs && d.jobs.some(function(j){ return criticalPathIds.has(j); })) return 3;
       if (sameDepthMode===1 && tblSameDepthNodeIds.has(d.id)) return 3;
-      return 1.5;
+      return d.depth===0 ? 3 : 1.5;
     });
+
+  /* ROOT badge — always visible above the table box, mirroring the job graph. */
+  nodeG.filter(function(d){ return d.depth === 0; })
+    .append("text").attr("class","root-badge").attr("text-anchor","middle")
+    .attr("x", 0).attr("y", -TBL_H/2 - 9)
+    .text("\u2691 ROOT \u2014 Backward/Forward View starts here");
 
   nodeG.append("text").attr("class","job-label").attr("text-anchor","middle").attr("dy", -2)
     .attr("fill", function(d){ return COLORS[d.category]||COLORS.OTHER; })
@@ -1955,10 +1990,11 @@ function renderTableView() {
     var isCritical = criticalPathMode && d.jobs && d.jobs.some(function(j){ return criticalPathIds.has(j); });
     var criticalTip = isCritical ? "<br><span style='color:#fbbf24;font-weight:bold;'>&#9733; On critical path</span>" : "";
     var sameDepthTip = tblSameDepthNodeIds.has(d.id) ? "<br><span style='color:#f97316;font-weight:bold;'>&#8646; Has a same-depth dependency</span>" : "";
+    var rootTip = d.depth === 0 ? "<br><span style='color:#22d3ee;font-weight:bold;'>&#9873; ROOT table — Depth 0. Backward/Forward View both start here.</span>" : "";
     var seqTip = tblTopoOrderIndex[d.id] !== undefined ? "<br>Sequence: #"+(tblTopoOrderIndex[d.id]+1)+" of "+tblTopoOrderList.length : "";
     var fwdTip = d.forward_depth != null ? "<br>Downstream: "+d.forward_depth+" hop"+(d.forward_depth===1?"":"s")+" from root" : "";
     tooltip.innerHTML = "<strong>"+d.id+"</strong><br>Category: "+d.category+
-      "<br>Depth: "+d.depth+fwdTip+seqTip+criticalTip+sameDepthTip+
+      "<br>Depth: "+d.depth+fwdTip+seqTip+criticalTip+sameDepthTip+rootTip+
       (jobList ? "<br><br><strong>Used by Jobs:</strong><br>"+jobList : "");
   }).on("mousemove",function(e){
     tooltip.style.left = (e.pageX+12)+"px"; tooltip.style.top = (e.pageY-12)+"px";

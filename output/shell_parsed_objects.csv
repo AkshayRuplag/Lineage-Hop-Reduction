@@ -1,0 +1,355 @@
+shell_script,pattern_type,object_type,schema,object_name,sub_object,is_parameterized,param_position,table_references,static_sql,remote_script,notes
+EDP_EDW_PACS_GRP_LOAD_MERGE_UPDATE_FCT_RPT_CLAIM_SUMMARY_R.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_RPT_CLAIM_SUMMARY_R,,False,,,,,This shell script merge reinsurance columns in                                                                               FCT_RPT_CLAIM_SUMMARY_R
+edp_grp_daily_edw_extract.sh,SSH_REMOTE,REMOTE_SCRIPT,,rsli_group_daily_dlToEDW.sh,,True,"$1,$2,...",,,/u01/app/oracle/tools/home/oracle/bin/tidal/datalake/group/dl_edw/rsli_group_daily_dlToEDW.sh,
+edp_grp_edw_extract.sh,SSH_REMOTE,REMOTE_SCRIPT,,rsli_group_dlToEDW.sh,,True,"$1,$2,...",,,/u01/app/oracle/tools/home/oracle/bin/tidal/datalake/group/dl_edw/rsli_group_dlToEDW.sh,
+edp_grp_plsql_difw_job_srcsys.sh,EXECUTE_IMMEDIATE_DYNAMIC,PACKAGE,ATOMIC,$v_pkg_name_r (from TIDAL param $1),main,True,$1,,,,"This shell script load the data using package PKG_GRP_LOAD_DIFW.
+Change log:"
+edp_grp_plsql_difw_job_srcsys_gen_ref.sh,EXECUTE_IMMEDIATE_DYNAMIC,PACKAGE,ATOMIC,$v_pkg_name_r (from TIDAL param $1),main,True,$1,,,,"This shell script load the data using package PKG_GRP_LOAD_DIFW.
+Change log:"
+edp_grp_plsql_difw_job_srcsys_plsql.sh,EXECUTE_IMMEDIATE_DYNAMIC,PACKAGE,ATOMIC_PLSQL,$v_pkg_name_r (from TIDAL param $1),main,True,$1,,,,"This shell script load the data using package PKG_GRP_LOAD_DIFW.
+Change log:"
+edp_grp_reserve_kpi_job_scheduler.sh,NO_SQL,NO_SQL,,,,False,,,,,No recognized SQL pattern. Desc: This shell script schedules the reserve kpi job with correct dependency based on mon-fri or sat and monthend + 1. DB objects: 
+edp_grp_reserve_kpi_job_scheduler_monthend.sh,NO_SQL,NO_SQL,,,,False,,,,,No recognized SQL pattern. Desc: This shell script schedules the reserve kpi job with correct dependency based on mon-fri or sat and monthend + 1. DB objects: 
+edp_grp_tpa_reserve_files_Prev_month_load.sh,EXECUTE_IMMEDIATE_DYNAMIC,PACKAGE,ATOMIC,$v_pkg_name_r (from TIDAL param $1),main,True,$1,,,,"This shell script load the data using package to load TPA Reserve Files.
+Change log:"
+edw_control_source_to_date.sh,EXECUTE_IMMEDIATE_STATIC,PROCEDURE,ATOMIC,PRC_GRP_AUDIT_CONTROL_PROCESS,,True,"$1,$2,$3,$4",,,,
+edw_cv_grp_load_fct_claim_payment_detail_r_expense_cv.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R,False,,FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R; IN_TYPE:CV_EXPENSE,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R to reload requested EXPENSE data in the FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R"
+edw_edp_load_experience_rating_inc.sh,DIRECT_PKG_PROC_CALL,PACKAGE,EXT_EIS,PKG_EXPERIENCE_RATING_STATIC_INC,MAIN,False,,,,,
+edw_edp_load_experience_rating_STD_inc.sh,DIRECT_PKG_PROC_CALL,PACKAGE,EXT_EIS,PKG_EXPERIENCE_RATING_STATIC_STD_INC,MAIN,False,,,,,
+edw_edp_load_experience_rating_STD_inc_test.sh,UNKNOWN,UNKNOWN,,,,False,,,,,No recognized SQL pattern. Desc: . DB objects: # Created on            -       MAY/2025
+edw_grp_aps_load_fct_agent_commission_summary.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_FCT_AGENT_COMMISSION_SUMMARY,PRC_GRP_LOAD_FCT_AGENT_COMMISSION_SUMMARY,False,,FCT_AGENT_COMMISSION_SUMMARY,,,
+edw_grp_aps_load_fct_grp_agent_policy_r_lookup_2.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_FCT_GRP_AGENT_POLICY_R_LOOKUP,False,,FCT_GRP_AGENT_POLICY_R_LOOKUP,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure atomic.PKG_LOAD_GRP_TABLES.PRC_LOAD_FCT_GRP_AGENT_POLICY_R_LOOKUP to reload data in the  FCT_GRP_AGENT_POLICY_R_LOOKUP"
+edw_grp_aps_truncate_fct_grp_agent_policy_r_lookup.sh,TRUNCATE_TABLE,TABLE,ATOMIC,FCT_GRP_AGENT_POLICY_R_LOOKUP,TRUNCATE,False,,,,,This shell script truncates the table FCT_GRP_AGENT_POLICY_R_LOOKUP
+edw_grp_aps_upd_fct_grp_agent_policy_r.sh,UPDATE_TABLE,TABLE,ATOMIC,FCT_GRP_AGENT_POLICY_R,UPDATE,False,,,,,This shell script performs the below steps Updates Column N_POLICY_SK_R in FCT_GRP_AGENT_POLICY_R after completion of APS cycle
+edw_grp_claim_summary_incr.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_FCT_RPT_CLAIM_SUMMARY_R_INCR_HPC_5,PRC_GRP_LOAD_CLAIM_SUMMARY_DATA,False,,FCT_RPT_CLAIM_SUMMARY_R_TEST10,,,This shell script truncates and reloads the table claim_activity_date_mv_tbl
+edw_grp_claim_summary_intermediate_mv.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh CLAIM_SUMMARY_INTERMEDIATE_MV
+edw_grp_create_bkp_dim_tables.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRCS_CREATE_DIM_BKP_TABLES,,False,,FCT_RPT_EOI_HISTORY_R,,,This shell script drop dim bkp tables and creates bkp tables using actual dim  tables
+edw_grp_create_bkp_fct_tables.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRCS_CREATE_FCT_BKP_TABLES,,False,,FCT_RPT_EOI_HISTORY_R,,,This shell script fct drop bkp tables and creates fct bkp tables using fct actual tables
+edw_grp_create_bkp_stg_ref_tables.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRCS_CREATE_STG_REF_MV_BKP_TABLES,,False,,FCT_RPT_EOI_HISTORY_R,,,This shell script drop stg_ref bkp tables and creates bkp tables using actual dim  tables
+edw_grp_create_bkp_tables.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRCS_CREATEBKP_TABLES,,False,,FCT_RPT_EOI_HISTORY_R,,,This shell script drop bkp tables and creates bkp tables using actual tables
+edw_grp_delete_load_reinsurer_prem_pct_ltd_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_REINSURER_PREM_PCT_R_LTD,,False,,STG_GRP_REINSURER_PREM_PCT_R,,,"This shell script deletes and reloads the table STG_GRP_REINSURER_PREM_PCT_R
+Change log:"
+edw_grp_delete_load_reinsurer_prem_pct_non_ltd_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_REINSURER_PREM_PCT_R_NON_LTD,,False,,STG_GRP_REINSURER_PREM_PCT_R,,,"This shell script deletes and reloads the table STG_GRP_REINSURER_PREM_PCT_R
+Change log:"
+edw_grp_dim_claim_prior_status_r_daily_activity.sh,STATIC_SQL,INSERT_SELECT,,DIM_GRP_CLAIM_PRIOR_STATUS_R_DAILY_ACTIVITY,,False,,DIM_GRP_CLAIM_PRIOR_STATUS_R_DAILY_ACTIVITY_VW,"INSERT /*+APPEND*/ INTO DIM_GRP_CLAIM_PRIOR_STATUS_R_DAILY_ACTIVITY
+SELECT * FROM DIM_GRP_CLAIM_PRIOR_STATUS_R_DAILY_ACTIVITY_VW;",,INSERT INTO DIM_GRP_CLAIM_PRIOR_STATUS_R_DAILY_ACTIVITY SELECT FROM DIM_GRP_CLAIM_PRIOR_STATUS_R_DAILY_ACTIVITY_VW
+edw_grp_dim_employee_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_DIM_EMPLOYEE_R,False,,DIM_EMPLOYEE_R,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure atomic.PKG_LOAD_GRP_TABLES.PRC_LOAD_DIM_EMPLOYEE_R to reload data in the DIM_EMPLOYEE_R"
+edw_grp_gather_tbl_idx_stats.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_GATHER_TABLE_IDX_STATS,,False,,,,,This shell script calls procedure to gather given table stats along with the corresponding indexes stats.
+edw_grp_load_adhoc_prc_exe_daily.sh,EXECUTE_IMMEDIATE_DYNAMIC,PROCEDURE,ATOMIC,$v_prc_name_r (from TIDAL param $1),,True,$1,,,,This shell script load the data using adhoc procedure for Reserve Fields.
+edw_grp_load_adhoc_prc_exe_monthend.sh,EXECUTE_IMMEDIATE_DYNAMIC,PROCEDURE,ATOMIC,$v_prc_name_r (from TIDAL param $1),,True,$1,,,,This shell script load the data using adhoc procedure to load TPA Reserve Files.
+edw_grp_load_bill_group_master_r_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_BILL_GROUP_MASTER_R,,False,,BILL_GROUP_MASTER_R,,,"This shell script loads data into BILL_GROUP_MASTER_R
+Change log:"
+edw_grp_load_bill_group_master_r_tmp.sh,NO_SQL,NO_SQL,,,,False,,,,,No recognized SQL pattern. Desc: . DB objects: 
+edw_grp_load_claim_summary_intermediate_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_LOAD_CLAIM_SUMMARY_INTERMEDIATE_MV_TBL,,False,,,,,This shell script truncates and reloads the tables related to CLAIM_SUMMARY_INTERMEDIATE_MV_TBL
+edw_grp_load_dim_grp_billing_pol_billgrp_r_mgis_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_DIM_GRP_BILLING_POL_BILLGRP_R_MGIS,,False,,DIM_GRP_BILLING_POL_BILLGRP_R,,,This shell script loads  data into DIM_GRP_BILLING_POL_BILLGRP_R
+edw_grp_load_dim_load_time_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_DIM_TIME_R,False,,DIM_TIME_R,,,"This shell script performs the below steps after accepting the batchid,loadrunid,newyear as a parameter: a) Calls procedure atomic.PKG_LOAD_GRP_TABLES.PRC_LOAD_DIM_TIME_R to reload data in the DIM_TIME_R"
+edw_grp_load_dq_check.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_DQ_CHECK,PRC_RUN_DQ_CHECKS,False,,,,,This shell script calls the package PKG_GRP_DQ_CHECK.
+edw_grp_load_fct_billing_policy_premium_r_mgis_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_BILLING_POLICY_PREMIUM_R_MGIS,,False,,FCT_BILLING_POLICY_PREMIUM_R,,,This shell script loads  data into FCT_BILLING_POLICY_PREMIUM_R
+edw_grp_load_fct_billing_policy_suspense_r_posted.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_BILLING_POLICY_SUSPENSE_R_POSTED,,False,,FCT_BILLING_POLICY_SUSPENSE_R_POSTED,,,This shell script calls procedure PRC_GRP_LOAD_FCT_BILLING_POLICY_SUSPENSE_R_POSTED which inserts data into fct_billing_policy_suspense_r_posted
+edw_grp_load_fct_billing_policy_suspense_r_posted_1.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_BILLING_POLICY_SUSPENSE_R_POSTED,,False,,FCT_BILLING_POLICY_SUSPENSE_R_POSTED,,,This shell script calls procedure PRC_GRP_LOAD_FCT_BILLING_POLICY_SUSPENSE_R_POSTED which inserts data into fct_billing_policy_suspense_r_posted
+edw_grp_load_fct_grp_process_custom_r_mgis_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_GRP_PROCESS_CUSTOM_R_MGIS,,False,,FCT_GRP_PROCESS_CUSTOM_R,,,"This shell script merges data into FCT_GRP_POLICY_R
+Change log:"
+edw_grp_load_fct_grp_process_custom_r_mgis_tbl_bkp.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_FCT_GRP_PROCESS_CUSTOM_R_MGIS,,False,,FCT_GRP_PROCESS_CUSTOM_R,,,This shell script loads  data into FCT_GRP_PROCESS_CUSTOM_R
+edw_grp_load_fct_incurred_summary_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_INCURRED_SUMMARY_R,,False,,FCT_INCURRED_SUMMARY_R,,,"The tidal job associated to this shell script runs every day after the completion of the dependent jobs , checks current date is Fisc Month End Date +1 or the current Day is Saturday or not, of either of one case mathces then DB procedure edw_grp_load_fct_incurred_summary_r.sh deletes the current month data from the table fct_incurred_summary_r and inserts current month data into the table fct_incurred_summary_r"
+edw_grp_load_fct_lg_recon_prc_exe_daily.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,$v_prc_name_r (from TIDAL param $1),,True,$1,,,,This shell script will do recon between fct_lg and RDM for Reserve Fields.
+edw_grp_load_fct_lg_recon_prc_exe_monthend.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,$v_prc_name_r (from TIDAL param $1),,True,$1,,,,This shell script will do recon between fct_lg and RDM for Reserve Fields.
+edw_grp_load_fct_lg_renewal_projctns_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RENEWAL_PROJCTNS_R,,False,,FCT_LG_RENEWAL_PROJCTNS_R,,,"The tidal job associated to this shell script runs every day after the completion of the dependent jobs , checks current date is Fisc Month End Date +1 or the current Day is Saturday or not, of either of one case mathces then DB procedure edw_grp_load_fct_lg_renewal_projctns_r.sh deletes the current month data from the table fct_lg_renewal_projctns_r and inserts current month data into the table fct_lg_renewal_projctns_r"
+edw_grp_load_fct_lg_renewal_tracking_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RENEWAL_TRACKING_R,,False,,FCT_LG_RENEWAL_TRACKING_R,,,"The tidal job associated to this shell script runs every day after the completion of the dependent jobs , checks current date is Fisc Month End Date +1 or the current Day is Saturday or not, of either of one case mathces then DB procedure edw_grp_load_fct_lg_renewal_tracking_r.sh deletes the current month data from the table fct_lg_renewal_tracking_r and inserts current month data into the table fct_lg_renewal_tracking_r"
+edw_grp_load_fct_lg_reserve_details_incr_ibnr_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR_IBNR,,False,,,,,This shell script truncates and reloads the tables related to fct_lg_reserve_details_r_tmp
+edw_grp_load_fct_lg_reserve_details_incr_life_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR_LIFE,,False,,,,,This shell script truncates and reloads the tables related to fct_lg_reserve_details_r_tmp
+edw_grp_load_fct_lg_reserve_details_incr_merge_ibnr_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR_MERGE_IBNR,,False,,,,,This shell script truncates and reloads the tables related to fct_lg_reserve_details_r_incr
+edw_grp_load_fct_lg_reserve_details_incr_merge_life_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR_MERGE_LIFE,,False,,,,,This shell script truncates and reloads the tables related to fct_lg_reserve_details_r_incr
+edw_grp_load_fct_lg_reserve_details_incr_waiver_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR_WAIVER,,False,,,,,This shell script truncates and reloads the tables related to fct_lg_reserve_details_r_tmp
+edw_grp_load_fct_lg_reserve_details_premium_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR_PREMIUM,,False,,,,,This shell script truncates and reloads the tables related to fct_lg_reserve_details_r
+edw_grp_load_fct_lg_reserve_details_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R,,False,,FCT_LG_RESERVE_DETAILS_R,,,"The tidal job associated to this shell script runs every day after the completion of the dependent jobs , checks current date is Fisc Month End Date +1 or the current Day is Saturday or not, of either of one case mathces then DB procedure edw_grp_load_fct_lg_reserve_details_r.sh deletes the current month data from the table fct_lg_reserve_details_r and inserts current month data into the table fct_lg_reserve_details_r"
+edw_grp_load_fct_lg_reserve_details_r_incr.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR,,False,,FCT_LG_RESERVE_DETAILS_R,,,"The tidal job associated to this shell script runs every day after the completion of the dependent jobs , checks current dat e is Fisc Month End Date +1 or the current Day is Saturday or not, of either of one case mathces then DB procedure edw_grp_load_fct_lg_reserve_details_r_incr.sh  deletes the current month data from the table fct_lg_reserve_details_r and inserts current month data into the table fct_lg_reserve_details_r"
+edw_grp_load_fct_lg_reserve_details_r_premium.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_PREMIUM,,False,,FCT_LG_RESERVE_DETAILS_R,,,"The tidal job associated to this shell script runs every day after the completion of the dependent jobs , checks current date is Fisc Month End Date +1 or the current Day is Saturday or not, of either of one case mathces then DB procedure edw_grp_load_fct_lg_reserve_details_r_premium.sh deletes the current month data from the table fct_lg_reserve_details_r for reserve_type_ind = P and inserts current month data into the table fct_lg_reserve_details_r from legacy db."
+edw_grp_load_fct_reopen_os_reserves_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_REOPEN_OS_RESERVE_R_INCR,,False,,,,,This shell script truncates and reloads the tables related to fct_reopen_os_reserves_r
+edw_grp_load_fct_rpt_act_plr_summary_incr_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_ACT_PLR_SUMMARY_INCR_R,,False,,FCT_RPT_ACT_PLR_SUMMARY_R,,,This shell script is to load FCT_RPT_ACT_PLR_SUMMARY_R Table
+edw_grp_load_fct_rpt_act_plr_summary_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_ACT_PLR_SUMMARY_R,,False,,FCT_RPT_ACT_PLR_SUMMARY_R,,,"The tidal job associate to this shell script runs every day after the completion of the dependent jobs , checks current date is Fisc Month End Date +1 or the current Day is Saturday or not, of either of one case mathces then DB procedure edw_grp_load_fct_rpt_act_plr_summary_r.sh will be called which takes backup of the table fct_rpt_act_plr_summary_r , truncates the table fct_rpt_act_plr_summary_r and loads the table fct_rpt_act_plr_summary_r"
+edw_grp_load_fct_rpt_ann_prem_summary_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_ANN_PREM_SUMMARY_R_INC,PRC_GRP_FCT_RPT_ANN_PREM_SUMMARY_R_INC,False,,FCT_RPT_ANN_PREM_SUMMARY_R,,,This shell script calls procedure PKG_GRP_ANN_PREM_SUMMARY_R_INC.PRC_GRP_FCT_RPT_ANN_PREM_SUMMARY_R_INC to load data in FCT_RPT_ANN_PREM_SUMMARY_R
+edw_grp_load_fct_rpt_claim_summary.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_FCT_RPT_CLAIM_SUMMARY_R_DAILY,,False,,FCT_RPT_CLAIM_SUMMARY_R,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure atomic.PRC_FCT_RPT_CLAIM_SUMMARY_R_daily to reload data in the FCT_RPT_CLAIM_SUMMARY_R"
+edw_grp_load_fct_rpt_claim_summary_r_incr.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_CLAIM_SUMMARY_R_DATA_INCR,,False,,,,,This shell script truncates and reloads the tables related to FCT_RPT_CLAIM_SUMMARY_R_INCR
+edw_grp_load_fct_rpt_cross_sell_summary_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_FCT_RPT_CROSS_SELL_SUMMARY_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_FCT_RPT_CROSS_SELL_SUMMARY_R.
+edw_grp_load_fct_rpt_group_production_r_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_GROUP_PRODUCTION_R,,False,,FCT_RPT_GROUP_PRODUCTION_R,,,"This shell script loads  data into FCT_RPT_GROUP_PRODUCTION_R
+Change log:"
+edw_grp_load_fct_rpt_rate_history_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_RATE_HISTORY_R,,False,,FCT_RPT_RATE_HISTORY_R,,,"This shell script is to load data  into FCT_RPT_RATE_HISTORY_R
+Change log:"
+edw_grp_load_ibnr_merge_fct_incurred_summary_prev_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_INCURRED_SUMMARY_IBNR_PREV_MONTH_R,,False,,FCT_INCURRED_SUMMARY_R,,,This shell script Merge table FCT_INCURRED_SUMMARY_R using FCT_LG_RESERVE_DETAILS_R for Previous Month
+edw_grp_load_ibnr_merge_fct_lg_reserve_detail_prev_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR_IBNR_PREV_MONTH,,False,,FCT_LG_RESERVE_DETAILS_R,,,This shell script is to load FCT_LG_RESERVE_DETAILS_R table for Previous Month
+edw_grp_load_ibnr_merge_rpt_fct_incurred_summary_prev_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_RPT_FCT_INCURRED_SUMMARY_IBNR_PREV_MONTH_R,,False,,RPT_FCT_INCURRED_SUMMARY_R,,,This shell script Merge table RPT_FCT_INCURRED_SUMMARY_R using FCT_INCURRED_SUMMARY_R for Previous Month
+edw_grp_load_inforce_cases_all_r_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_INFORCE_CASES_ALL_R,,False,,INFORCE_CASES_ALL_R,,,"This shell script loads data into INFROCE_CASES_ALL_R
+Change log:"
+edw_grp_load_paid_premium_r_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_PAID_PREMIUM_R,,False,,PAID_PREMIUM_R,,,"This shell script loads data into PAID_PREMIUM_R
+Change log:"
+edw_grp_load_reinsurance_claims_fct_merge_claim_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_CLAIM_PAYMENT_REINS_R,,False,,FCT_CLAIM_PAYMENT_DETAIL_R,,,This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+edw_grp_load_reinsurance_claims_fct_merge_reopen_reserve_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_REOPEN_OS_RESERVE_R,,False,,FCT_REOPEN_OS_RESERVES_R,,,"This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+Change log:"
+edw_grp_load_reinsurance_claims_fct_merge_reserve_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_LG_RESERVE_DETAILS_REINS_R,,False,,FCT_LG_RESERVE_DETAILS_R,,,This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+edw_grp_load_reinsurance_ltd_paid_claims_vw.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_REFRESH_REINSURANCE_LTD_PAID_CLAIMS_VW,,False,,STG_GRP_REINSURER_CLAIM_PCT_R,,,"This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+Change log:"
+edw_grp_load_reinsurance_merge_fct_rpt_premium_summary_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_RPT_PREMIUM_SUMMARY_R,,False,,FCT_RPT_PREMIUM_SUMMARY_R,,,This shell script truncates and reloads the table STG_GRP_REINSURER_PREM_PCT_R
+edw_grp_load_reinsurance_merge_fct_rpt_premium_summary_r_gl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_RPT_PREMIUM_SUMMARY_R_GL,,False,,FCT_RPT_PREMIUM_SUMMARY_R,,,This shell script Merge table FCT_RPT_PREMIUM_SUMMARY_R using STG_GRP_REINSURER_PREM_PCT_R
+edw_grp_load_reinsurance_merge_fct_rpt_premium_summary_r_ltd.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_RPT_PREMIUM_SUMMARY_R_LTD,,False,,FCT_RPT_PREMIUM_SUMMARY_R,,,This shell script Merge table FCT_RPT_PREMIUM_SUMMARY_R using STG_GRP_REINSURER_PREM_PCT_R
+edw_grp_load_reinsurance_merge_fct_rpt_premium_summary_r_non_gl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_RPT_PREMIUM_SUMMARY_R_NON_GL,,False,,FCT_RPT_PREMIUM_SUMMARY_R,,,This shell script Merge table FCT_RPT_PREMIUM_SUMMARY_R using STG_GRP_REINSURER_PREM_PCT_R
+edw_grp_load_reinsurance_merge_fct_rpt_premium_summary_r_non_ltd.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_RPT_PREMIUM_SUMMARY_R_NON_LTD,,False,,FCT_RPT_PREMIUM_SUMMARY_R,,,This shell script Merge table FCT_RPT_PREMIUM_SUMMARY_R using STG_GRP_REINSURER_PREM_PCT_R
+edw_grp_load_reinsurance_prem_fct_merge_annprem_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_VFCT_RPT_ANN_PREM_SUMMARY_R,,False,,FCT_RPT_ANN_PREM_SUMMARY_R,,,"This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+Change log:"
+edw_grp_load_renewal_projctns_incr.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RENEWAL_PROJCTNS_R_INCR,,False,,FCT_LG_RENEWAL_PROJCTNS_R_FDMTEST,,,"This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+Change log:"
+edw_grp_load_renewal_tracking_incr.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_LG_RENEWAL_TRACKING_R_INCR,,False,,FCT_LG_RENEWAL_TRACKING_R_FDM_TEST,,,"This shell script truncates and reloads the table fct_lg_renewal_tracking_r
+Change log:"
+edw_grp_load_rpt_agent_policy_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_AGENT_POLICY_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_AGENT_POLICY_R.
+edw_grp_load_rpt_agent_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_AGENT_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_AGENT_R.
+edw_grp_load_rpt_billgroup_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_BILLGROUP_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_BILLGROUP_R.
+edw_grp_load_rpt_billgroup_r_mgis_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_RPT_BILLGROUP_R_MGIS,,False,,RPT_BILLGROUP_R,,,This shell script loads  data into RPT_BILLGROUP_R
+edw_grp_load_rpt_claim_dtl_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_DTL_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_DTL_R
+edw_grp_load_rpt_claim_dtl_r_inc.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_DTL_R_INC,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_DTL_R_INC
+edw_grp_load_rpt_claim_dtl_r_upd_cols.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_UPD_RPT_CLAIM_DTL_R_COLS,,False,,,,,This shell script calls the procedure PRC_GRP_UPD_RPT_CLAIM_DTL_R_COLS
+edw_grp_load_rpt_claim_dtl_r_upd_dec_cols.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_DTL_R,PRC_UPD_DECISION_COLS,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_DTL_R.prc_upd_decision_cols
+edw_grp_load_rpt_claim_dtl_r_upd_ind_cols.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_DTL_R,PRC_UPD_WAVIER_LTD_IND_COLS,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_DTL_R.prc_upd_wavier_ltd_ind_cols
+edw_grp_load_rpt_claim_note_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_NOTE_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_NOTE_R.
+edw_grp_load_rpt_claim_note_r_inc.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_NOTE_R_INC,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_NOTE_R_INC.
+edw_grp_load_rpt_claim_payment_dtl_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_PAYMENT_DTL_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_PAYMENT_DTL_R.
+edw_grp_load_rpt_claim_payment_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_PAYMENT_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_PAYMENT_R.
+edw_grp_load_rpt_claim_payment_r_inc.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_PAYMENT_R_INC,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_PAYMENT_R_INC.
+edw_grp_load_rpt_claim_sum_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_SUM_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_SUM_R.
+edw_grp_load_rpt_claim_sum_r_upd_cols.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_SUM_R,PRC_UPD_COLS,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_SUM_R.prc_upd_cols
+edw_grp_load_rpt_claim_summary_intermediate_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_CLAIM_SUMMARY_INTERMEDIATE_MV_TBL,,False,,,,,This shell script truncates and reloads the tables related to FCT_RPT_CLAIM_SUMMARY_INTERMEDIATE_MV_TBL
+edw_grp_load_rpt_claim_summary_intermediate_mv_tbl2.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_CLAIM_SUMMARY_INTERMEDIATE_MV_TBL2,,False,,,,,This shell script truncates and reloads the tables related to FCT_RPT_CLAIM_SUMMARY_INTERMEDIATE_MV_TBL2
+edw_grp_load_rpt_claim_task_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_TASK_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_TASKS_R.
+edw_grp_load_rpt_claim_task_r_bkp_2024_11_11.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_TASKS_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_TASKS_R.
+edw_grp_load_rpt_claim_task_r_inc.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIM_TASK_R_INC,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIM_TASKS_R_INC.
+edw_grp_load_rpt_claimant_dtl_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIMANT_DTL_R,MAIN,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIMANT_DTL_R.
+edw_grp_load_rpt_claimant_dtl_r_inc.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLAIMANT_DTL_R_INC,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLAIMANT_DTL_R_INC.
+edw_grp_load_rpt_client_dtl_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CLIENT_DTL_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CLIENT_DTL_R.
+edw_grp_load_rpt_commissions_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_COMMISSIONS_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_COMMISSIONS_R.
+edw_grp_load_rpt_concerns_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_CONCERNS_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_CONCERNS_R.
+edw_grp_load_rpt_dics_claims_detail_oac_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_DICS_CLAIMS_DETAIL_OAC_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_rpt_dics_claims_detail_oac_r.
+edw_grp_load_rpt_dics_claims_detail_oac_r_inc.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_DICS_CLAIMS_DETAIL_OAC_R_INC,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_rpt_dics_claims_detail_oac_r_inc.
+edw_grp_load_rpt_employee_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_EMPLOYEE_R,MAIN,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_EMPLOYEE_R.
+edw_grp_load_rpt_eoi_applicant_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_EOI_APPLICANT_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_EOI_APPLICANT_R.
+edw_grp_load_rpt_eoi_application_history_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_EOI_APPLICATION_HISTORY_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_EOI_APPLICATION_HISTORY_R.
+edw_grp_load_rpt_eoi_detail_nonvue_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_EOI_DETAIL_NONVUE_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_EOI_DETAIL_NONVUE_R.
+edw_grp_load_rpt_fct_incurred_summary_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_FCT_INCURRED_SUMMARY_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_FCT_INCURRED_SUMMARY_R.
+edw_grp_load_rpt_fct_rpt_ann_prem_summary_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_FCT_RPT_ANN_PREM_SUMMARY_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_FCT_RPT_ANN_PREM_SUMMARY_R.
+edw_grp_load_rpt_fct_rpt_ann_prem_summary_r_inc.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_FCT_RPT_ANN_PREM_SUMMARY_R_INC,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_FCT_RPT_ANN_PREM_SUMMARY_R_INC.
+edw_grp_load_rpt_fct_rpt_ann_prem_summary_r_mgis_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_ANN_PREM_SUMMARY_R_MGIS,,False,,FCT_RPT_ANN_PREM_SUMMARY_R,,,This shell script loads  data into RPT_BILLGROUP_R
+edw_grp_load_rpt_fct_rpt_ann_prem_summary_r_mgis_tbl_bkp.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_RPT_FCT_RPT_ANN_PREM_SUMMARY_R_MGIS,,False,,RPT_FCT_RPT_ANN_PREM_SUMMARY_R,,,This shell script loads  data into RPT_BILLGROUP_R
+edw_grp_load_rpt_fct_rpt_claim_summary_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_FCT_RPT_CLAIM_SUMMARY_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_FCT_RPT_CLAIM_SUMMARY_R.
+edw_grp_load_rpt_fct_rpt_claim_summary_r_hist.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_FCT_RPT_CLAIM_SUMMARY_R_HIST,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_FCT_RPT_CLAIM_SUMMARY_R_HIST.
+edw_grp_load_rpt_fct_rpt_premium_summary_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_FCT_RPT_PREMIUM_SUMMARY_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_FCT_RPT_PREMIUM_SUMMARY_R.
+edw_grp_load_rpt_fct_rpt_premium_summary_r_upd_cols.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_FCT_RPT_PREMIUM_SUMMARY_R,PRC_UPD_COLS,False,,,,,This shell script calls the procedure PKG_GRP_LOAD_RPT_FCT_RPT_PREMIUM_SUMMARY_R.prc_upd_cols
+edw_grp_load_rpt_grp_product_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_GRP_PRODUCT_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_GRP_PRODUCT_R.
+edw_grp_load_rpt_payee_dtl_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_PAYEE_DTL_R,MAIN,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_PAYEE_DTL_R.
+edw_grp_load_rpt_policy_dtl_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_POLICY_DTL_R,MAIN,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_POLICY_DTL_R.
+edw_grp_load_rpt_posted_suspense_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_POSTED_SUSPENSE_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_POSTED_SUSPENSE_R.
+edw_grp_load_rpt_premium_dtl_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_PREMIUM_DTL_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_PREMIUM_DTL_R.
+edw_grp_load_rpt_premium_dtl_r_mgis_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_RPT_PREMIUM_DTL_R_MGIS,,False,,RPT_PREMIUM_DTL_R,,,This shell script loads  data into RPT_PREMIUM_DTL_R
+edw_grp_load_rpt_premium_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_PREMIUM_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_PREMIUM_R.
+edw_grp_load_rpt_premium_r_mgis_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_RPT_PREMIUM_R_MGIS,,False,,RPT_PREMIUM_R,,,This shell script loads  data into RPT_PREMIUM_R
+edw_grp_load_rpt_quotes_dtl_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_QUOTES_DTL_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_QUOTES_DTL_R.
+edw_grp_load_rpt_quotes_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_QUOTES_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_QUOTES_R.
+edw_grp_load_rpt_rate_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_RATE_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_RATE_R.
+edw_grp_load_rpt_reserve_details_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_RESERVE_DETAILS_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_RESERVE_DETAILS_R.
+edw_grp_load_rpt_sales_rep_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_SALES_REP_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_SALES_REP_R
+edw_grp_load_rpt_suspense_dtl_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_SUSPENSE_DTL_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_SUSPENSE_DTL_R.
+edw_grp_load_rpt_task_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_TASK_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_TASK_R.
+edw_grp_load_rpt_worksheet_dtl_r.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_RPT_WORKSHEET_DTL_R,main,False,,,,,This shell script calls the package PKG_GRP_LOAD_RPT_WORKSHEET_DTL_R.
+edw_grp_load_sf_policy_r_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_SF_POLICY_R,,False,,SF_POLICY_R,,,"This shell script loads data into SF__POLICY_R
+Change log:"
+edw_grp_load_stg_ba_ltd_rollforward_fact.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_BA_LTD_ROLLFORWARD_FACT,,False,,,,,This shell script truncates and reloads the tables related to stg_ba_ltd_rollforward_fact
+edw_grp_load_stg_grp_claim_summary_covg_tier_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_LOAD_STG_GRP_CLAIM_SUMMARY_COVRG_TIER_TBL_R,,False,,,,,This shell script truncates and reloads the tables related to STG_GRP_CLAIM_SUMMARY_R
+edw_grp_load_stg_grp_claim_summary_payment_details_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_LOAD_STG_GRP_CLAIM_SUMMARY_PAYMENT_DETAILS_R,,False,,,,,This shell script truncates and reloads the tables related to STG_GRP_CLAIM_SUMMARY_R
+edw_grp_load_stg_grp_claim_summary_r_main.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_STG_GRP_CLAIM_SUMMARY_R,PRC_LOAD_STG_GRP_CLAIM_SUMMARY_R,False,,,,,This shell script truncates and reloads the tables related to STG_GRP_CLAIM_SUMMARY_R
+edw_grp_load_stg_grp_claim_summary_reserve_amts_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_LOAD_STG_GRP_CLAIM_SUMMARY_RESERVE_AMTS_R,,False,,,,,This shell script truncates and reloads the tables related to STG_GRP_CLAIM_SUMMARY_R
+edw_grp_load_t_rpt_sch.sh,STATIC_SQL,INSERT_SELECT,,T_RPT_SCH,,False,,,"INSERT INTO t_rpt_sch 
+                ( LOAD_DATE                
+                ,LOAD_STATUS              
+                ,AS_OF_DATE               
+                ,T_CREATION_DATE_R        
+                ,T_LAST_MODIFIED_DATE_R   
+                ,V_CREATED_BY_R           
+                ,V_LAST_MODIFIED_BY_R     
+                ,N_BATCH_ID_R
+                )
+                VALUES
+                (LD_SYSDATE
+                ,'COMPLETED'
+                ,LD_EDS_CYCLEDATE_R
+           ...",,INSERT INTO T_RPT_SCH SELECT FROM 
+edw_grp_load_t_rpt_sch_services.sh,STATIC_SQL,INSERT_SELECT,,T_RPT_SCH,,False,,,"INSERT INTO t_rpt_sch
+                ( LOAD_DATE
+                ,LOAD_STATUS
+                ,AS_OF_DATE
+                ,T_CREATION_DATE_R
+                ,T_LAST_MODIFIED_DATE_R
+                ,V_CREATED_BY_R
+                ,V_LAST_MODIFIED_BY_R
+                ,N_BATCH_ID_R
+                ,V_SOURCE_SYSTEM_R
+                ,V_SERVICES_TYPE_R
+                )
+                VALUES
+                (LD_SYSDATE
+                ,'COMPLETED'
+                ,LD_EDS_CYCLEDATE_R
+              ...",,INSERT INTO T_RPT_SCH SELECT FROM 
+edw_grp_load_t_rpt_sch_services_bkp-20240410.sh,STATIC_SQL,INSERT_SELECT,,T_RPT_SCH,,False,,,"INSERT INTO t_rpt_sch 
+                ( LOAD_DATE                
+                ,LOAD_STATUS              
+                ,AS_OF_DATE               
+                ,T_CREATION_DATE_R        
+                ,T_LAST_MODIFIED_DATE_R   
+                ,V_CREATED_BY_R           
+                ,V_LAST_MODIFIED_BY_R     
+                ,N_BATCH_ID_R
+                ,V_SOURCE_SYSTEM_R
+                ,V_SERVICES_TYPE_R
+                )
+                VALUES
+                (LD_SYSDATE
+      ...",,INSERT INTO T_RPT_SCH SELECT FROM 
+edw_grp_load_t_rpt_sch_services_bkp0409.sh,STATIC_SQL,INSERT_SELECT,,T_RPT_SCH,,False,,,"INSERT INTO t_rpt_sch 
+                ( LOAD_DATE                
+                ,LOAD_STATUS              
+                ,AS_OF_DATE               
+                ,T_CREATION_DATE_R        
+                ,T_LAST_MODIFIED_DATE_R   
+                ,V_CREATED_BY_R           
+                ,V_LAST_MODIFIED_BY_R     
+                ,N_BATCH_ID_R
+                ,V_SOURCE_SYSTEM_R
+                ,V_SERVICES_TYPE_R
+                )
+                VALUES
+                (LD_SYSDATE
+      ...",,INSERT INTO T_RPT_SCH SELECT FROM 
+edw_grp_load_t_rpt_sch_services_bkp0409.sh,UPDATE_TABLE,TABLE,,FCT_GRP_TRANSACTIONS_R,UPDATE,False,,,,,This shell script inserts a record in the table t_rpt_sch after completion of Grp_EDP Cycle
+edw_grp_load_total_earn_prem.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_TOTAL_EARN_PREM,,False,,TOTAL_EARN_PREM_LATEST7,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure atomic.PRC_GRP_LOAD_TOTAL_EARN_PREM to load data in the tables TOTAL_EARN_PREM,TOTAL_EARN_PREM_LATEST7,FCT_RPT_PREMIUM_SUMMARY_R"
+edw_grp_load_total_earn_prem_mgis_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_RPT_EARN_PREMIUM_SUMMARY_R_MGIS,,False,,TOTAL_EARN_PREM,,,"This shell script loads  data into TOTAL_EARN_PREM
+Change log:"
+edw_grp_load_tpa_adhoc_prc_exe.sh,EXECUTE_IMMEDIATE_DYNAMIC,PROCEDURE,ATOMIC,$v_prc_name_r (from TIDAL param $1),,True,$1,,,,"This shell script load the data using adhoc procedure to load TPA Reserve Files.
+Change log:"
+edw_grp_month_end_load.sh,EXECUTE_IMMEDIATE_STATIC,PACKAGE,ATOMIC,PKG_GRP_MONTH_END_LOAD,main,True,"$1,$2",,,,"This shell script load the data using package pkg_grp_month_end_load
+Change log:"
+edw_grp_month_end_load_exg_partition.sh,EXECUTE_IMMEDIATE_STATIC,PACKAGE,ATOMIC,PKG_GRP_EXG_PARTITION_MONTH_END,main,True,"$1,$2",,,,"This shell script load the data using package pkg_grp_exg_partition_month_end
+Change log:"
+edw_grp_month_end_update_flag.sh,EXECUTE_IMMEDIATE_STATIC,PACKAGE,ATOMIC_PLSQL,PKG_GRP_LOAD_RPT_MONTH_END_UPDATE_FLAG,MAIN,False,,,,,"This shell script creates a Temp table and insert prior month data by updating flag to 'N' load the data using package PKG_GRP_LOAD_RPT_MONTH_END_UPDATE_FLAG
+Change log:"
+edw_grp_mv_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh the MATERIALIZED VIEWS used in claim summary package.
+edw_grp_mv_synonym_swap_and_mv_refresh.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_COMMON_UTIL,PRC_REFRESH_MV_SYNONYM_SWAP,False,,,,,This shell script will swap the synonym for mv.
+edw_grp_offset1_fullload.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_OFFSETS,PRC_FULLLOAD_FCT_CLAIMPMNT_DET_OFFSET1_R,False,,FCT_CLAIM_PAYMENT_DETAIL_OFFSETS_R,,,This shell script truncates and reloads the table FCT_CLAIM_PAYMENT_DETAIL_OFFSETS_R
+edw_grp_offset2_fullload.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_OFFSETS,PRC_FULLLOAD_FCT_CLAIMPMNT_DET_OFFSET2_R,False,,FCT_CLAIM_PAYMENT_DETAIL_OFFSETS_R,,,This shell script truncates and reloads the table FCT_CLAIM_PAYMENT_DETAIL_OFFSETS_R
+edw_grp_offset3_fullload.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_OFFSETS,PRC_FULLLOAD_FCT_CLAIMPMNT_DET_OFFSET3_R,False,,FCT_CLAIM_PAYMENT_DETAIL_OFFSETS_R,,,This shell script truncates and reloads the table FCT_CLAIM_PAYMENT_DETAIL_OFFSETS_R
+edw_grp_pacs_del_fct_claim_det_benefit_pmnt.sh,DELETE_FROM,TABLE,ATOMIC,FCT_CLAIM_PAYMENT_DETAIL_BENEFIT_PAYMENT_R,DELETE,False,,,,,This shell script performs the below steps Deletes only PACS data from the reporting table FCT_CLAIM_PAYMENT_DETAIL_BENEFIT_PAYMENT_R
+edw_grp_pacs_del_fct_claim_det_gross_benefit.sh,DELETE_FROM,TABLE,ATOMIC,FCT_CLAIM_PAYMENT_DETAIL_GROSS_BENEFIT_R,DELETE,False,,,,,This shell script performs the below steps Deletes only PACS  data from the reporting table FCT_CLAIM_PAYMENT_DETAIL_GROSS_BENEFIT_R
+edw_grp_pacs_load_dim_grp_claim_detail_subgroup_lookup.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_DIM_GRP_CLAIM_DETAIL_SUBGROUP_LOOKUP,False,,,,,
+edw_grp_pacs_load_fct_grp_policy_pbc_team_lookup.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_FCT_GRP_POLICY_R_PBC_TEAM_LOOKUP,False,,,,,
+edw_grp_pacs_load_fct_grp_policy_r_uw_needed.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_FCT_GRP_POLICY_R_UW_NEEDED,False,,,,,
+edw_grp_pacs_load_stg_claim_payment_detail_benefit_payment_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_LOAD_FCT_CLAIM_PMT_DET_R,False,,,,,
+edw_grp_pacs_load_stg_claim_payment_detail_gross_benefit_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_LOAD_FCT_CLAIM_PMT_DET_R,False,,,,,
+edw_grp_portal_mv_refresh.sh,MV_REFRESH_WITH_TRUNCATE,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh the PORTAL MATERIALIZED VIEWS used in Web Portal Packages/MV's.
+edw_grp_purge_log_audit_tbls.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_PURGE,MAIN,False,,,,,"This shell script deletes given days back data from the sysdate in the given table
+Change log:"
+edw_grp_rate_history_mv_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh the PORTAL MATERIALIZED VIEWS used in Web Portal Packages/MV's.
+edw_grp_rebuild_index_rpt_claim_dtl_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REBUILD_INDEXES_RPT_CLAIM_DTL_R,,False,,,,,This shell script rebuild the unusable index for RPT_CLAIM_DTL_R.
+edw_grp_rebuild_index_rpt_claim_note_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REBUILD_INDEXES_RPT_CLAIM_NOTE_R,,False,,,,,This shell script calls the procedure PROC_REBUILD_INDEXES_RPT_CLAIM_NOTE_R.
+edw_grp_rebuild_index_rpt_claim_payment_dtl_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REBUILD_INDEXES_RPT_CLAIM_PAYMENT_DTL_R,,False,,,,,This shell script rebuilds unusable indexes for table RPT_CLAIM_PAYMENT_DTL_R.
+edw_grp_rebuild_index_rpt_claim_payment_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REBUILD_INDEXES_RPT_CLAIM_PAYMENT_R,,False,,,,,This shell script rebuilds the unusable index for table RPT_CLAIM_PAYMENT_R.
+edw_grp_rebuild_index_rpt_claim_task_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REBUILD_INDEXES_RPT_CLAIM_TASK_R,,False,,,,,This shell script calls the procedure PROC_REBUILD_INDEXES_RPT_CLAIM_TASK_R.
+edw_grp_rebuild_index_rpt_claimant_dtl_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REBUILD_INDEXES_RPT_CLAIMANT_DTL_R,,False,,,,,This shell script rebuilds unusable indexes for table RPT_CLAIMANT_DTL_R.
+edw_grp_rebuild_unusable_indexes.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_REBUILD_UNUSABLE_INDEXES,,False,,,,,This shell script calls procedure which rebuild the unusable indexes agaisnt the given table.
+edw_grp_refresh_claim_note_tier_mv.sh,MV_REFRESH,MATERIALIZED_VIEW,,CLAIM_NOTE_TIER_MV,DBMS_MVIEW.REFRESH,False,,CLAIM_NOTE_TIER_MV,,,This shell script refreshes CLAIM_NOTE_TIER_MV
+edw_grp_refresh_ncate_load_f_psr_claim_cov_status_mv_tbl.sh.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRCS_CREATEBKP_TABLES,,False,,FCT_RPT_EOI_HISTORY_R,,,This shell script drop bkp tables and creates bkp tables using actual tables
+edw_grp_rpt_experience_claim_summary_mv_1_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh the PORTAL MATERIALIZED VIEWS used in Web Portal Packages/MV's.
+edw_grp_rpt_experience_claim_summary_mv_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh the PORTAL MATERIALIZED VIEWS used in Web Portal Packages/MV's.
+edw_grp_rpt_experience_premium_summary_mv_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh the PORTAL MATERIALIZED VIEWS used in Web Portal Packages/MV's.
+edw_grp_rpt_experience_summary_oac_mv_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh RPT_EXPERIENCE_SUMMARY_OAC_MV MV.
+edw_grp_rpt_incurred_summary_base_mv_1_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh RPT_INCURRED_SUMMARY_BASE_MV_1 MV.
+edw_grp_rpt_incurred_summary_base_mv_2_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh RPT_INCURRED_SUMMARY_BASE_MV_2 MV.
+edw_grp_rpt_incurred_summary_base_mv_3_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh RPT_INCURRED_SUMMARY_BASE_MV_3 MV.
+edw_grp_rpt_incurred_summary_base_mv_refresh.sh,MV_REFRESH,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh RPT_INCURRED_SUMMARY_BASE_MV MV.
+edw_grp_ssl_mv_refresh.sh,MV_REFRESH_WITH_TRUNCATE,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh the SSL MATERIALIZED VIEWS used in SelfService Packages.
+edw_grp_Supplemental_mv_refresh.sh,MV_REFRESH_WITH_TRUNCATE,MATERIALIZED_VIEW,,(from TIDAL param $1),DBMS_MVIEW.REFRESH,True,$1,,,,This shell script refresh the MATERIALIZED VIEWS used in supplemental health report.
+edw_grp_truncate_fct_benefit_payment_detail_offset_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,FCT_BENEFIT_PAYMENT_DETAIL_OFFSET_MV_TBL,,,"This shell script truncates and reloads the table fct_benefit_payment_detail_offset_mv_tbl
+Change log:"
+edw_grp_truncate_load_claim_activity_date_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,CLAIM_ACTIVITY_DATE_MV_TBL,,,"This shell script truncates and reloads the table claim_activity_date_mv_tbl
+Change log:"
+edw_grp_truncate_load_claim_detail_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,CLAIM_DETAIL_MV_TBL,,,"This shell script truncates and reloads the table claim_detail_mv_tbl
+Change log:"
+edw_grp_truncate_load_claim_note_tier_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,CLAIM_NOTE_TIER_MV_TBL,,,"This shell script truncates and reloads the table claim_note_tier_mv_tbl
+Change log:"
+edw_grp_truncate_load_claim_tier_wfam_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,CLAIM_TIER_WFAM_MV_TBL,,,"This shell script truncates and reloads the table CLAIM_TIER_WFAM_MV_TBL
+Change log:"
+edw_grp_truncate_load_f_policy_specific_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,F_POLICY_SPECIFIC_MV_TBL,,,"This shell script truncates and reloads the table f_psr_claimant_mv_tbl
+Change log:"
+edw_grp_truncate_load_f_psr_claim_cov_status_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,F_PSR_CLAIM_COV_STATUS_MV_TBL,,,"This shell script truncates and reloads the table f_psr_claim_cov_status_mv_tbl
+Change log:"
+edw_grp_truncate_load_f_psr_claim_mv_1_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,F_PSR_CLAIM_MV_1_TBL,,,"This shell script truncates and reloads the table f_psr_claim_mv_1_tbl
+Change log:"
+edw_grp_truncate_load_f_psr_claim_mv_3_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,F_PSR_CLAIM_MV_3_TBL,,,"This shell script truncates and reloads the table f_psr_claim_mv_3_tbl
+Change log:"
+edw_grp_truncate_load_f_psr_claim_mv_4_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,F_PSR_CLAIM_MV_4_TBL,,,"This shell script truncates and reloads the table f_psr_claim_mv_4_tbl
+Change log:"
+edw_grp_truncate_load_f_psr_claimant_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,F_PSR_CLAIMANT_MV_TBL,,,"This shell script truncates and reloads the table f_psr_claimant_mv_tbl
+Change log:"
+edw_grp_truncate_load_fct_benefit_payment_detail_r_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,FCT_BENEFIT_PAYMENT_DETAIL_R_MV_TBL,,,"This shell script truncates and reloads the table fct_benefit_payment_detail_r_mv_tbl
+Change log:"
+edw_grp_truncate_load_fct_claim_payment_summary_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,FCT_CLAIM_PAYMENT_SUMMARY_MV_TBL,,,This shell script truncates and reloads the table FCT_CLAIM_PAYMENT_SUMMARY_MV_TBL
+edw_grp_truncate_load_fct_grp_policy_r_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_MERGE_UPDATE_FCT_GRP_POLICY_R,,False,,FCT_GRP_POLICY_R,,,"This shell script merges data into FCT_GRP_POLICY_R
+Change log:"
+edw_grp_truncate_load_fct_rpt_eoi_history_r_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,FCT_RPT_EOI_HISTORY_R_MV_TBL,,,This shell script truncates and reloads the table FCT_RPT_EOI_HISTORY_R_MV_TBL
+edw_grp_truncate_load_fct_rpt_eoi_history_summ_mv_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,FCT_RPT_EOI_HISTORY_SUMM_MV_TBL,,,This shell script truncates and reloads the table FCT_RPT_EOI_HISTORY_SUMM_MV_TBL
+edw_grp_truncate_load_lg_reserves_max_reserve_val_date_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,LG_RESERVES_MAX_RESERVE_VAL_DATE_MV_TBL,,,"This shell script truncates and reloads the table lg_reserves_max_reserve_val_date_tbl
+Change log:"
+edw_grp_truncate_load_mvw_product_sk_lookup_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,MVW_PRODUCT_SK_LOOKUP_TBL,,,"This shell script truncates and reloads the table mvw_product_sk_lookup_tbl
+Change log:"
+edw_grp_truncate_load_reinsurance_ceded_reserve_vw.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_REFRESH_REINSURANCE_CEDED_RESERVE_VW,,False,,REINSURANCE_CEDED_RESERVE_VW,,,"This shell script truncates and reloads the table CLAIM_TIER_WFAM_MV_TBL
+Change log:"
+edw_grp_truncate_load_reinsurance_ceded_reserve_vw_tbl.sh,DIRECT_PKG_MAIN_CALL,PACKAGE,ATOMIC,PKG_GRP_REFRESH_REINSURANCE_CEDED_RESERVE,main,False,,REINSURANCE_CEDED_RESERVE_VW,,,This shell script truncates and reloads the table REINSURANCE_CEDED_RESERVE
+edw_grp_truncate_load_reinsurance_paid_claims_vw_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_REFRESH_REINSURANCE_LTD_PAID_CLAIMS_VW,,False,,REINSURANCE_LTD_PAID_CLAIMS_VW,,,This shell script truncates and reloads the table REINSURANCE_LTD_PAID_CLAIMS
+edw_grp_truncate_load_reinsurance_premium_ltd_vpl_mv.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_REFRESH_GRP_M_VIEW_TBLS,,False,,REINSURANCE_PREMIUM_LTD_VPL_MV,,,"This shell script truncates and reloads the table CLAIM_TIER_WFAM_MV_TBL
+Change log:"
+edw_grp_truncate_load_reinsurance_premium_vw_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_REFRESH_REINSURANCE_PREMIUM_VW,,False,,REINSURANCE_PREMIUM,,,This shell script truncates and reloads the table REINSURANCE_PREMIUM used for reports
+edw_grp_truncate_load_reinsurer_claim_pct_gl_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_REINSURER_CLAIM_PCT_R_GL,,False,,STG_GRP_REINSURER_CLAIM_PCT_R,,,This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+edw_grp_truncate_load_reinsurer_claim_pct_ltd_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_REINSURER_CLAIM_PCT_R_LTD,,False,,STG_GRP_REINSURER_CLAIM_PCT_R,,,"This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+Change log:"
+edw_grp_truncate_load_reinsurer_claim_pct_waiver_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_REINSURER_CLAIM_PCT_R_WAIVER,,False,,STG_GRP_REINSURER_CLAIM_PCT_R,,,This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+edw_grp_truncate_load_reinsurer_prem_pct_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_REINSURER_PREM_PCT_R,,False,,STG_GRP_REINSURER_CLAIM_PCT_R,,,"This shell script truncates and reloads the table STG_GRP_REINSURER_CLAIM_PCT_R
+Change log:"
+edw_grp_truncload_fct_billing_pol_prem_r_tbl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_FCT_BILLING_POLICY_PREMIUM_R_TABLE,,False,,FCT_BILLING_POLICY_PREMIUM_R_TABLE,,,"This shell script calls procedure PRC_GRP_LOAD_FCT_BILLING_POLICY_PREMIUM_R_TABLE which drops bkp tbl,creates bkp tbl and  truncates and reloads the table FCT_BILLING_POLICY_PREMIUM_R_TABLE,FCT_BILLING_POLICY_PREMIUM_R_TABLE_TMP"
+edw_grp_truncload_stg_ann_prem_customer_link_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_ANN_PREM_CUSTOMER_LINK_R,,False,,STG_ANN_PREM_CUSTOMER_LINK_R,,,"This shell script calls procedure PRC_GRP_LOAD_stg_ann_prem_customer_link_r which drops bkp tbl,creates bkp tbl and  truncates and reloads the table stg_ann_prem_customer_link_r"
+edw_grp_truncload_stg_rpt_ann_prem_exclusion_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_RPT_ANN_PREM_EXCLUSION_R,,False,,STG_RPT_ANN_PREM_EXCLUSION_R,,,"This shell script calls procedure PRC_GRP_LOAD_stg_rpt_ann_prem_exclusion_r which drops bkp tbl,creates bkp tbl and  truncates and reloads the table stg_rpt_ann_prem_exclusion_r"
+edw_grp_truncload_stg_rpt_ann_prem_override_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_LOAD_STG_RPT_ANN_PREM_OVERRIDE_R,,False,,STG_RPT_ANN_PREM_OVERRIDE_R,,,"This shell script calls procedure PRC_GRP_LOAD_STG_RPT_ANN_PREM_OVERRIDE_R which drops bkp tbl,creates bkp tbl and  truncates and reloads the table STG_RPT_ANN_PREM_OVERRIDE_R"
+edw_grp_upd_month_end_config_table.sh,UPDATE_TABLE,TABLE,,PRCS_GRP_MONTH_END_CONFIG_R,UPDATE,False,,,,,This shell script updates start date in the table PRCS_GRP_MONTH_END_CONFIG_R.
+edw_grp_upd_pacs_partysk_fct_claim_pmnt_dtl_benefit_pmnt_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_UPD_PACS_PARTYSK_FCT_CLAIM_PMNT_DTL_BENEFIT_PMNT_R,,False,,,,,This shell script calls the Procedure PRC_GRP_UPD_PACS_PARTYSK_FCT_CLAIM_PMNT_DTL_BENEFIT_PMNT_R.
+edw_grp_upd_pacs_partysk_fct_claim_pmnt_dtl_gross_benefit_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_UPD_PACS_PARTYSK_FCT_CLAIM_PMNT_DTL_GROSS_BENEFIT_R,,False,,,,,This shell script calls the Procedure PRC_GRP_UPD_PACS_PARTYSK_FCT_CLAIM_PMNT_DTL_GROSS_BENEFIT_R.
+edw_grp_vue_load_fct_grp_policy_pbc_team_lookup.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_FCT_GRP_POLICY_R_PBC_TEAM_LOOKUP,False,,,,,
+edw_grp_vue_load_fct_rpt_eoi_history_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_LOAD_FCT_RPT_EOI_HISTORY_R,PRC_GRP_LOAD_FCT_RPT_EOI_HISTORY_R,False,,FCT_RPT_EOI_HISTORY_R,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure  PKG_GRP_LOAD_FCT_RPT_EOI_HISTORY_R.PRC_GRP_LOAD_FCT_RPT_EOI_HISTORY_R to reload data in  FCT_RPT_EOI_HISTORY_R"
+edw_grp_vue_load_vue_fct_grp_policy_r.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_VUE_FCT_GRP_POLICY_R,False,,,,,
+edw_grp_vue_truncate_fct_rpt_eoi_history_r.sh,TRUNCATE_TABLE,TABLE,ATOMIC,FCT_RPT_EOI_HISTORY_R,TRUNCATE,False,,,,,This shell script truncates the table fct_rpt_eoi_history_r
+edw_pacs_grp_load_fct_claim_payment_detail_r_adjustment.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R,False,,FCT_CLAIM_PAYMENT_DETAIL_ADJUSTMENT_R; IN_TYPE:ADJUSTMENT,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R to reload requested ADJUSTMENT data in the FCT_CLAIM_PAYMENT_DETAIL_ADJUSTMENT_R"
+edw_pacs_grp_load_fct_claim_payment_detail_r_benefit_payment.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R,False,,FCT_CLAIM_PAYMENT_DETAIL_BENEFIT_PAYMENT_R; IN_TYPE:BENEFIT_PAYMENT,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R to reload requested BENEFIT_BENEFIT data in the  FCT_CLAIM_PAYMENT_DETAIL_BENEFIT_PAYMENT_R"
+edw_pacs_grp_load_fct_claim_payment_detail_r_disbursement.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R,False,,FCT_CLAIM_PAYMENT_DETAIL_DISBURSEMENT_R; IN_TYPE:DISBURSEMENT,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R to reload requested DISBURSEMENT(REDIRECT) data in the  #                                 FCT_CLAIM_PAYMENT_DETAIL_DISBURSEMENT_R"
+edw_pacs_grp_load_fct_claim_payment_detail_r_expense.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R,False,,FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R; IN_TYPE:EXPENSE,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R to reload requested EXPENSE data in the  FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R"
+edw_pacs_grp_load_fct_claim_payment_detail_r_expense_old.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_FCT_CLAIM_PAYMENT_DETAIL_R_TEST,PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R,False,,FCT_CLAIM_PAYMENT_DETAIL_R_TEST; IN_TYPE:EXPENSE,,,"This shell script performs the below steps after accepting the batchid,loadrunif,type as a parameter:  a) Calls procedure PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R to reload requested EXPENSE data in the FCT_CLAIM_PAYMENT_DETAIL_R"
+edw_pacs_grp_load_fct_claim_payment_detail_r_expense_pacs.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R,False,,FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R; IN_TYPE:PACS_EXPENSE,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R to reload requested EXPENSE data in the FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R"
+edw_pacs_grp_load_fct_claim_payment_detail_r_gross_benefit.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_GRP_FULLLOAD_FCT_CLAIM_PAYMENT_DETAIL_R,PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R,False,,FCT_CLAIM_PAYMENT_DETAIL_GROSS_BENEFIT_R; IN_TYPE:GROSS_BENEFIT,,,"This shell script performs the below steps after accepting the batchid,loadrunid,type as a parameter: a) Calls procedure PRC_FULLLOAD_FCT_CLAIM_PMT_DET_R to reload requested GROSS_BENEFIT data in the  FCT_CLAIM_PAYMENT_DETAIL_GROSS_BENEFIT_R"
+edw_prc_purge_dropped_tables.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_PURGE_DROPPED_TABLES,,False,,,,,This shell script calls the package PRC_PURGE_DROPPED_TABLES.
+edw_run_backup_cleanup.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_BACKUP_TBL_OPS,PRC_PURGE_EXPIRED_BACKUP_TABLES_R,False,,,,,
+edw_shinka_cv_del_fct_claim_det_benefit_pmnt.sh,DELETE_FROM,TABLE,ATOMIC,FCT_CLAIM_PAYMENT_DETAIL_BENEFIT_PAYMENT_R,DELETE,False,,,,,This shell script performs the below steps Deletes only CV data from the reporting table FCT_CLAIM_PAYMENT_DETAIL_BENEFIT_PAYMENT_R
+edw_shinka_cv_del_fct_claim_det_gross_benefit.sh,DELETE_FROM,TABLE,ATOMIC,FCT_CLAIM_PAYMENT_DETAIL_GROSS_BENEFIT_R,DELETE,False,,,,,This shell script performs the below steps Deletes only CV data from the reporting table FCT_CLAIM_PAYMENT_DETAIL_GROSS_BENEFIT_R
+edw_shinka_cv_load_dim_grp_claim_dtl_subgrp_lkp.sh,DIRECT_PKG_PROC_CALL,PACKAGE,ATOMIC,PKG_LOAD_GRP_TABLES,PRC_LOAD_DIM_GRP_CLAIM_DETAIL_SUBGROUP_LOOKUP_CV,False,,DIM_GRP_CLAIM_DETAIL_SUBGROUP_LOOKUP,,,This shell script inserts data in the table DIM_GRP_CLAIM_DETAIL_SUBGROUP_LOOKUP
+edw_shinka_upd_cv_partysk_fct_claim_pmnt_dtl_benefit_pmnt_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_SHIKA_UPD_CV_PARTYSK_FCT_CLAIM_PMNT_DTL_BENEFIT_PMNT_R,,False,,,,,This shell script calls the Procedure PRC_SHIKA_UPD_CV_PARTYSK_FCT_CLAIM_PMNT_DTL_BENEFIT_PMNT_R.
+edw_shinka_upd_cv_partysk_fct_claim_pmnt_dtl_gross_benefit_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_SHIKA_UPD_CV_PARTYSK_FCT_CLAIM_PMNT_DTL_GROSS_BENEFIT_R,,False,,,,,This shell script calls the Procedure PRC_SHIKA_UPD_CV_PARTYSK_FCT_CLAIM_PMNT_DTL_GROSS_BENEFIT_R.
+edw_shinka_upd_cv_payeename_fct_claim_pmnt_dtl_benefit_pmnt_r.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_GRP_UPD_CV_PAYEE_NAME_FCT_CLAIM_PMNT_DTL_BENEFIT_PMNT_R,,False,,,,,This shell script calls the Procedure PRC_GRP_UPD_CV_PAYEE_NAME_FCT_CLAIM_PMNT_DTL_BENEFIT_PMNT_R.
+prc_delete_insert_vw_fct_claim_payment_detail_r_mv_ssl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_DELETE_INSERT_VW_FCT_CLAIM_PAYMENT_DETAIL_R_MV_SSL,,False,,,,,This shell script performs the below steps below Deletes data from fct_claim_payment_detail_r_mv based on date   Inserts data from above tables based on the same date
+prc_drop_create_fct_grp_policy_r_ltdpolind_mv_ssl.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PRC_DROP_CREATE_FCT_GRP_POLICY_R_LTDPOLIND_MV_SSL,,False,,,,,This shell script performs the below steps below Drops fct_grp_policy_r_ltdpolind_mv_ssl Creates fct_grp_policy_r_ltdpolind_mv_ssl
+PROC_ADD_NEXT_YEAR_PARTITIONS.sh,DIRECT_PROC_CALL,PROCEDURE,ATOMIC,PROC_ADD_NEXT_YEAR_PARTITIONS,,False,,,,,This shell script refresh the SSL MATERIALIZED VIEWS used in SelfService Packages.
+RPT_CLAIMS_RESERVE_KPI_DTL_R.sh,EXECUTE_IMMEDIATE_DYNAMIC,PACKAGE,ATOMIC,$v_pkg_name_r (from TIDAL param $1),main,True,$1,,,,"This shell script is for loading RPT_CLAIMS_RESERVE_KPI_DTL_R
+Change log:"
+shinka_cv_harm_to_stg_tidal.sh,SSH_REMOTE,REMOTE_SCRIPT,,cv_harm_to_stg_bds.sh,,True,"$1,$2,...",,,/u01/app/oracle/tools/home/oracle/bin/tidal/datalake/group/cv_harm_to_stg_bds.sh,
+shinka_eis_control_to_stg_tidal.sh,SSH_REMOTE,REMOTE_SCRIPT,,eis_todate_fileload_to_stg_bds.sh,,True,"$1,$2,...",,,/u01/app/oracle/tools/home/oracle/bin/tidal/datalake/group/eis_todate_fileload_to_stg_bds.sh,
+shinka_eis_source_to_landing_controls_tidal.sh,SSH_REMOTE,REMOTE_SCRIPT,,eis_source_to_landing_controls_load_edw.sh,,True,"$1,$2,...",,,/u01/app/oracle/tools/home/oracle/bin/tidal/datalake/group/eis_source_to_landing_controls_load_edw.sh,
+test.sh,NO_SQL,NO_SQL,,,,False,,,,,No recognized SQL pattern. Desc: . DB objects: 

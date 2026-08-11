@@ -6,8 +6,8 @@ input/*
 !input/.gitkeep
 
 # ── Generated outputs ─────────────────────────────────────────────────────────
-output/*
-!output/.gitkeep
+# output/*
+# !output/.gitkeep
 
 # ── Oracle PL/SQL source files (client IP) ────────────────────────────────────
 All_Metadata/*
