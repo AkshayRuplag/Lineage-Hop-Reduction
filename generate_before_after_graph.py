@@ -165,7 +165,7 @@ def build_enhanced_data(all_graphs: dict, master_recs: list) -> dict:
     For each RPT graph, scope the master's '✅ Consider' recommendations via their
     'appears_in_rpts' tag and run the removal simulation.
     Returns enhanced_data[rpt] = {nodes, links, removed_jobs, job_to_rec,
-                                   consider_recs, sim_stats}
+                                   consider_recs, job_optimizations, sim_stats}
     """
     consider_recs_all = [r for r in master_recs if r["validation_status"] == VS_CONSIDER]
     enhanced = {}
@@ -175,15 +175,35 @@ def build_enhanced_data(all_graphs: dict, master_recs: list) -> dict:
 
         hop_recs = [r for r in consider_recs if r.get("recommendation_type") == "HOP_REDUCTION"]
         sim      = simulate_with_tracking(hop_recs, graph)
+        removed_set = set(sim["removed_jobs"])
 
         rt_saved = round(sum(r["est_runtime_saved_minutes"] for r in hop_recs), 2)
         hop_total = sum(r["verified_hop_savings"] for r in hop_recs)
+
+        # Jobs that keep running in the After view but still carry a validated,
+        # runtime-improving rec (single-job GTT->CTE/pass-through/circular-update
+        # fixes, or a multi-job rec whose candidate was protected e.g. a root) —
+        # these are script-level wins even though no hop was removed.
+        job_optimizations: dict = defaultdict(list)
+        for r in consider_recs:
+            if r["est_runtime_saved_minutes"] <= 0:
+                continue
+            for j in r["affected_jobs"]:
+                if j not in removed_set:
+                    job_optimizations[j].append({
+                        "rec_id":                    r["id"],
+                        "category":                  r["category"],
+                        "target_table":              r["target_table"],
+                        "verified_hop_savings":      r["verified_hop_savings"],
+                        "est_runtime_saved_minutes": r["est_runtime_saved_minutes"],
+                    })
 
         enhanced[rpt_table] = {
             "nodes":        graph["nodes"],
             "links":        graph["links"],
             "removed_jobs": sim["removed_jobs"],
             "job_to_rec":   sim["job_to_rec"],
+            "job_optimizations": dict(job_optimizations),
             "consider_recs": [
                 {
                     "id":           r["id"],
@@ -206,9 +226,11 @@ def build_enhanced_data(all_graphs: dict, master_recs: list) -> dict:
                 "rt_saved_minutes":    rt_saved,
                 "consider_rec_count":  len(consider_recs),
                 "hop_savings":         hop_total,
+                "optimized_job_count": len(job_optimizations),
             },
         }
         print(f"  {rpt_table}: {len(sim['removed_jobs'])} jobs to remove, "
+              f"{len(job_optimizations)} script-optimized, "
               f"depth {sim['original_max_depth']}->{sim['new_max_depth']}, "
               f"{rt_saved} min saved")
 
@@ -253,6 +275,7 @@ body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#0a0a
 .sim-chip.good { border-color:#2a5a3a; color:#69db7c; }
 .sim-chip.warn { border-color:#5a3a1a; color:#ffa94d; }
 .sim-chip.info { border-color:#2a3a5a; color:#74c0fc; }
+.sim-chip.flat { border-color:#3a3a4a; color:#999; }
 
 /* ── Changes panel ── */
 #changes-header { padding:8px 16px; font-size:11px; font-weight:700; color:#7b8cff; text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid #2a2a4a; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
@@ -288,6 +311,8 @@ svg { flex:1; width:100%; }
 .link-path.dimmed { stroke-opacity:0.05; }
 .link-path.link-removed { stroke:#ff4444; stroke-dasharray:5,3; stroke-opacity:0.3; }
 .link-path.link-removed.highlighted { stroke:#ff6666; stroke-opacity:0.8; }
+.link-path.critical-edge-ba { stroke:#fbbf24; stroke-width:3.5; stroke-opacity:0.95; }
+.link-path.samedepth-edge-ba { stroke:#f97316; stroke-width:3; stroke-opacity:0.9; stroke-dasharray:2,3; }
 .node-group { cursor:pointer; }
 .node-box { rx:6; ry:6; }
 .node-box.highlighted { stroke-width:3 !important; stroke:#fff !important; }
@@ -297,6 +322,9 @@ svg { flex:1; width:100%; }
 .remove-badge { font-size:10px; fill:#fff; pointer-events:none; font-weight:700; }
 .difw-badge-ba { font-size:7px; fill:#f59e0b; pointer-events:none; font-weight:700; }
 .disabled-badge-ba { font-size:7px; fill:#9ca3af; pointer-events:none; font-weight:700; }
+.opt-badge-ba { font-size:7px; fill:#ff3d9a; pointer-events:none; font-weight:700; }
+.critical-badge-ba { font-size:7px; fill:#fbbf24; pointer-events:none; font-weight:700; }
+.samedepth-badge-ba { font-size:7px; fill:#f97316; pointer-events:none; font-weight:700; }
 .depth-col-label { font-size:11px; fill:#5a5a8a; font-weight:600; text-anchor:middle; }
 
 /* ── Detail panel ── */
@@ -308,6 +336,7 @@ svg { flex:1; width:100%; }
 .close-btn { position:absolute; top:8px; right:12px; cursor:pointer; color:#888; font-size:18px; }
 .close-btn:hover { color:#fff; }
 .removed-notice { background:#2a0a0a; border:1px solid #ff4444; border-radius:6px; padding:8px 12px; font-size:11px; color:#ff8888; margin-bottom:10px; }
+.optimized-notice { background:#300019; border:1px solid #ff3d9a; border-radius:6px; padding:8px 12px; font-size:11px; color:#ffcbe6; margin-bottom:10px; }
 
 /* ── Legend ── */
 #legend { position:absolute; bottom:12px; right:12px; background:#15152eee; border:1px solid #2a2a4a; border-radius:8px; padding:10px 14px; font-size:11px; z-index:5; }
@@ -369,6 +398,9 @@ svg { flex:1; width:100%; }
     <button class="mode-btn" onclick="showStatsModal()" style="margin-left:auto;">&#9776; Stats</button>
     <button class="mode-btn" id="btn-difw-ba" onclick="cycleDifwModeBa()">&#11041; DIFW Loads</button>
     <button class="mode-btn" id="btn-disabled-ba" onclick="cycleDisabledModeBa()">&#8856; Disabled Jobs</button>
+    <button class="mode-btn" id="btn-opt-ba" onclick="cycleOptModeBa()">&#9881; Script Optimizations</button>
+    <button class="mode-btn" id="btn-samedepth-ba" onclick="cycleSameDepthModeBa()">&#8646; Same-Depth Deps</button>
+    <button class="mode-btn" id="btn-critical-ba" onclick="toggleCriticalPathBa()">&#9733; Critical Path</button>
   </div>
   <div id="stats-modal" onclick="if(event.target===this)this.classList.remove('show')">
     <div id="stats-content">
@@ -421,6 +453,11 @@ var showUnlinked = false;
 var changesOpen = true;
 var _linkPaths = null, _nodeG = null;
 var selectedJobId = null;
+var criticalPathModeBa = false;
+var criticalPathIdsBa = new Set(), criticalPathEdgesBa = new Set(), criticalPathChainBa = [], criticalPathTotalBa = 0;
+var sameDepthModeBa = 0;   // 0 = off | 1 = highlight | 2 = hide
+var sameDepthNodeIdsBa = new Set(), sameDepthEdgeKeysBa = new Set(), sameDepthPairsBa = [];
+var topoOrderIndexBa = {}, topoOrderListBa = [];
 
 var svg  = d3.select("#graph-svg");
 var gRoot = svg.append("g");
@@ -455,6 +492,135 @@ function toggleChanges() {
     (changesOpen ? '\u25BC ' : '\u25B6 ') + document.getElementById('changes-title').textContent.replace(/^[▼▶] /,'');
 }
 
+/* Full-graph topological order (Kahn's algorithm) — the TRUE execution sequence,
+   correctly resolving same-depth dependencies that BFS depth alone can't order. */
+function computeTopoOrderBa() {
+  topoOrderIndexBa = {}; topoOrderListBa = [];
+  if (!currentData) return;
+  function sortKey(id) {
+    var n = nodeMap.get(id);
+    var d = n && n.depth != null ? n.depth : -1;
+    var c = n && CAT_ORDER[n.category] !== undefined ? CAT_ORDER[n.category] : 9;
+    return [-d, c, id];
+  }
+  function cmp(a, b) {
+    var ka = sortKey(a), kb = sortKey(b);
+    for (var i = 0; i < ka.length; i++) { if (ka[i] < kb[i]) return -1; if (ka[i] > kb[i]) return 1; }
+    return 0;
+  }
+  var inDegree = {};
+  currentData.nodes.forEach(function(n){ inDegree[n.id] = (upMap.get(n.id) || []).length; });
+  var remaining = new Set(currentData.nodes.map(function(n){ return n.id; }));
+  var ready = currentData.nodes.filter(function(n){ return inDegree[n.id] === 0; }).map(function(n){ return n.id; });
+  var idx = 0;
+  while (ready.length) {
+    ready.sort(cmp);
+    var id = ready.shift();
+    if (!remaining.has(id)) continue;
+    remaining.delete(id);
+    topoOrderIndexBa[id] = idx++;
+    topoOrderListBa.push(id);
+    (downMap.get(id) || []).forEach(function(nxt){
+      if (!remaining.has(nxt)) return;
+      inDegree[nxt]--;
+      if (inDegree[nxt] === 0) ready.push(nxt);
+    });
+  }
+  Array.from(remaining).sort(cmp).forEach(function(id){
+    topoOrderIndexBa[id] = idx++;
+    topoOrderListBa.push(id);
+  });
+}
+
+/* Same-depth ("intra-level") dependencies: two jobs at the same BFS depth that
+   still have a direct edge between them — not safe to assume they run in parallel. */
+function computeSameDepthDepsBa() {
+  sameDepthNodeIdsBa = new Set(); sameDepthEdgeKeysBa = new Set(); sameDepthPairsBa = [];
+  if (!currentData) return;
+  currentData.links.forEach(function(l){
+    var sid = l.source, tid = l.target;
+    var sn = nodeMap.get(sid), tn = nodeMap.get(tid);
+    if (!sn || !tn) return;
+    if (sn.depth === tn.depth && sn.depth !== -1 && sn.depth != null) {
+      sameDepthNodeIdsBa.add(sid); sameDepthNodeIdsBa.add(tid);
+      sameDepthEdgeKeysBa.add(sid + '|||' + tid);
+      sameDepthPairsBa.push({ source: sid, target: tid, depth: sn.depth });
+    } else if (sn.forward_depth != null && sn.forward_depth === tn.forward_depth) {
+      sameDepthNodeIdsBa.add(sid); sameDepthNodeIdsBa.add(tid);
+      sameDepthEdgeKeysBa.add(sid + '|||' + tid);
+      sameDepthPairsBa.push({ source: sid, target: tid, depth: sn.forward_depth, forward: true });
+    }
+  });
+}
+
+/* Best-effort longest-runtime chain ending at a depth-0 root, using avg_runtime
+   per job. Cycle-safe (a "visiting" guard breaks any back-edges). */
+function computeCriticalPathBa() {
+  criticalPathIdsBa = new Set(); criticalPathEdgesBa = new Set(); criticalPathChainBa = []; criticalPathTotalBa = 0;
+  if (!currentData) return;
+  var roots = currentData.nodes.filter(function(n){ return n.depth === 0; });
+  if (!roots.length) return;
+  var memo = {}, visiting = new Set();
+  function longestFrom(id) {
+    if (memo[id]) return memo[id];
+    if (visiting.has(id)) return { time: 0, next: null };
+    visiting.add(id);
+    var best = { time: 0, next: null };
+    (upMap.get(id) || []).forEach(function(u){
+      var r = longestFrom(u);
+      var un = nodeMap.get(u);
+      var rt = (un && un.avg_runtime) ? un.avg_runtime : 0;
+      var total = r.time + rt;
+      if (total > best.time) best = { time: total, next: u };
+    });
+    visiting.delete(id);
+    memo[id] = best;
+    return best;
+  }
+  var overallBest = { time: -1, root: null };
+  roots.forEach(function(r){
+    var res = longestFrom(r.id);
+    var rn = nodeMap.get(r.id);
+    var rt = (rn && rn.avg_runtime) ? rn.avg_runtime : 0;
+    var total = res.time + rt;
+    if (total > overallBest.time) overallBest = { time: total, root: r.id };
+  });
+  if (!overallBest.root) return;
+  var cur = overallBest.root;
+  var chain = [cur];
+  while (memo[cur] && memo[cur].next) {
+    var nxt = memo[cur].next;
+    criticalPathEdgesBa.add(nxt + '|||' + cur);
+    chain.push(nxt);
+    cur = nxt;
+  }
+  chain.forEach(function(id){ criticalPathIdsBa.add(id); });
+  criticalPathTotalBa = overallBest.time;
+  criticalPathChainBa = chain.slice().reverse();
+}
+
+function toggleCriticalPathBa() {
+  criticalPathModeBa = !criticalPathModeBa;
+  var btn = document.getElementById('btn-critical-ba');
+  btn.style.background = criticalPathModeBa ? '#fbbf24' : '';
+  btn.style.color      = criticalPathModeBa ? '#000' : '';
+  btn.style.borderColor = criticalPathModeBa ? '#fbbf24' : '';
+  renderGraph();
+}
+
+function cycleSameDepthModeBa() {
+  sameDepthModeBa = (sameDepthModeBa + 1) % 3;
+  var btn = document.getElementById('btn-samedepth-ba');
+  var labels   = ['\u21c6 Same-Depth Deps', '\u21c6 Same-Depth: Highlighted', '\u21c6 Same-Depth: Hidden'];
+  var bgs      = ['', '#f97316', '#7c2d12'];
+  var fgColors = ['', '#000', '#fdba74'];
+  btn.textContent      = labels[sameDepthModeBa];
+  btn.style.background = bgs[sameDepthModeBa];
+  btn.style.color      = fgColors[sameDepthModeBa];
+  btn.style.borderColor = sameDepthModeBa ? bgs[sameDepthModeBa] : '';
+  renderGraph();
+}
+
 /* ── Load an RPT ── */
 function loadRpt(rpt) {
   currentRpt = rpt;
@@ -470,6 +636,10 @@ function loadRpt(rpt) {
     if (!downMap.has(s)) downMap.set(s,[]); downMap.get(s).push(t);
   });
 
+  computeTopoOrderBa();
+  computeSameDepthDepsBa();
+  computeCriticalPathBa();
+
   updateBanner();
   updateChangesList();
   renderGraph();
@@ -479,16 +649,25 @@ function loadRpt(rpt) {
 function updateBanner() {
   var ss = currentData.sim_stats;
   var chips = document.getElementById('sim-chips');
-  var n = currentData.removed_jobs.length;
-  if (n === 0) {
+  if (ss.consider_rec_count === 0) {
     chips.innerHTML = '<span class="sim-chip info">No Consider recs for this RPT</span>';
     return;
   }
-  chips.innerHTML =
-    '<span class="sim-chip good">Depth: ' + ss.original_max_depth + ' \u2192 ' + ss.new_max_depth + ' (saved ' + ss.depth_saved + ')</span>' +
-    '<span class="sim-chip good">Nodes: ' + ss.original_node_count + ' \u2192 ' + ss.new_node_count + ' (saved ' + ss.nodes_saved + ')</span>' +
+  var depthChip = ss.depth_saved > 0
+    ? '<span class="sim-chip good">Depth: ' + ss.original_max_depth + ' \u2192 ' + ss.new_max_depth + ' (saved ' + ss.depth_saved + ')</span>'
+    : '<span class="sim-chip flat">Depth: ' + ss.original_max_depth + ' (unchanged)</span>';
+  var nodesChip = ss.nodes_saved > 0
+    ? '<span class="sim-chip good">Nodes: ' + ss.original_node_count + ' \u2192 ' + ss.new_node_count + ' (saved ' + ss.nodes_saved + ')</span>'
+    : '<span class="sim-chip flat">Nodes: ' + ss.original_node_count + ' (unchanged)</span>';
+  var optChip = ss.optimized_job_count > 0
+    ? '<span class="sim-chip info">\u2699 ' + ss.optimized_job_count + ' script-optimized job(s)</span>'
+    : '';
+  var noHopNote = (ss.nodes_saved === 0 && ss.rt_saved_minutes > 0)
+    ? '<span class="sim-chip info">In-place optimizations only \u2014 no hop reduction</span>'
+    : '';
+  chips.innerHTML = depthChip + nodesChip +
     '<span class="sim-chip warn">' + ss.rt_saved_minutes.toFixed(1) + ' min saved</span>' +
-    '<span class="sim-chip info">' + ss.consider_rec_count + ' recs applied</span>';
+    '<span class="sim-chip info">' + ss.consider_rec_count + ' recs applied</span>' + optChip + noHopNote;
 }
 
 /* ── Changes list ── */
@@ -566,6 +745,8 @@ function renderGraph() {
     if (mode === 'after' && removedSet.has(n.id)) return false;
     if (difwModeBa === 2 && isDifwNodeBa(n)) return false;
     if (disabledModeBa === 2 && isDisabledNodeBa(n)) return false;
+    if (optModeBa === 2 && isOptimizedNodeBa(n)) return false;
+    if (sameDepthModeBa === 2 && sameDepthNodeIdsBa.has(n.id)) return false;
     return true;
   });
   var visibleIds = new Set(visibleNodes.map(function(n){ return n.id; }));
@@ -587,6 +768,9 @@ function renderGraph() {
   });
   Object.keys(columns).forEach(function(d){
     columns[d].sort(function(a,b){
+      var ta = topoOrderIndexBa[a.id] !== undefined ? topoOrderIndexBa[a.id] : 1e9;
+      var tb = topoOrderIndexBa[b.id] !== undefined ? topoOrderIndexBa[b.id] : 1e9;
+      if (ta !== tb) return ta - tb;
       var ca = CAT_ORDER[a.category]!==undefined?CAT_ORDER[a.category]:9;
       var cb = CAT_ORDER[b.category]!==undefined?CAT_ORDER[b.category]:9;
       return ca-cb || a.id.localeCompare(b.id);
@@ -598,12 +782,33 @@ function renderGraph() {
   if (columns[-1]) { depthToCol[-1]=colIdx++; }
   var numCols = colIdx;
 
+  /* Nudge same-depth-dependent nodes horizontally so the true run order is
+     visible even though they share a depth column (mirrors main lineage graph). */
+  var sameDepthSuccBa = {};
+  sameDepthPairsBa.forEach(function(p){
+    (sameDepthSuccBa[p.source] = sameDepthSuccBa[p.source] || []).push(p.target);
+  });
+  var nudgeRankMemoBa = {}, nudgeVisitingBa = new Set();
+  function nudgeRankBa(id) {
+    if (nudgeRankMemoBa[id] !== undefined) return nudgeRankMemoBa[id];
+    if (nudgeVisitingBa.has(id)) return 0;
+    nudgeVisitingBa.add(id);
+    var succs = sameDepthSuccBa[id] || [];
+    var best = 0;
+    succs.forEach(function(s){ best = Math.max(best, nudgeRankBa(s) + 1); });
+    nudgeVisitingBa.delete(id);
+    nudgeRankMemoBa[id] = best;
+    return best;
+  }
+  var NUDGE_STEP_BA = 18, NUDGE_MAX_RANKS_BA = 2;
+
   Object.keys(columns).forEach(function(d){
     var col = columns[d];
     var ci  = depthToCol[parseInt(d)];
     var x   = PAD_LEFT + ci * COL_WIDTH;
     col.forEach(function(n,i){
-      n._x = x + NODE_W/2;
+      var nudge = sameDepthNodeIdsBa.has(n.id) ? Math.min(nudgeRankBa(n.id), NUDGE_MAX_RANKS_BA) * NUDGE_STEP_BA : 0;
+      n._x = x + NODE_W/2 + nudge;
       n._y = PAD_TOP + 24 + i * ROW_HEIGHT + NODE_H/2;
     });
   });
@@ -635,8 +840,11 @@ function renderGraph() {
     .data(linkData).join('path')
     .attr('class', function(l){
       var cls = 'link-path';
+      var key = l.source.id + '|||' + l.target.id;
       if (mode==='diff' && (removedSet.has(l.source.id) || removedSet.has(l.target.id)))
         cls += ' link-removed';
+      if (criticalPathModeBa && criticalPathEdgesBa.has(key)) cls += ' critical-edge-ba';
+      if (sameDepthModeBa === 1 && sameDepthEdgeKeysBa.has(key)) cls += ' samedepth-edge-ba';
       return cls;
     })
     .attr('marker-end','url(#arrow)')
@@ -666,11 +874,20 @@ function renderGraph() {
     })
     .attr('stroke', function(d){
       if (mode==='diff'&&isRem(d)) return '#ff4444';
+      if (criticalPathModeBa && criticalPathIdsBa.has(d.id)) return '#fbbf24';
+      if (sameDepthModeBa===1 && sameDepthNodeIdsBa.has(d.id)) return '#f97316';
       if (disabledModeBa===1&&isDisabledNodeBa(d)) return '#6b7280';
       if (difwModeBa===1&&isDifwNodeBa(d)) return '#f59e0b';
+      if (optModeBa===1&&isOptimizedNodeBa(d)) return '#ff3d9a';
       return COLORS[d.category]||COLORS.OTHER;
     })
-    .attr('stroke-width', function(d){ return (mode==='diff'&&isRem(d)) ? 2 : (d.depth===0?2.5:1.2); })
+    .attr('stroke-width', function(d){
+      if (mode==='diff'&&isRem(d)) return 2;
+      if (criticalPathModeBa && criticalPathIdsBa.has(d.id)) return 3;
+      if (sameDepthModeBa===1 && sameDepthNodeIdsBa.has(d.id)) return 3;
+      if (optModeBa===1&&isOptimizedNodeBa(d)) return 3.5;
+      return d.depth===0?2.5:1.2;
+    })
     .attr('stroke-dasharray', function(d){
       if (mode==='diff'&&isRem(d)) return '6,3';
       if (disabledModeBa===1&&isDisabledNodeBa(d)) return '5,3';
@@ -692,13 +909,14 @@ function renderGraph() {
     .attr('fill', function(d){ return (mode==='diff'&&isRem(d))?'#ff8888':'#69db7c'; })
     .text(function(d){ return d.primary_sql.length>36?d.primary_sql.substring(0,34)+'\u2026':d.primary_sql; });
 
-  /* Depth badge */
+  /* Sequence badge circle — shows the TRUE execution sequence number (unique
+     per job, from topoOrderIndexBa), not the shared depth value */
   _nodeG.append('circle').attr('r',8)
     .attr('cx',NODE_W/2-6).attr('cy',-NODE_H/2+6)
     .attr('fill','#1a1a3a').attr('stroke','#666').attr('stroke-width',0.8);
   _nodeG.append('text').attr('class','depth-badge').attr('text-anchor','middle')
     .attr('x',NODE_W/2-6).attr('y',-NODE_H/2+10)
-    .text(function(d){ return d.depth!=null?d.depth:'?'; });
+    .text(function(d){ return topoOrderIndexBa[d.id] !== undefined ? (topoOrderIndexBa[d.id] + 1) : '?'; });
 
   /* ✕ badge for removed nodes in diff mode */
   if (mode==='diff') {
@@ -722,6 +940,24 @@ function renderGraph() {
       .append('text').attr('class','disabled-badge-ba').attr('text-anchor','middle')
       .attr('x',0).attr('y',4).text('\u2296 DISABLED');
   }
+  /* Script optimization badge */
+  if (optModeBa===1) {
+    _nodeG.filter(function(d){ return isOptimizedNodeBa(d); })
+      .append('text').attr('class','opt-badge-ba').attr('text-anchor','end')
+      .attr('x',NODE_W/2-4).attr('y',NODE_H/2-4).text('\u2699 OPT');
+  }
+  /* Critical path badge (top-left) */
+  if (criticalPathModeBa) {
+    _nodeG.filter(function(d){ return criticalPathIdsBa.has(d.id); })
+      .append('text').attr('class','critical-badge-ba').attr('text-anchor','start')
+      .attr('x',-NODE_W/2+4).attr('y',-NODE_H/2+28).text('\u2605 CRITICAL');
+  }
+  /* Same-depth dependency badge (top-left, below critical badge) */
+  if (sameDepthModeBa === 1) {
+    _nodeG.filter(function(d){ return sameDepthNodeIdsBa.has(d.id); })
+      .append('text').attr('class','samedepth-badge-ba').attr('text-anchor','start')
+      .attr('x',-NODE_W/2+4).attr('y',-NODE_H/2+38).text('\u21c6 SAME-DEPTH');
+  }
 
   /* Tooltip */
   var tooltip = document.getElementById('tooltip');
@@ -730,8 +966,14 @@ function renderGraph() {
     var remNote = removedMeta ? '<br><strong style="color:#ff8888;">\u2715 Will be removed</strong><br>Rec: '+removedMeta.rec_id+'<br>Target: '+removedMeta.target_table : '';
     var difwNote = isDifwNodeBa(d) ? '<br><span style="color:#f59e0b;font-weight:bold;">&#11041; DIFW Load (STG \u2192 DIM/FCT)</span>' : '';
     var disNote  = isDisabledNodeBa(d) ? '<br><span style="color:#9ca3af;font-weight:bold;">&#8856; DISABLED in TIDAL</span>' : '';
+    var optList  = (currentData.job_optimizations||{})[d.id];
+    var optNote  = optList ? '<br><strong style="color:#ff3d9a;">\u2699 Script-level optimization(s)</strong>' +
+      optList.map(function(o){ return '<br>['+o.rec_id+'] '+o.category+' \u2014 '+o.est_runtime_saved_minutes.toFixed(1)+' min'; }).join('') : '';
+    var criticalNote = criticalPathIdsBa.has(d.id) ? '<br><span style="color:#fbbf24;font-weight:bold;">&#9733; On critical path (~'+_fmtRt(criticalPathTotalBa)+' total)</span>' : '';
+    var sameDepthNote = sameDepthNodeIdsBa.has(d.id) ? '<br><span style="color:#f97316;font-weight:bold;">&#8646; Has a same-depth dependency \u2014 not safe to assume parallel</span>' : '';
+    var seqNote = topoOrderIndexBa[d.id] !== undefined ? '<br>Sequence: #'+(topoOrderIndexBa[d.id]+1)+' of '+topoOrderListBa.length : '';
     tooltip.style.display='block';
-    tooltip.innerHTML = '<strong>'+d.id+'</strong><br>Category: '+d.category+'<br>Depth: '+d.depth+remNote+difwNote+disNote;
+    tooltip.innerHTML = '<strong>'+d.id+'</strong><br>Category: '+d.category+'<br>Depth: '+d.depth+seqNote+remNote+difwNote+disNote+optNote+criticalNote+sameDepthNote;
   }).on('mousemove', function(e){
     tooltip.style.left=(e.pageX+12)+'px'; tooltip.style.top=(e.pageY-12)+'px';
   }).on('mouseout', function(){ tooltip.style.display='none'; });
@@ -789,6 +1031,7 @@ function dpField(label, val) {
 function showDetail(jid, conn) {
   var n = nodeMap.get(jid); if(!n) return;
   var removedMeta = (currentData.job_to_rec||{})[jid];
+  var optList = (currentData.job_optimizations||{})[jid];
   var h = '<h3>'+n.id+'</h3>';
 
   if (removedMeta) {
@@ -796,6 +1039,38 @@ function showDetail(jid, conn) {
          'Recommendation: <strong>'+removedMeta.rec_id+'</strong><br>' +
          'Category: '+removedMeta.category+'<br>' +
          'Target table: '+removedMeta.target_table+'</div>';
+  }
+
+  if (optList && optList.length) {
+    h += '<div class="optimized-notice">\u2699 Script-level optimization(s) applied \u2014 job stays, runtime improves<br>';
+    optList.forEach(function(o){
+      h += '<div style="margin-top:4px;"><strong>'+o.rec_id+'</strong> \u2014 '+o.category+'<br>' +
+           '<span style="color:#ff8cc6;">'+o.est_runtime_saved_minutes.toFixed(1)+' min saved</span></div>';
+    });
+    h += '</div>';
+  }
+
+  if (criticalPathIdsBa.has(jid)) {
+    h += '<div class="dp-field" style="background:#1a1608;border-left:3px solid #fbbf24;border-radius:4px;padding:8px;">';
+    h += '<div class="dp-label" style="color:#fde68a;">&#9733; Critical Path</div>';
+    h += '<div style="font-size:11px;margin-top:4px;">Longest runtime chain (~'+_fmtRt(criticalPathTotalBa)+' total): '+criticalPathChainBa.join(' \u2192 ')+'</div>';
+    h += '</div>';
+  }
+
+  if (sameDepthNodeIdsBa.has(jid)) {
+    var sdPairs = sameDepthPairsBa.filter(function(p){ return p.source === jid || p.target === jid; });
+    h += '<div class="dp-field" style="background:#2a1608;border-left:3px solid #f97316;border-radius:4px;padding:8px;">';
+    h += '<div class="dp-label" style="color:#fdba74;">&#8646; Same-Depth Dependency</div>';
+    sdPairs.forEach(function(p){
+      var rel = p.source === jid ? ('must complete before \u2192 ' + p.target) : (p.source + ' must complete before this job');
+      var lbl = p.forward ? (p.depth + ' hop' + (p.depth === 1 ? '' : 's') + ' downstream') : ('Depth ' + p.depth);
+      h += '<div style="font-size:11px;margin-top:4px;">(' + lbl + ') ' + rel + '</div>';
+    });
+    h += '</div>';
+  }
+
+  if (topoOrderIndexBa[jid] !== undefined) {
+    h += dpField('True Execution Sequence', '#'+(topoOrderIndexBa[jid]+1)+' of '+topoOrderListBa.length);
   }
 
   h += dpField('Category', n.category);
@@ -857,6 +1132,9 @@ function showDetail(jid, conn) {
     h += '<div class="leg-item"><span class="leg-dot" style="background:'+COLORS[p[0]]+'"></span>'+p[1]+'</div>';
   });
   h += '<div class="leg-item"><span class="leg-dot leg-removed" style="width:12px;height:12px;border-radius:2px;"></span>Will be removed (Diff)</div>';
+  h += '<div class="leg-item"><span class="leg-dot" style="width:12px;height:12px;border-radius:2px;border:2px solid #ff3d9a;background:transparent;"></span>Script-level optimization (no hop change)</div>';
+  h += '<div class="leg-item"><span class="leg-dot" style="width:12px;height:12px;border-radius:2px;border:2px solid #fbbf24;background:transparent;"></span>Critical path (longest runtime chain)</div>';
+  h += '<div class="leg-item"><span class="leg-dot" style="width:12px;height:12px;border-radius:2px;border:2px solid #f97316;background:transparent;"></span>Same-depth dependency</div>';
   leg.innerHTML = h;
 })();
 
@@ -866,7 +1144,7 @@ document.getElementById('toggle-unlinked').addEventListener('change', function(e
 });
 
 /* ── DIFW and Disabled filters ── */
-var difwModeBa = 0, disabledModeBa = 0;
+var difwModeBa = 0, disabledModeBa = 0, optModeBa = 0;
 function isDifwNodeBa(n) {
   var p=(n.params||'').toUpperCase();
   if (p.indexOf('PKG_GRP_LOAD_DIFW')!==-1) return true;
@@ -874,6 +1152,10 @@ function isDifwNodeBa(n) {
 }
 function isDisabledNodeBa(n) {
   return !!(n.notes && n.notes.toUpperCase().includes('DISABLED'));
+}
+function isOptimizedNodeBa(n) {
+  var opts = (currentData.job_optimizations||{})[n.id];
+  return !!(opts && opts.length);
 }
 function _applyBtnStyle(id, mode, labels, bgs, fgs) {
   var btn=document.getElementById(id);
@@ -892,6 +1174,13 @@ function cycleDisabledModeBa() {
   _applyBtnStyle('btn-disabled-ba', disabledModeBa,
     ['\u2296 Disabled Jobs','\u2296 Disabled: Highlighted','\u2296 Disabled: Hidden'],
     ['','#374151','#450a0a'], ['','#d1d5db','#fca5a5']);
+  renderGraph();
+}
+function cycleOptModeBa() {
+  optModeBa=(optModeBa+1)%3;
+  _applyBtnStyle('btn-opt-ba', optModeBa,
+    ['\u2699 Script Optimizations','\u2699 Optimized: Highlighted','\u2699 Optimized: Hidden'],
+    ['','#ff3d9a','#5c1030'], ['','#3a0020','#ffd6ea']);
   renderGraph();
 }
 

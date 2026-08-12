@@ -1760,7 +1760,7 @@ def _resolve_sql_object(row: dict) -> str:
     if proc and (proc.upper().startswith('V_') or proc.upper().startswith('$')
                  or proc.startswith('(')):
         if params:
-            return params.split()[0]
+            return _strip_quotes(params.split()[0])
         return proc  # can't resolve without params, keep as-is
 
     # PKG.PROC combination (PACKAGE or PKG_PROCEDURE rows)
@@ -1795,13 +1795,26 @@ def _get_tidal_params(job_name: str, tidal: dict) -> str:
     return ''
 
 
+def _strip_quotes(value: str) -> str:
+    """Strip a single matching pair of leading/trailing quotes from a TIDAL
+    PARAMS token. Some TIDAL jobs (e.g. the INCR_LIFE_ADHOC/MONTHEND family)
+    have their single PARAMS argument exported with literal quote characters
+    (e.g. '"PRC_GRP_LOAD_STG_..._ADHOC"'), which otherwise leak into
+    PROC_NAME/FULL_OBJECT.
+    """
+    v = value.strip()
+    if len(v) >= 2 and v[0] == v[-1] and v[0] in ('"', "'"):
+        return v[1:-1]
+    return v
+
+
 def _get_difw_pkg_from_tidal(job_name: str, tidal: dict) -> str:
     """For DIFW jobs, extract package name from TIDAL PARAMS ($1)."""
     params = _get_tidal_params(job_name, tidal)
     if params:
         parts = params.strip().split()
         if parts:
-            return parts[0]  # First param is the package name
+            return _strip_quotes(parts[0])  # First param is the package name
     return 'PKG_GRP_LOAD_DIFW'
 
 
@@ -1814,15 +1827,15 @@ def _resolve_param_from_tidal(obj_name: str, pattern: str, tidal_params: str) ->
 
     if pattern == 'MV_REFRESH' or pattern == 'MV_REFRESH_WITH_TRUNCATE':
         # $1 is the MV name
-        return parts[0] if parts else obj_name
+        return _strip_quotes(parts[0]) if parts else obj_name
 
     if pattern == 'EXECUTE_IMMEDIATE_DYNAMIC':
         # $1 is the package name
-        return parts[0] if parts else obj_name
+        return _strip_quotes(parts[0]) if parts else obj_name
 
     # Generic: try first param
     if '$' in obj_name and parts:
-        return parts[0]
+        return _strip_quotes(parts[0])
 
     return obj_name
 

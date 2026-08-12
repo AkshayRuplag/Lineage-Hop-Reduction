@@ -16,7 +16,7 @@ argument-hint: >
   Package name to analyse (e.g. PKG_GRP_LOAD_RPT_POLICY_DTL_R), an RPT table name
   (e.g. RPT_CLAIM_PAYMENT_DTL_R) to first list all related packages/procs/MVs/views,
   or 'next' to pick the next unplanned package from pipeline_registry.json.
-agents: ["PL/SQL Pipeline", "PL/SQL Merger", "PL/SQL Optimizer", "PL/SQL Standardize"]
+agents: ["PL/SQL Pipeline", "PL/SQL Merger", "PL/SQL Optimizer", "PL/SQL Standardize", "PL/SQL Documenter"]
 ---
 
 You are the RSL EDP **PL/SQL Planning Agent**. You are the *thinking* layer — you analyse a
@@ -441,6 +441,13 @@ This is the document the developer reviews and approves.
   Agent: PL/SQL Standardize
   → Produces: 03_standardized.sql
 
+## Step 4 — Stage 4: Documenter  `[final — documentation only, no SQL changes]`
+  Agent: PL/SQL Documenter
+  Input: best available file (03_standardized.sql > 02_optimized.sql > 01_merged.sql)
+  Baseline: 00_source.sql (BEFORE)
+  Action: Generate technical reference doc + before-vs-after change log mapped to rec IDs
+  → Produces: 04_package_documentation.md + 04_change_log.md
+
 ─────────────────────────────────────────────────────────────────────
 ## Cross-Package Impact Plan  [from any GLOBAL recs]
 <same structure as before — list affected packages, lines, changes, options A/B/C>
@@ -455,7 +462,8 @@ Steps: 3  |  Cross-package items: <N>
 ═══════════════════════════════════════════════════════════════════════
 
 Review options:
-  approve            — approve full plan and begin execution
+  approve            — approve full plan and begin execution (all 4 stages)
+  approve no-doc     — approve plan but skip Stage 4 (Documenter)
   revise step N      — request change to a specific step
   cross-impacts A    — apply cross-impacts to all affected packages now
   cross-impacts B    — register as pending cross-impacts
@@ -482,8 +490,11 @@ On approval:
 4. Invoke `PL/SQL Standardize` for Stage 3.
    - Pass: package name, pipeline mode, input = best available file.
    - Confirm `03_standardized.sql` is written.
-5. Update `execution_plan.md` Stage Log after each stage completes.
-6. If any stage fails or returns "cannot apply", update Stage Log with `❌ Failed` and pause.
+5. Invoke `PL/SQL Documenter` for Stage 4 (unless user chose `approve no-doc`).
+   - Pass: package name, pipeline mode.
+   - Confirm `04_package_documentation.md` and `04_change_log.md` are written.
+6. Update `execution_plan.md` Stage Log after each stage completes.
+7. If any stage fails or returns "cannot apply", update Stage Log with `❌ Failed` and pause.
 
 ---
 
@@ -552,6 +563,7 @@ Registered: <today>
 | 1    | All registry recs (Merger) | 01_merged.sql | ✅ |
 | 2    | Optimizer discovery | 02_optimizer_report.md + 02_optimized.sql | ✅ |
 | 3    | Standardizer | 03_standardized.sql | ✅ |
+| 4    | Documenter | 04_package_documentation.md + 04_change_log.md | ✅ / ⏭ skipped |
 
 Cross-package impacts:
   Option A applied to: PKG_B (00_cross_impact_M0028.sql), PKG_C, PKG_D, PKG_E, PKG_F
