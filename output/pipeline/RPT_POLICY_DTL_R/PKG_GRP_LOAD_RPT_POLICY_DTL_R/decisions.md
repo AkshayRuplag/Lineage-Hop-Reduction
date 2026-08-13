@@ -18,6 +18,7 @@
 | Stage 1 — Merger | 2026-08-04 | PL/SQL Merger | ✅ Complete — M-0028, M-0031+M-0058+M-0073+M-0074 (compound), M-0053a applied. M-0053b (v_policy_case_size_r) deferred — analyst review pending. Output: 01_merged.sql |
 | Stage 2 — Optimizer | 2026-08-04 | PL/SQL Optimizer | ✅ Complete — MGAP-1 fixed + OPP-02,03,04,05,06,07,08,12,14 applied. OPP-14 semicolon patched by Planner. 02_optimized.sql written. OPP-01 deferred. OPP-10 blocked (unsafe). |
 | Stage 3 — Standardize | 2026-08-04 | PL/SQL Standardize | ✅ Complete — 9 violations fixed (2 CRITICAL compile errors, 2 HIGH, 3 MED, 2 LOW). STD-07/08 deferred. 03_standardized.sql written. |
+| 04_documentation | 2026-08-12 | Generated | doc: 04_package_documentation.md, changelog: 04_change_log.md |
 
 ## Stage 2 Optimizer Decisions (Mode A)
 

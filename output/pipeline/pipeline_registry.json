@@ -16822,6 +16822,10 @@
       "source_sql": "C:/Users/210ray/OneDrive - Reliance Standard Life Insurance/Documents/RSLI-DataLineage-VDI/All_Metadata/PKG_GRP_LOAD_RPT_POLICY_DTL_R.sql",
       "pipeline_stage": "raw",
       "source_type": "recommended",
+      "doc_status": "documented",
+      "doc_date": "2026-08-12",
+      "doc_stage": "03_standardized.sql",
+      "doc_artefacts": ["04_package_documentation.md", "04_change_log.md"],
       "applicable_agents": [
         "optimizer",
         "merger",
