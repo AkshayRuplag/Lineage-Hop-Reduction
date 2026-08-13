@@ -473,6 +473,23 @@ svg { flex: 1; width: 100%; min-height: 0; }
 .stats-close { position: absolute; top: 16px; right: 20px; cursor: pointer; color: #888; font-size: 22px; }
 .stats-close:hover { color: #fff; }
 
+/* ── Guided Tour ── */
+#tour-overlay { display: none; position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+#tour-overlay.show { display: block; }
+#tour-highlight { position: absolute; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.72); transition: all 0.25s ease; pointer-events: none; }
+#tour-tooltip { position: absolute; width: 300px; background: #15152e; border: 1px solid #7b8cff; border-radius: 10px; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); pointer-events: auto; transition: top 0.25s ease, left 0.25s ease; }
+#tour-tooltip .tour-step { font-size: 10px; color: #7b8cff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+#tour-tooltip h4 { font-size: 14px; color: #fff; margin-bottom: 6px; }
+#tour-tooltip p { font-size: 12px; color: #ccc; line-height: 1.5; margin-bottom: 12px; }
+#tour-tooltip .tour-actions { display: flex; justify-content: space-between; align-items: center; }
+#tour-tooltip .tour-btn { background: #7b8cff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: #0a0a1a; cursor: pointer; }
+#tour-tooltip .tour-btn:hover { background: #93a2ff; }
+#tour-tooltip .tour-btn.tour-secondary { background: transparent; color: #999; font-weight: 500; padding: 6px 8px; }
+#tour-tooltip .tour-btn.tour-secondary:hover { color: #fff; }
+#tour-tooltip .tour-btn[disabled] { opacity: 0.35; cursor: default; }
+#tour-skip { position: absolute; top: 10px; right: 14px; color: #888; font-size: 12px; cursor: pointer; pointer-events: auto; }
+#tour-skip:hover { color: #fff; }
+
 /* ── Column Lineage Mode ── */
 #col-bar { display:none; padding:8px 14px 0; background:#0a0a1a; border-bottom:1px solid #2a2a4a; position:relative; }
 #col-bar.active { display:block; }
@@ -554,6 +571,7 @@ svg { flex: 1; width: 100%; min-height: 0; }
     <button class="toolbar-btn" id="btn-disabled" onclick="cycleDisabledMode()">&#8856; Disabled Jobs</button>
     <button class="toolbar-btn" id="btn-samedepth" onclick="cycleSameDepthMode()">&#8646; Same-Depth Deps</button>
     <button class="toolbar-btn" id="btn-critical" onclick="toggleCriticalPath()">&#9733; Critical Path</button>
+    <button class="toolbar-btn" id="btn-tour" style="margin-left:auto;">&#129517; Take a Tour</button>
   </div>
   <div id="col-bar">
     <div id="col-input-wrap">
@@ -574,6 +592,12 @@ svg { flex: 1; width: 100%; min-height: 0; }
   </div>
   <div id="legend"></div>
   <div class="tooltip" id="tooltip"></div>
+</div>
+
+<div id="tour-overlay">
+  <div id="tour-highlight"></div>
+  <span id="tour-skip" onclick="endTour()">Skip tour &times;</span>
+  <div id="tour-tooltip"></div>
 </div>
 
 <script>
@@ -1787,6 +1811,81 @@ function statCard(value, label) {
   return '<div class="stat-card"><div class="stat-value">' + value + '</div><div class="stat-label">' + label + '</div></div>';
 }
 
+/* ── Guided Tour ── */
+var TOUR_STEPS = [
+  { sel: '#rpt-select', title: 'Pick an RPT Table', text: 'Choose the reporting table whose lineage you want to explore. Everything else on the page updates for the selection.' },
+  { sel: '#search-box', title: 'Search Jobs', text: 'Type a job name or SQL object name to filter the list below in real time.' },
+  { sel: '#job-list', title: 'Job List', text: 'All TIDAL jobs feeding this RPT, grouped by category. Click any job to select and highlight it in the graph.' },
+  { sel: '#graph-svg', title: 'The Graph', text: 'Each box is a job. Click a node to highlight its upstream/downstream chain and open its details. Drag to pan, scroll to zoom.' },
+  { sel: '#legend', title: 'Legend', text: 'Color key for node categories (RPT, FCT, DIM, MV, STG, etc.).' },
+  { sel: '#toggle-forward', title: 'Forward View', text: 'Flip the graph to show downstream consumers instead of upstream sources.' },
+  { sel: '#toggle-table-view', title: 'Table Lineage', text: 'Switch from job-level (TIDAL) view to table-to-table lineage \u2014 useful when you only care how data flows between tables, not which jobs move it.' },
+  { sel: '#toggle-runbook', title: 'Runbook View', text: 'See a plain, step-by-step execution order instead of the graph \u2014 handy for validating run order.' },
+  { sel: '#btn-stats', title: 'Stats', text: 'Get a summary: job/object counts, runtimes, critical path, and cross-RPT dependencies.' },
+  { sel: '#btn-col', title: 'Column Lineage', text: 'Search a single column to trace exactly which jobs and tables read or write it end to end.' },
+  { sel: '#btn-difw', title: 'DIFW Loads', text: 'Cycle: off \u2192 highlight \u2192 hide jobs that are part of DIFW (data-in-flight/warehouse) loads.' },
+  { sel: '#btn-disabled', title: 'Disabled Jobs', text: 'Cycle: off \u2192 highlight \u2192 hide TIDAL jobs that are currently disabled, so you can spot dependencies on inactive jobs.' },
+  { sel: '#btn-samedepth', title: 'Same-Depth Deps', text: 'Cycle: off \u2192 highlight \u2192 hide job pairs that share a BFS depth but still directly depend on each other \u2014 these are NOT safe to assume run in parallel.' },
+  { sel: '#btn-critical', title: 'Critical Path', text: 'Highlights the longest-runtime chain of jobs \u2014 the one most likely to delay the load.' },
+];
+var tourStep = 0;
+
+function startTour() {
+  tourStep = 0;
+  document.getElementById('tour-overlay').classList.add('show');
+  renderTourStep();
+}
+
+function endTour() {
+  document.getElementById('tour-overlay').classList.remove('show');
+  localStorage.setItem('lineageTourSeen', '1');
+}
+
+function renderTourStep() {
+  var step = TOUR_STEPS[tourStep];
+  var target = document.querySelector(step.sel);
+  var hl = document.getElementById('tour-highlight');
+  var tip = document.getElementById('tour-tooltip');
+  var rect = target ? target.getBoundingClientRect() : { top: 40, left: 40, width: 200, height: 40 };
+  var pad = 6;
+  hl.style.top = (rect.top - pad) + 'px';
+  hl.style.left = (rect.left - pad) + 'px';
+  hl.style.width = (rect.width + pad * 2) + 'px';
+  hl.style.height = (rect.height + pad * 2) + 'px';
+
+  tip.innerHTML =
+    '<div class="tour-step">Step ' + (tourStep + 1) + ' of ' + TOUR_STEPS.length + '</div>' +
+    '<h4>' + step.title + '</h4>' +
+    '<p>' + step.text + '</p>' +
+    '<div class="tour-actions">' +
+      '<button class="tour-btn tour-secondary" onclick="prevTourStep()" ' + (tourStep === 0 ? 'disabled' : '') + '>&larr; Back</button>' +
+      '<button class="tour-btn" onclick="' + (tourStep === TOUR_STEPS.length - 1 ? 'endTour()' : 'nextTourStep()') + '">' +
+        (tourStep === TOUR_STEPS.length - 1 ? 'Done' : 'Next \u2192') +
+      '</button>' +
+    '</div>';
+
+  // Position tooltip below the target, flipping above/left as needed to stay on screen
+  var top = rect.bottom + pad + 12;
+  var left = Math.min(Math.max(rect.left, 10), window.innerWidth - 320);
+  if (top + 160 > window.innerHeight) top = Math.max(rect.top - 180, 10);
+  tip.style.top = top + 'px';
+  tip.style.left = left + 'px';
+
+  if (target) target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function nextTourStep() { if (tourStep < TOUR_STEPS.length - 1) { tourStep++; renderTourStep(); } }
+function prevTourStep() { if (tourStep > 0) { tourStep--; renderTourStep(); } }
+
+document.addEventListener('keydown', function(e) {
+  if (!document.getElementById('tour-overlay').classList.contains('show')) return;
+  if (e.key === 'Escape') endTour();
+  else if (e.key === 'ArrowRight') nextTourStep();
+  else if (e.key === 'ArrowLeft') prevTourStep();
+});
+
+document.getElementById('btn-tour').addEventListener('click', function(){ startTour(); });
+
 function renderTableView() {
   gRoot.selectAll("*").remove();
   if (!tableGraph || tableGraph.nodes.length === 0) {
@@ -2215,6 +2314,11 @@ rptSelect.addEventListener("change", function(e){ loadGraph(e.target.value); });
 
 // Auto-load
 loadGraph(rptTable);
+
+// Launch the guided tour automatically for first-time visitors (once per browser)
+if (!localStorage.getItem('lineageTourSeen')) {
+  setTimeout(startTour, 400);
+}
 
 /* ── Column Lineage Mode ─────────────────────────────────────────────── */
 var _colMode = false;
