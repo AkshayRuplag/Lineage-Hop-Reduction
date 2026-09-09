@@ -1,0 +1,55 @@
+﻿File,Verdict,Reason
+PKG_GRP_LOAD_FCT_AGENT_COMMISSION_SUMMARY_PRC_GRP_LOAD_FCT_AGENT_COMMISSION_SUMMARY_part1_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (31,138 chars)"
+PKG_GRP_LOAD_FCT_AGENT_COMMISSION_SUMMARY_PRC_GRP_LOAD_FCT_AGENT_COMMISSION_SUMMARY_part2_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PKG_GRP_LOAD_RPT_AGENT_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_AGENT_R_PRC_INSERT_DUMMY_REC_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_AGENT_R_PRC_UPD_DEL_DATA_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PKG_GRP_LOAD_RPT_BILLGROUP_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_BILLGROUP_R_PRC_GET_CUR_DATA_part1_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PKG_GRP_LOAD_RPT_BILLGROUP_R_PRC_GET_CUR_DATA_part2_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (10,655 chars)"
+PKG_GRP_LOAD_RPT_BILLGROUP_R_PRC_UPD_DEL_DATA_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PKG_GRP_LOAD_RPT_COMMISSIONS_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_COMMISSIONS_R_PRC_UPD_DEL_DATA_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PKG_GRP_LOAD_RPT_EOI_APPLICANT_R_PRC_GET_CUR_DATA_part1_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (12,340 chars)"
+PKG_GRP_LOAD_RPT_EOI_APPLICANT_R_PRC_INSERT_DUMMY_REC_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_FCT_INCURRED_SUMMARY_R_PRC_GET_CUR_DATA_part1_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (10,546 chars)"
+PKG_GRP_LOAD_RPT_FCT_RPT_PREMIUM_SUMMARY_R_PRC_GET_CUR_DATA_part1_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (11,907 chars)"
+PKG_GRP_LOAD_RPT_FCT_RPT_PREMIUM_SUMMARY_R_PRC_UPD_COLS_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_PAYEE_DTL_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_PAYEE_DTL_R_PRC_INSERT_DUMMY_REC_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_PAYEE_DTL_R_PRC_UPD_DEL_DATA_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PKG_GRP_LOAD_RPT_POSTED_SUSPENSE_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_PREMIUM_DTL_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_PREMIUM_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_QUOTES_DTL_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_QUOTES_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_QUOTES_R_PRC_INSERT_DUMMY_REC_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_RATE_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_SALES_REP_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_SALES_REP_R_PRC_INSERT_DUMMY_REC_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PKG_GRP_LOAD_RPT_SALES_REP_R_PRC_UPD_DEL_DATA_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PKG_GRP_LOAD_RPT_SUSPENSE_DTL_R_PRC_GET_CUR_DATA_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PRC_GRP_LOAD_FCT_BILLING_POLICY_SUSPENSE_R_POSTED_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PRC_GRP_LOAD_FCT_INCURRED_SUMMARY_R_part1_cleaned.sql,PASS,"OK (4,459 chars, has DML)"
+PRC_GRP_LOAD_FCT_INCURRED_SUMMARY_R_part2_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (12,121 chars)"
+PRC_GRP_LOAD_FCT_INCURRED_SUMMARY_R_part3_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PRC_GRP_LOAD_FCT_INCURRED_SUMMARY_R_part4_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PRC_GRP_LOAD_FCT_RPT_ACT_PLR_SUMMARY_R_cleaned.sql,PASS,"OK (4,600 chars, has DML)"
+PRC_GRP_LOAD_FCT_RPT_ANN_PREM_SUMMARY_R_MGIS_part1_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PRC_GRP_LOAD_FCT_RPT_ANN_PREM_SUMMARY_R_MGIS_part2_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (26,518 chars)"
+PRC_GRP_LOAD_FCT_RPT_EARN_PREMIUM_SUMMARY_R_MGIS_part1_cleaned.sql,PASS,"OK (6,476 chars, has DML)"
+PRC_GRP_LOAD_FCT_RPT_EARN_PREMIUM_SUMMARY_R_MGIS_part2_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PRC_GRP_LOAD_MERGE_UPDATE_FCT_RPT_PREMIUM_SUMMARY_R_GL_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PRC_GRP_LOAD_MERGE_UPDATE_FCT_RPT_PREMIUM_SUMMARY_R_NON_GL_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PRC_GRP_LOAD_RPT_PREMIUM_DTL_R_MGIS_cleaned.sql,PASS,"OK (3,401 chars, has DML)"
+PRC_GRP_LOAD_RPT_PREMIUM_R_MGIS_cleaned.sql,PASS,"OK (2,871 chars, has DML)"
+PRC_GRP_LOAD_STG_REINSURER_PREM_PCT_R_LTD_part1_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PRC_GRP_LOAD_STG_REINSURER_PREM_PCT_R_LTD_part2_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (12,046 chars)"
+PRC_GRP_LOAD_STG_REINSURER_PREM_PCT_R_NON_LTD_part1_cleaned.sql,REJECT,No INSERT/MERGE/UPDATE/DELETE found after cleaning
+PRC_GRP_LOAD_STG_REINSURER_PREM_PCT_R_NON_LTD_part2_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (10,139 chars)"
+PRC_GRP_LOAD_TOTAL_EARN_PREM_part1_cleaned.sql,PASS,"OK (421 chars, has DML)"
+PRC_GRP_LOAD_TOTAL_EARN_PREM_part2_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (23,334 chars)"
+PRC_GRP_LOAD_TOTAL_EARN_PREM_part3_cleaned.sql,SKIP,Lineage JSON already exists with relationships
+PRC_GRP_LOAD_TOTAL_EARN_PREM_part4_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (21,321 chars)"
+PRC_GRP_LOAD_TOTAL_EARN_PREM_part5_cleaned.sql,PASS,"OK (7,044 chars, has DML)"
+PRC_GRP_LOAD_TOTAL_EARN_PREM_part6_cleaned.sql,REJECT,"Exceeds Gudu 10K limit (65,982 chars)"

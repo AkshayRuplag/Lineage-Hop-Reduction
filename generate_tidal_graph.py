@@ -24,7 +24,7 @@ csv.field_size_limit(10 * 1024 * 1024)  # 10 MB to handle large column lists
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
-COMBINED_CSV = os.path.join(OUTPUT_DIR, "combined_lineage_latest.csv")
+COMBINED_CSV = os.path.join(OUTPUT_DIR, "combined_lineage_latest_expanded.csv")
 TIDAL_FILE = os.path.join(SCRIPT_DIR, "..", "TidalDeps_April15.xlsx")
 OUTPUT_HTML = os.path.join(OUTPUT_DIR, "tidal_dependency_graph.html")
 COL_NORMALIZED_CSV = os.path.join(OUTPUT_DIR, "column_level_normalized.csv")
@@ -435,6 +435,7 @@ svg { flex: 1; width: 100%; min-height: 0; }
 .close-btn:hover { color: #fff; }
 .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
 .status-COMPLETE { background: #1b4332; color: #69db7c; }
+.status-DIFW_QUERY { background: #1b4332; color: #69db7c; }
 .status-SQL_OBJECT_IDENTIFIED { background: #3d2e00; color: #ffd43b; }
 .status-MV_REFRESH_ONLY { background: #1a2e44; color: #74c0fc; }
 .status-NEEDS_INVESTIGATION { background: #3d1a1a; color: #ff6b6b; }
@@ -442,6 +443,14 @@ svg { flex: 1; width: 100%; min-height: 0; }
 .status-ROOT { background: #2e1a44; color: #da77f2; }
 .status-ORCHESTRATOR_ONLY { background: #2e2e1a; color: #ffe066; }
 .status-DIFW_MISSING_LINEAGE { background: #3d2a1a; color: #ffa94d; }
+.status-DIFW_FRAMEWORK { background: #1a2e1a; color: #a3d977; }
+.status-STATIC_SQL_PARSED { background: #1a2e44; color: #74c0fc; }
+.status-DELETE_PREPROCESS { background: #3d1a2e; color: #ff8fb1; }
+.status-TIDAL_DISABLED { background: #2e2e2e; color: #adb5bd; }
+.status-UTILITY_NO_LINEAGE { background: #1a2e1a; color: #a3d977; }
+
+#fwd-empty-banner { display: none; position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: #3d2e00cc; color: #ffd43b; border: 1px solid #ffd43b55; border-radius: 8px; padding: 10px 18px; font-size: 12px; max-width: 520px; text-align: center; z-index: 6; }
+#fwd-empty-banner.show { display: block; }
 
 #legend { position: absolute; bottom: 12px; left: 12px; background: #15152eee; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px 16px; font-size: 11px; z-index: 5; max-width: 240px; }
 #legend .leg-item { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
@@ -581,6 +590,7 @@ svg { flex: 1; width: 100%; min-height: 0; }
     <div id="col-ac"></div>
   </div>
   <div id="col-flow"></div>
+  <div id="fwd-empty-banner">&#8635; No downstream consumers found for this RPT table in TIDAL — it is a terminal report with no further consuming jobs (after excluding DataLake export jobs with no consumers of their own).</div>
   <svg id="graph-svg"></svg>
   <div id="runbook-panel"></div>
   <div id="stats-modal" onclick="if(event.target===this)this.classList.remove('show')">
@@ -823,9 +833,22 @@ function loadGraph(rpt) {
 }
 
 function renderCurrentView() {
+  updateForwardEmptyBanner();
   if (runbookMode) { renderRunbook(); }
   else if (tableViewMode) { renderTableView(); }
   else { renderGraph(); }
+}
+
+/* Forward View silently renders the same backward graph when the selected RPT
+   table has zero downstream-consumer nodes (e.g. its only TIDAL consumer is a
+   dead-end DataLake export job) — show a banner so that isn't mistaken for a
+   broken toggle. */
+function updateForwardEmptyBanner() {
+  var banner = document.getElementById('fwd-empty-banner');
+  var hasForwardNodes = !!(currentGraph && currentGraph.nodes.some(function(n){
+    return n.forward_depth != null;
+  }));
+  banner.classList.toggle('show', forwardViewMode && !hasForwardNodes);
 }
 
 function renderSidebar(filter) {

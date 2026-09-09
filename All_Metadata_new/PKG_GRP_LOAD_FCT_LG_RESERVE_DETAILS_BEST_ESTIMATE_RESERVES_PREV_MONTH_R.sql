@@ -1,0 +1,1148 @@
+"PACKAGE PKG_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R AS
+--29-Aug-2025: Created package to merge FCT_LG_RESERVE_DETAILS_R for previous month
+
+
+--Global Constants
+    gd_sysdate DATE := trunc(sysdate);
+    gn_current_month NUMBER := to_number(to_char(
+                                                gd_sysdate,
+                                                &apos;YYYYMM&apos;
+                                         ));
+    gn_sysdt_batchid NUMBER := to_number(to_char(
+                                                gd_sysdate,
+                                                &apos;YYYYMMDD&apos;
+                                         ));
+    gc_main_loadedby VARCHAR2(100 CHAR) := &apos;PKG_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R.MAIN&apos;;
+    gc_job_name VARCHAR2(100 CHAR) := &apos;GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R&apos;;
+    gc_running_status VARCHAR2(30) := &apos;Running&apos;;
+    gc_error_status VARCHAR2(30) := &apos;Error&apos;;
+    gc_success_status VARCHAR2(30) := &apos;Success&apos;;
+    gc_source VARCHAR2(30) := &apos;EDW&apos;;
+--Global Variables
+    gn_out_job_id NUMBER;
+    gc_errmsg VARCHAR2(4000 CHAR);
+	gc_trcmsg                       CLOB               :=&apos;Trace Message:-&gt;&apos;;
+	gd_mis_date_be_r DATE;
+	gd_mis_cycle_date_r DATE; 
+	gd_mis_date_prev_r DATE;
+--main procedure
+	PROCEDURE Main;
+--Procedure to load FCT_LG_RESERVE_DETAILS_R_TMP_PREV table for previous month
+    PROCEDURE PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_TMP_PREV;
+--Procedure to load FCT_LG_RESERVE_DETAILS_R table for previous month	
+	PROCEDURE PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R;
+
+
+END PKG_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R;PACKAGE BODY PKG_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R AS
+/***********************************************************************
+  Purpose:  This package body contains procedures which load data into FCT_LG_RESERVE_DETAILS_R Table
+
+
+  Author           Date     Description
+  ---------- -------- -------------------------------------------------
+  Anantha Jothi   28/08/25 Initial Creation
+  Anantha Jothi	  29/10/25 Added insert and reins merge
+  Anantha Jothi	  06/11/25 Added NVL in v_coverage_code_r From life_Reserve
+  Anantha Jothi/Samba	  30/03/26 Audit Controls Implementation
+  ***********************************************************************/
+
+  --main procedure
+  PROCEDURE MAIN is
+
+  BEGIN
+
+	pkg_grp_log_util.prc_insert_log
+                       ( p_source              =&gt; gc_source
+					    ,p_job_nm              =&gt; gc_job_name
+                        ,p_job_status          =&gt; gc_running_status
+                        ,p_err_msg             =&gt; null
+                        ,p_trc_msg             =&gt; null
+                        ,p_n_batch_id          =&gt; gn_sysdt_batchid
+                        ,p_log_util_called_by_r=&gt; gc_main_loadedby
+						,out_job_id            =&gt; gn_out_job_id
+						);
+
+	gc_trcmsg:=&apos;1. Entered into main&apos;;
+
+	gc_trcmsg:=&apos;1.1 Call package function to get gd_mis_date_be_r&apos;;
+
+	gd_mis_date_be_r := PKG_GRP_RESERVE_UTIL.get_valuation_date_best_estimate_r; 
+
+	gc_trcmsg:=&apos;1.2 Call package function to get gd_mis_cycle_date_r&apos;;
+
+	gd_mis_cycle_date_r := PKG_GRP_RESERVE_UTIL.get_cycle_date_best_estimate_r; 
+
+	gc_trcmsg:=&apos;1.3 Call package function to get gd_mis_date_prev_r&apos;;
+
+	gd_mis_date_prev_r := PKG_GRP_RESERVE_UTIL.get_prev_cycle_date_best_estimate_r; 
+
+	gc_trcmsg:=&apos;1.4 Call Procedure PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_TMP_PREV&apos;;	
+	PKG_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R.PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_TMP_PREV;
+
+  gc_trcmsg:=&apos;1.5 Completed Procedure PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_TMP_PREV&apos;;
+
+  gc_trcmsg:=&apos;1.6 Call Procedure PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R&apos;;	
+	PKG_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R.PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R;
+
+  gc_trcmsg:=&apos;1.7 Completed Procedure PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R&apos;;
+
+
+
+	gc_trcmsg:=&apos;1.8 Exit from main&apos;;
+  pkg_grp_log_util.prc_update_log ( gn_out_job_id --p_job_id
+  ,gc_success_status                              --p_job_status
+  ,gc_errmsg                                      --p_err_msg
+  ,gc_trcmsg                                      --p_trc_msg
+  ,gc_main_loadedby                               --p_log_util_called_by_r
+  );
+EXCEPTION
+WHEN OTHERS THEN
+  gc_errmsg :=SUBSTR(SQLERRM,1,4000);
+  gc_trcmsg :=gc_trcmsg||&apos;1. Error in main&apos;||chr(13);
+  pkg_grp_log_util.prc_update_log ( gn_out_job_id --p_job_id
+  ,gc_error_status                                --p_job_status
+  ,gc_errmsg                                      --p_err_msg
+  ,gc_trcmsg||chr(13)||gc_errmsg                  --p_trc_msg
+  ,gc_main_loadedby                               --p_log_util_called_by_r
+  );
+  RAISE;
+END main;
+
+
+--Procedure to load FCT_LG_RESERVE_DETAILS_R_TMP_PREV table for previous month
+  PROCEDURE PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_TMP_PREV IS
+
+	lv_message_type_r             	PRCS_JOB_LOG_MESSAGE_R.v_message_type_r%TYPE    := PKG_GRP_LOG_UTIL.gc_message_type_info;
+	ln_job_log_message_id_r         NUMBER;
+	lt_start_time_r 	TIMESTAMP;
+	lt_end_time_r 		TIMESTAMP;
+	lc_run_cnt          PRCS_JOB_LOG_MESSAGE_R.N_COUNT_R%TYPE 	 		:=0;
+	lc_count_type_r 	PRCS_JOB_LOG_MESSAGE_R.v_count_type_r%TYPE      := PKG_GRP_LOG_UTIL.gc_count_type_insert;
+	lc_duration_r       PRCS_JOB_LOG_MESSAGE_R.T_DURATION_R%TYPE 		:=0;
+BEGIN
+
+
+
+	pkg_grp_log_util.prc_insert_log
+                       ( p_source              =&gt; gc_source
+					    ,p_job_nm              =&gt; gc_job_name
+                        ,p_job_status          =&gt; gc_running_status
+                        ,p_err_msg             =&gt; null
+                        ,p_trc_msg             =&gt; null
+                        ,p_n_batch_id          =&gt; gn_sysdt_batchid
+                        ,p_log_util_called_by_r=&gt; gc_main_loadedby
+						,out_job_id            =&gt; gn_out_job_id
+						);
+
+
+execute immediate &apos;TRUNCATE TABLE ATOMIC.FCT_LG_RESERVE_DETAILS_R_TMP_PREV&apos;;
+
+lc_run_cnt:= SQL%ROWCOUNT;
+    COMMIT;
+
+    gc_trcmsg:=&apos;1 Truncated FCT_LG_RESERVE_DETAILS_R_TMP_PREV table :-&gt;&apos;||lc_run_cnt;
+
+		PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r(
+						p_job_id_r                    	=&gt; gn_out_job_id,
+						p_batch_id_r                  	=&gt; gn_sysdt_batchid,
+						p_message_type_r              	=&gt; lv_message_type_r,
+						p_code_location_r             	=&gt; gc_main_loadedby,
+						p_message_r                   	=&gt; gc_trcmsg,
+						p_count_type_r                	=&gt; NULL,
+						p_count_r                     	=&gt; NULL,
+						p_duration_r                  	=&gt; NULL,
+						p_created_by_r                	=&gt; gc_job_name,
+						out_prcs_job_log_message_id_r 	=&gt; ln_job_log_message_id_r
+						);	
+
+
+lt_start_time_r:= SYSTIMESTAMP;
+
+		gc_trcmsg:=&apos;2.Inserting data into FCT_LG_RESERVE_DETAILS_R_TMP_PREV&apos;;		
+
+		PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r(
+						p_job_id_r                    	=&gt; gn_out_job_id,
+						p_batch_id_r                  	=&gt; gn_sysdt_batchid,
+						p_message_type_r              	=&gt; lv_message_type_r,
+						p_code_location_r             	=&gt; gc_main_loadedby,
+						p_message_r                   	=&gt; gc_trcmsg,
+						p_count_type_r                	=&gt; NULL,
+						p_count_r                     	=&gt; NULL,
+						p_duration_r                  	=&gt; NULL,
+						p_created_by_r                	=&gt; gc_job_name,
+						out_prcs_job_log_message_id_r 	=&gt; ln_job_log_message_id_r
+						);
+
+
+		INSERT  INTO ATOMIC.FCT_LG_RESERVE_DETAILS_R_TMP_PREV
+			(V_RESERVE_TYPE_IND_R
+			,N_RESERVE_DIRECT__GAAP__R
+			,N_RESERVE_ASSUMED__GAAP__R
+			,N_RESERVE_CEDED__GAAP__R
+			,N_RESERVE_NET__GAAP__R
+			,N_CHG_RESERVE_DIRECT__GAAP__R
+			,N_CHG_RESERVE_ASSUMED__GAAP__R
+			,N_CHG_RESERVE_CEDED__GAAP__R
+			,N_CHG_RESERVE_NET__GAAP__R
+			,N_RESERVE_DIRECT__STAT__R
+			,N_RESERVE_ASSUMED__STAT__R
+			,N_RESERVE_CEDED__STAT__R
+			,N_RESERVE_NET__STAT__R
+			,N_CHG_RESERVE_DIRECT__STAT__R
+			,N_CHG_RESERVE_ASSUMED__STAT__R
+			,N_CHG_RESERVE_CEDED__STAT__R
+			,N_CHG_RESERVE_NET__STAT__R
+			,N_ORIGINAL_RESERVE_R
+			,N_CURRENT_RESERVE_R
+			,N_GROSS_BENEFIT_R
+			,N_NET_BENEFIT_R
+			,N_CHECK_NET_BENEFIT_R
+			,N_FINANCIAL_NET_BENEFIT_R
+			,N_RESERVE_DIRECT_BEST_ESTMT_R
+			,N_RESERVE_ASSUMED_BEST_ESTMT_R
+			,N_RESERVE_CEDED_BEST_ESTMT_R
+			,N_RESERVE_NET_BEST_ESTIMATE_R
+			,N_CHG_RSRV_DIRECT_BEST_ESTMT_R
+			,N_CHG_RSRV_ASSUMD_BEST_ESTMT_R
+			,N_CHG_RSRV_CEDED_BEST_ESTMT_R
+			,N_CHG_RESERVE_NET_BEST_ESTMT_R
+			,N_BEST_ESTIMATE_NET_BENEFIT_R
+			,V_PRICING_SSDI_ESTIMATED_IND_R
+			,V_BEST_ESTMT_RESERVE_MODEL_R
+			,N_RESERVE_DIRECT__FIELD__R
+			,N_RESERVE_ASSUMED__FIELD__R
+			,N_RESERVE_CEDED__FIELD__R
+			,N_RESERVE_NET__FIELD__R
+			,N_CHG_RESERVE_DIRECT__FIELD__R
+			,N_CHG_RESERVE_ASSUMED_FIELD_R
+			,N_CHG_RESERVE_CEDED__FIELD__R
+			,N_CHG_RESERVE_NET__FIELD__R
+			,N_UNADJUSTD_RSRV_DIRECT_GAAP_R
+			,N_UNADJUSTD_RSRV_DIRECT_STAT_R
+			,N_POLICY_SK_R
+			,N_CLAIM_SK_R
+			,D_RECORD_START_DATE_R
+			,D_RECORD_END_DATE_R
+			,V_SOURCE_SYSTEM_NAME_R
+			,T_EVENT_TIMESTAMP_R
+			,FIC_MIS_DATE_R
+			,N_BATCH_ID_R
+			,N_SEQUENCE_NUMBER_R
+			,T_CREATION_DATE_R
+			,T_LAST_MODIFIED_DATE_R
+			,V_CREATED_BY_R
+			,V_LAST_MODIFIED_BY_R
+			,D_RESERVE_VALUATION_DATE_R
+			,V_COVERAGE_CODE_R
+			,N_GAAP_IBNR_CEDED_R
+			,N_STAT_IBNR_CEDED_R
+			,V_POLICY_NUMBER_R
+			,V_CLAIM_NUMBER_R
+			,N_LOAD_RUN_ID_R
+			,V_PRIVACY_INDICATOR_R
+			,V_CLAIM_IDENTIFIER_R
+			,V_cov_grp_id_r )
+			SELECT
+					&apos;L&apos; V_RESERVE_TYPE_IND_R
+					,C.N_RESERVE_DIRECT__GAAP__R
+					,C.N_RESERVE_ASSUMED__GAAP__R
+					,C.N_RESERVE_CEDED__GAAP__R
+					,C.N_RESERVE_NET__GAAP__R
+					,NVL(C.N_RESERVE_DIRECT__GAAP__R, 0) - NVL(P.N_RESERVE_DIRECT__GAAP__R, 0) N_CHG_RESERVE_DIRECT__GAAP__R
+					,NVL(C.N_RESERVE_ASSUMED__GAAP__R, 0) - NVL(P.N_RESERVE_ASSUMED__GAAP__R, 0) N_CHG_RESERVE_ASSUMED__GAAP__R
+					,NVL(C.N_RESERVE_CEDED__GAAP__R, 0) - NVL(P.N_RESERVE_CEDED__GAAP__R, 0) N_CHG_RESERVE_CEDED__GAAP__R
+					,NVL(C.N_RESERVE_NET__GAAP__R, 0) - NVL(P.N_RESERVE_NET__GAAP__R, 0)  N_CHG_RESERVE_NET__GAAP__R
+					,C.N_RESERVE_DIRECT__STAT__R
+					,C.N_RESERVE_ASSUMED__STAT__R
+					,C.N_RESERVE_CEDED__STAT__R
+					,C.N_RESERVE_NET__STAT__R
+					,NVL(C.N_RESERVE_DIRECT__STAT__R, 0) - NVL(P.N_RESERVE_DIRECT__STAT__R, 0) N_CHG_RESERVE_DIRECT__STAT__R
+					,NVL(C.N_RESERVE_ASSUMED__STAT__R, 0) - NVL(P.N_RESERVE_ASSUMED__STAT__R, 0) N_CHG_RESERVE_ASSUMED__STAT__R
+					,NVL(C.N_RESERVE_CEDED__STAT__R, 0) - NVL(P.N_RESERVE_CEDED__STAT__R, 0) N_CHG_RESERVE_CEDED__STAT__R
+					,NVL(C.N_RESERVE_NET__STAT__R, 0) - NVL(P.N_RESERVE_NET__STAT__R, 0) N_CHG_RESERVE_NET__STAT__R
+					,C.N_ORIGINAL_RESERVE_R--
+					,C.N_CURRENT_RESERVE_R--
+					,C.N_GROSS_BENEFIT_R
+					,C.N_NET_BENEFIT_R
+					,C.N_CHECK_NET_BENEFIT_R
+					,C.N_FINANCIAL_NET_BENEFIT_R
+					,C.N_RESERVE_DIRECT_BEST_ESTMT_R
+					,C.N_RESERVE_ASSUMED_BEST_ESTMT_R
+					,C.N_RESERVE_CEDED_BEST_ESTMT_R
+					,C.N_RESERVE_NET_BEST_ESTIMATE_R
+					,NVL(C.N_RESERVE_DIRECT_BEST_ESTMT_R, 0) - NVL(P.N_RESERVE_DIRECT_BEST_ESTMT_R, 0) N_CHG_RSRV_DIRECT_BEST_ESTMT_R
+					,NVL(C.N_RESERVE_ASSUMED_BEST_ESTMT_R, 0) - NVL(P.N_RESERVE_ASSUMED_BEST_ESTMT_R, 0) N_CHG_RSRV_ASSUMD_BEST_ESTMT_R
+					,NVL(C.N_RESERVE_CEDED_BEST_ESTMT_R, 0) - NVL(P.N_RESERVE_CEDED_BEST_ESTMT_R, 0) N_CHG_RSRV_CEDED_BEST_ESTMT_R
+					,NVL(C.N_RESERVE_NET_BEST_ESTIMATE_R, 0) - NVL(P.N_RESERVE_NET_BEST_ESTIMATE_R, 0) N_CHG_RESERVE_NET_BEST_ESTMT_R
+					,C.N_BEST_ESTIMATE_NET_BENEFIT_R
+					,C.V_PRICING_SSDI_ESTIMATED_IND_R
+					,C.V_BEST_ESTMT_RESERVE_MODEL_R
+					,C.N_RESERVE_DIRECT__FIELD__R AS N_RESERVE_DIRECT__FIELD__R
+					,C.N_RESERVE_ASSUMED__FIELD__R
+					,C.N_RESERVE_CEDED__FIELD__R
+					,C.N_RESERVE_NET__FIELD__R
+					,NVL(C.N_RESERVE_DIRECT__FIELD__R, 0) - NVL(P.N_RESERVE_DIRECT__FIELD__R, 0) N_CHG_RESERVE_DIRECT__FIELD__R
+					,NVL(C.N_RESERVE_ASSUMED__FIELD__R, 0) - NVL(P.N_RESERVE_ASSUMED__FIELD__R, 0)  N_CHG_RESERVE_ASSUMED_FIELD_R
+					,NVL(C.N_RESERVE_CEDED__FIELD__R, 0) - NVL(P.N_RESERVE_CEDED__FIELD__R, 0)  N_CHG_RESERVE_CEDED__FIELD__R
+					,NVL(C.N_RESERVE_NET__FIELD__R, 0) - NVL(P.N_RESERVE_NET__FIELD__R, 0)  N_CHG_RESERVE_NET__FIELD__R
+					,C.N_UNADJUSTD_RSRV_DIRECT_GAAP_R
+					,C.N_UNADJUSTD_RSRV_DIRECT_STAT_R
+					,NVL(C.N_POLICY_SK_R, P.N_POLICY_SK_R) N_POLICY_SK_R
+					,NVL(C.N_CLAIM_SK_R, P.N_CLAIM_SK_R) N_CLAIM_SK_R
+					,CAST(NULL AS TIMESTAMP) D_RECORD_START_DATE_R
+					,CAST(NULL AS TIMESTAMP) D_RECORD_END_DATE_R
+					,CAST(NULL AS VARCHAR(100)) V_SOURCE_SYSTEM_NAME_R
+					,SYSTIMESTAMP T_EVENT_TIMESTAMP_R
+					,SYSTIMESTAMP FIC_MIS_DATE_R
+					,gn_sysdt_batchid N_BATCH_ID_R
+					,ROWNUM N_SEQUENCE_NUMBER_R
+					,SYSTIMESTAMP T_CREATION_DATE_R
+					,SYSTIMESTAMP T_LAST_MODIFIED_DATE_R
+					,&apos;PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR&apos; V_CREATED_BY_R
+					,&apos;PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR&apos; V_LAST_MODIFIED_BY_R
+					--,C.D_RESERVE_VALUATION_DATE_R
+					--,NVL(C.D_RESERVE_VALUATION_DATE_R,P.D_RESERVE_VALUATION_DATE_R) as D_RESERVE_VALUATION_DATE_R
+					,gd_mis_cycle_date_r  D_RESERVE_VALUATION_DATE_R
+					,NVL(C.V_COVERAGE_CODE_R,P.V_COVERAGE_CODE_R) V_COVERAGE_CODE_R
+					,C.N_GAAP_IBNR_CEDED_R
+					,C.N_STAT_IBNR_CEDED_R
+					,NVL(C.V_POLICY_NUMBER_R, P.V_POLICY_NUMBER_R) V_POLICY_NUMBER_R
+					,NVL(C.V_CLAIM_NUMBER_R,P.V_CLAIM_NUMBER_R) V_CLAIM_NUMBER_R
+					,1 N_LOAD_RUN_ID_R
+					,CAST(NULL AS VARCHAR(100))  V_PRIVACY_INDICATOR_R
+					--,NVL(C.Flag_type,P.Flag_type) Flag_type
+					,	NVL(C.V_CLAIM_IDENTIFIER_R, P.V_CLAIM_IDENTIFIER_R) AS V_CLAIM_IDENTIFIER_R
+					,	NVL(C.V_cov_grp_id_r, P.V_cov_grp_id_r) AS V_cov_grp_id_r
+					FROM (
+
+						SELECT  &apos;L&apos; V_RESERVE_TYPE_IND_R
+						,NVL(RS.N_RESERVE_DIRECT__GAAP__R,LF.N_RESERVE_DIRECT__GAAP__R) AS N_RESERVE_DIRECT__GAAP__R 	---MINE
+						--,RS.N_RESERVE_DIRECT__GAAP__R AS N_RESERVE_DIRECT__GAAP__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_ASSUMED__GAAP__R
+						--,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_CEDED__GAAP__R
+						,LF.N_RESERVE_CEDED__GAAP__R N_RESERVE_CEDED__GAAP__R	---MINE
+						,CAST(RS.N_RESERVE_NET__GAAP__R AS DECIMAL(13,2))  N_RESERVE_NET__GAAP__R 	---MINE
+						--,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_NET__GAAP__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_DIRECT__GAAP__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_ASSUMED__GAAP__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_CEDED__GAAP__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_NET__GAAP__R
+						--,TO_NUMBER(RS.N_RESERVE_DIRECT__STAT__R) AS N_RESERVE_DIRECT__STAT__R
+						,NVL(TO_NUMBER(RS.N_RESERVE_DIRECT__STAT__R),TO_NUMBER(LF.N_RESERVE_DIRECT__STAT__R)) N_RESERVE_DIRECT__STAT__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_ASSUMED__STAT__R
+						--,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_CEDED__STAT__R
+						,LF.N_RESERVE_CEDED__STAT__R N_RESERVE_CEDED__STAT__R
+						,CAST(RS.N_RESERVE_NET__STAT__R AS DECIMAL(13,2)) N_RESERVE_NET__STAT__R 	---MINE
+						--,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_NET__STAT__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_DIRECT__STAT__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_ASSUMED__STAT__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_CEDED__STAT__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_NET__STAT__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_ORIGINAL_RESERVE_R--
+						--,CAST(NULL  AS DECIMAL(13,2)) N_CURRENT_RESERVE_R--
+						,LF.N_CURRENT_RESERVE_R  AS N_CURRENT_RESERVE_R
+						,NVL(RS.N_GROSS_BENEFIT_R, BE.N_GROSS_BENEFIT_R) as N_GROSS_BENEFIT_R
+						,TO_NUMBER(RS.N_NET_BENEFIT_R) AS N_NET_BENEFIT_R
+						,NVL(RS.N_RPT_NET_BENEFIT_R, BE.N_RPT_NET_BENEFIT_R) as N_CHECK_NET_BENEFIT_R
+						,TO_NUMBER(RS.N_FINANCIAL_NET_BENEFIT_R) as N_FINANCIAL_NET_BENEFIT_R
+						,TO_NUMBER(BE.N_BEST_ESTIMATE_RESERVE_R) AS N_RESERVE_DIRECT_BEST_ESTMT_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_ASSUMED_BEST_ESTMT_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_CEDED_BEST_ESTMT_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_NET_BEST_ESTIMATE_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RSRV_DIRECT_BEST_ESTMT_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RSRV_ASSUMD_BEST_ESTMT_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RSRV_CEDED_BEST_ESTMT_R
+						,cast(null  as decimal(13,2)) N_CHG_RESERVE_NET_BEST_ESTMT_R
+						,TO_NUMBER(BE.N_BEST_ESTIMATE_NET_BENEFIT_R) AS N_BEST_ESTIMATE_NET_BENEFIT_R
+						,CAST(BE.V_PRICING_SSDI_ESTIMATED_IND_R AS VARCHAR(100)) AS V_PRICING_SSDI_ESTIMATED_IND_R
+						,CAST(BE.V_BEST_ESTMT_RESERVE_MODEL_R AS VARCHAR(100)) AS V_BEST_ESTMT_RESERVE_MODEL_R
+						/*,
+						CAST( CASE WHEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) &gt; NVL(RS.N_STAT_GROSS_RESERVE_R,0) AND (RS.V_CLAIM_STATUS_CODE_R&lt; &apos;60&apos; OR NVL(RS.N_STAT_GROSS_RESERVE_R,0) &lt;&gt; 0 ) THEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) ELSE RS.N_STAT_GROSS_RESERVE_R END * (1+ NVL( CASE WHEN  SUM (CASE WHEN BE.V_CLAIM_STATUS_CODE_R LIKE &apos;3%&apos; THEN CASE WHEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) &gt; NVL(RS.N_STAT_GROSS_RESERVE_R,0) AND (RS.V_CLAIM_STATUS_CODE_R&lt; &apos;60&apos; OR NVL(RS.N_STAT_GROSS_RESERVE_R,0) &lt;&gt; 0 ) THEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) ELSE RS.N_STAT_GROSS_RESERVE_R END  END  ) OVER (PARTITION BY NVL(BE.V_POLICY_NUMBER_R,RS.V_POLICY_NUMBER_R)) &lt;&gt; 0 THEN SUM (CASE WHEN BE.V_CLAIM_STATUS_CODE_R NOT LIKE &apos;3%&apos; THEN CASE WHEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) &gt; NVL(RS.N_STAT_GROSS_RESERVE_R,0) AND (RS.V_CLAIM_STATUS_CODE_R&lt; &apos;60&apos; OR NVL(RS.N_STAT_GROSS_RESERVE_R,0) &lt;&gt; 0 ) THEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) ELSE RS.N_STAT_GROSS_RESERVE_R END  END  ) OVER (PARTITION BY NVL(BE.V_POLICY_NUMBER_R,RS.V_POLICY_NUMBER_R))
+																														/ SUM (CASE WHEN BE.V_CLAIM_STATUS_CODE_R LIKE &apos;3%&apos; THEN CASE WHEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) &gt; NVL(RS.N_STAT_GROSS_RESERVE_R,0) AND (RS.V_CLAIM_STATUS_CODE_R&lt; &apos;60&apos; OR NVL(RS.N_STAT_GROSS_RESERVE_R,0) &lt;&gt; 0 ) THEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) ELSE RS.N_STAT_GROSS_RESERVE_R END  END  ) OVER (PARTITION BY NVL(BE.V_POLICY_NUMBER_R,RS.V_POLICY_NUMBER_R))
+									END,0)) AS DECIMAL(13,2)) N_RESERVE_DIRECT__FIELD__R*/
+						,CAST((CASE WHEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0) &gt; NVL(RS.N_STAT_GROSS_RESERVE_R,0) AND (RS.V_CLAIM_STATUS_CODE_R &lt; &apos;60&apos; OR NVL(RS.N_STAT_GROSS_RESERVE_R,0) &lt;&gt; 0 ) THEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,0)
+							ELSE RS.N_STAT_GROSS_RESERVE_R 
+							END) * (1+ NVL(CASE WHEN SUM ( CASE WHEN nvl(RS.V_CLAIM_STATUS_CODE_R, BE.V_CLAIM_STATUS_CODE_R) LIKE &apos;3%&apos; 	
+									THEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,RS.N_STAT_GROSS_RESERVE_R) END ) OVER (PARTITION BY NVL(RS.V_POLICY_NUMBER_R,BE.V_POLICY_NUMBER_R))&lt;&gt;0 THEN 
+						SUM(CASE WHEN nvl(RS.V_CLAIM_STATUS_CODE_R, BE.V_CLAIM_STATUS_CODE_R) NOT LIKE &apos;3%&apos; THEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,RS.N_STAT_GROSS_RESERVE_R) end ) OVER (PARTITION BY  NVL(RS.V_POLICY_NUMBER_R,BE.V_POLICY_NUMBER_R))
+						/ SUM (CASE WHEN nvl(RS.V_CLAIM_STATUS_CODE_R, BE.V_CLAIM_STATUS_CODE_R) LIKE &apos;3%&apos; THEN NVL(BE.N_BEST_ESTIMATE_RESERVE_R,RS.N_STAT_GROSS_RESERVE_R) END ) OVER (PARTITION BY NVL(RS.V_POLICY_NUMBER_R,BE.V_POLICY_NUMBER_R)) END ,0))
+						AS DECIMAL(13,2))      N_RESERVE_DIRECT__FIELD__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_ASSUMED__FIELD__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_CEDED__FIELD__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_NET__FIELD__R
+						,CAST(NULL  AS DECIMAL(13,2)) AS N_CHG_RESERVE_DIRECT__FIELD__R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_ASSUMED_FIELD_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_CEDED__FIELD__R
+						,cast(null  as decimal(13,2)) N_CHG_RESERVE_NET__FIELD__R
+						,TO_NUMBER(RS.N_RESERVE_DIRECT__GAAP__R) as N_UNADJUSTD_RSRV_DIRECT_GAAP_R
+						,TO_NUMBER(RS.N_RESERVE_DIRECT__STAT__R) AS N_UNADJUSTD_RSRV_DIRECT_STAT_R
+						,NVL(NVL(RS.N_POLICY_SK_R, BE.N_POLICY_SK_R), LF.N_POLICY_SK_R) AS N_POLICY_SK_R
+						,NVL(NVL(RS.N_CLAIM_SK_R, BE.N_CLAIM_SK_R),  LF.N_CLAIM_SK_R) AS N_CLAIM_SK_R
+						,CAST(NULL AS TIMESTAMP) D_RECORD_START_DATE_R
+						,CAST(NULL AS TIMESTAMP) D_RECORD_END_DATE_R
+						,CAST(NULL AS VARCHAR(100)) V_SOURCE_SYSTEM_NAME_R
+						,SYSTIMESTAMP T_EVENT_TIMESTAMP_R
+						,SYSTIMESTAMP FIC_MIS_DATE_R
+						,gn_sysdt_batchid  N_BATCH_ID_R
+						,ROWNUM N_SEQUENCE_NUMBER_R
+						,SYSTIMESTAMP T_CREATION_DATE_R
+						,SYSTIMESTAMP T_LAST_MODIFIED_DATE_R
+						,&apos;PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR&apos; V_CREATED_BY_R
+						,&apos;PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR&apos; V_LAST_MODIFIED_BY_R
+						--,to_date(LD_MIS_DATE_R, &apos;dd-mon-yy&apos;) AS D_RESERVE_VALUATION_DATE_R -- MINE
+						--,nvl(RS.D_VALUATION_DATE_R, BE.D_VALUATION_DATE_R ) D_RESERVE_VALUATION_DATE_R
+						,NVL(NVL(RS.D_VALUATION_DATE_R, BE.D_VALUATION_DATE_R ),LF.D_RESERVE_VALUATION_DATE_R) AS D_RESERVE_VALUATION_DATE_R
+						,NVL(NVL(NVL(RS.CG_V_CLAIM_COVERAGE_CODE_R, RS.CO_V_CLAIM_COVERAGE_CODE_R),BE.CO2_V_COVERAGE_CODE_R),LF.V_COVERAGE_R) V_COVERAGE_CODE_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_GAAP_IBNR_CEDED_R
+						,CAST(NULL  AS DECIMAL(13,2)) N_STAT_IBNR_CEDED_R
+						--,NVL(NVL(RS.V_POLICY_NUMBER_R,BE.V_POLICY_NUMBER_R),LF.V_POLICY_NUMBER_R) V_POLICY_NUMBER_R
+						,NVL(NVL(RS.V_POLICY_NUMBER_R,BE.V_POLICY_NUMBER_R),
+								 (CASE WHEN LF.V_POLICY_NUMBER_R LIKE &apos;zzz%&apos; THEN SUBSTR(LF.V_POLICY_NUMBER_R,4,LENGTH(LF.V_POLICY_NUMBER_R))
+								 ELSE LF.V_POLICY_NUMBER_R END)) V_POLICY_NUMBER_R
+
+						,NVL(NVL(RS.V_CLAIM_NUMBER_R, BE.V_CLAIM_NUMBER_R),LF.V_CLAIM_NUMBER_R) V_CLAIM_NUMBER_R
+						,1 N_LOAD_RUN_ID_R
+						,CAST(NULL AS VARCHAR(100))  V_PRIVACY_INDICATOR_R
+						--,Case when RS.Flag_type is not null and BE.Flag_type is not null then &apos;present in Both of LTD&apos; ELSE NVL(RS.Flag_type, BE.Flag_type) END AS  Flag_type
+						,NVL(NVL(rs.V_CLAIM_IDENTIFIER_R, BE.V_CLAIM_IDENTIFIER_R),LF.V_CLAIM_IDENTIFIER_R) V_CLAIM_IDENTIFIER_R
+						,CAST(NULL AS VARCHAR(4)) V_cov_grp_id_r
+						FROM
+									(select distinct
+									TO_NUMBER(RS1.N_GAAP_RESERVE_DIRECT_AMT_R) AS N_RESERVE_DIRECT__GAAP__R --Same as GAAP_GROSS_RESERVES from sdm
+									,RS1.N_STAT_RESERVE_DIRECT_AMT_R AS N_RESERVE_DIRECT__STAT__R --Same as STAT_GROSS_RESERVES from sdm
+									,WS.N_GROSS_BENEFIT_R AS N_GROSS_BENEFIT_R
+									,RS1.N_RESERVE_NET_BENEFIT_R AS N_NET_BENEFIT_R
+									,WS.N_RPT_NET_BENEFIT_R AS N_RPT_NET_BENEFIT_R
+									,RS1.N_RESERVE_NET_BENEFIT_R AS N_FINANCIAL_NET_BENEFIT_R
+									,TO_NUMBER(RS1.N_STAT_RESERVE_DIRECT_AMT_R) AS N_STAT_GROSS_RESERVE_R
+									,RS1.N_GAAP_RESERVE_DIRECT_AMT_R
+									,RS1.V_CLAIM_STATUS_CODE_R
+									,RS1.N_GAAP_RESERVE_DIRECT_AMT_R AS N_UNADJUSTD_RS1RV_DIRECT_GAAP_R
+									,RS1.N_STAT_RESERVE_DIRECT_AMT_R AS N_UNADJUSTD_RS1RV_DIRECT_STAT_R
+									,RS1.N_GAAP_RESERVE_NET_AMT_R AS N_RESERVE_NET__GAAP__R
+									,RS1.N_STAT_RESERVE_NET_AMT_R AS N_RESERVE_NET__STAT__R
+									,NVL(PD.N_POLICY_SK_R,-1) AS N_POLICY_SK_R
+									,NVL(CO.N_CLAIM_SK_R,-1)  AS N_CLAIM_SK_R
+									,RS1.V_POLICY_NUMBER_R V_POLICY_NUMBER_R
+									--,(case when length(RS1.V_CLAIM_NUM_R) in (25,26) then SUBSTR(RS1.V_CLAIM_NUM_R, 1, length(RS1.V_CLAIM_NUM_R)-3) else RS1.V_CLAIM_NUM_R end) V_CLAIM_NUMBER_R
+									,(case when length(RS1.V_CLAIM_IDENTIFIER_R) in (25,26) then SUBSTR(RS1.V_CLAIM_IDENTIFIER_R, 1, length(RS1.V_CLAIM_IDENTIFIER_R)-3)
+									else RS1.V_CLAIM_IDENTIFIER_R end)  V_CLAIM_NUMBER_R---mine..no impact on lg reserve
+									--,to_date( RS1.D_VALUATION_DATE_R , &apos;MM/DD/YYYY&apos;) D_VALUATION_DATE_R
+									,DT.D_CALENDAR_DATE_R D_VALUATION_DATE_R									 
+									,CG.V_CLAIM_COVERAGE_CODE_R                      AS CG_V_CLAIM_COVERAGE_CODE_R
+									,CO.V_CLAIM_COVERAGE_CODE_R                      AS CO_V_CLAIM_COVERAGE_CODE_R
+									--,&apos;LTD_STG_FIN_OS_RESERVES&apos; AS  Flag_type
+									,RS1.V_CLAIM_IDENTIFIER_R	V_CLAIM_IDENTIFIER_R
+									, CAST(NULL AS VARCHAR(4)) V_COV_GRP_ID_R
+									from ATOMIC.STG_FIN_OS_RESERVES_HIST_R RS1
+									LEFT JOIN ATOMIC.DIM_GRP_CLAIM_COVERAGE_GROUP_R CG  ON
+										--case when length(RS1.V_CLAIM_NUM_R) in (25,26) then RS1.V_CLAIM_NUM_R else &apos;X&apos; end = CG.V_CLAIM_IDENTIFIER_R--mine..no impact on lg reserve
+										RS1.V_CLAIM_IDENTIFIER_R = CG.V_CLAIM_IDENTIFIER_R
+										AND CG.V_ACTIVE_STATUS_R = &apos;Y&apos;
+										and CG.N_CLAIM_CVRG_SEQUENCE_NUMBER_R is not null
+									LEFT JOIN ATOMIC.DIM_GRP_CLAIM_COVERAGE_R  CO
+										ON case when length(RS1.V_CLAIM_IDENTIFIER_R) in (25,26) then SUBSTR(RS1.V_CLAIM_IDENTIFIER_R, 1, length(RS1.V_CLAIM_IDENTIFIER_R)-3) else RS1.V_CLAIM_IDENTIFIER_R end = CO.V_CLAIM_NUMBER_R
+										AND CO.V_ACTIVE_STATUS_R = &apos;Y&apos;
+									--AND CG.N_CLAIM_COVERAGE_SK_R = CO.N_CLAIM_COVERAGE_SK_R
+									--and case when length(RS1.V_CLAIM_NUM_R) in (25,26) then CO.N_CLAIM_COVERAGE_SK_R  else nvl(CG.N_CLAIM_COVERAGE_SK_R,1) end = nvl(CG.N_CLAIM_COVERAGE_SK_R,1)
+										and case when length(RS1.V_CLAIM_IDENTIFIER_R) in (25,26) then CO.N_CLAIM_COVERAGE_SK_R  else nvl(CG.N_CLAIM_COVERAGE_SK_R,1) end = nvl(CG.N_CLAIM_COVERAGE_SK_R,1)--mine..no impact on lg reserve
+										and co.N_CLAIM_CVRG_SEQUENCE_NUMBER_R is not null
+									LEFT JOIN ATOMIC.DIM_GRP_POLICY_DIR_R PD
+										ON RS1.V_POLICY_NUMBER_R = PD.V_POLICY_NUMBER_R
+										AND PD.V_ACTIVE_STATUS_R = &apos;Y&apos;
+									LEFT JOIN ATOMIC.FCT_GRP_WORKSHEET WS
+										ON WS.N_CLAIM_SK_R = CO.N_CLAIM_SK_R
+										AND WS.N_CLAIM_COVERAGE_SK_R = CO.N_CLAIM_COVERAGE_SK_R
+										AND WS.V_RPT_WORKSHEET_INDICATOR_R = &apos;Y&apos;
+									LEFT JOIN (SELECT * FROM DIM_TIME_R DT WHERE V_END_OF_FISCAL_MONTH_IND_R=&apos;Y&apos;)DT	
+										ON extract(month from TO_DATE( RS1.D_VALUATION_DATE_R , &apos;MM/DD/YYYY&apos;)) =extract (month from TO_DATE(DT.D_CALENDAR_DATE_R, &apos;dd-mon-yy&apos;) )
+										AND extract(YEAR from to_date( RS1.D_VALUATION_DATE_R , &apos;MM/DD/YYYY&apos;)) = EXTRACT (YEAR FROM to_date(DT.D_CALENDAR_DATE_R, &apos;dd-mon-yy&apos;) )																																	
+
+									WHERE TO_DATE(RS1.D_VALUATION_DATE_R , &apos;MM/DD/YYYY&apos;) = gd_mis_date_be_r 
+									) RS
+
+					FULL OUTER JOIN
+
+									(select
+									WS2.N_GROSS_BENEFIT_R AS N_GROSS_BENEFIT_R
+									,WS2.N_RPT_NET_BENEFIT_R AS N_RPT_NET_BENEFIT_R
+									,BE1.N_BEST_ESTIMATE_RESERVE_R AS N_RESERVE_DIRECT_BEST_ESTMT_R
+									,BE1.N_BEST_EST_RESRV_NET_BENEFIT_R AS N_BEST_ESTIMATE_NET_BENEFIT_R
+									,CAST(BE1.V_SSDI_ESTIMATED_IND_R AS VARCHAR(100)) AS V_PRICING_SSDI_ESTIMATED_IND_R--MINE
+									,CAST(BE1.V_DATA_UPDATE_R AS VARCHAR(100)) AS V_BEST_ESTMT_RESERVE_MODEL_R---MINE
+									,TO_NUMBER(BE1.N_BEST_ESTIMATE_RESERVE_R) N_BEST_ESTIMATE_RESERVE_R
+									,BE1.V_CLAIM_STATUS_CODE_R
+									--,BE1.D_LOSS_DATE_R
+									,NVL(CO2.V_CLAIM_COVERAGE_CODE_R,&apos;LTD&apos;) CO2_V_COVERAGE_CODE_R
+									,nvl(PD2.V_POLICY_PREFIX_R||PD2.V_POLICY_SUFFIX_R, BE1.V_POLICY_NUMBER_R) V_POLICY_NUMBER_R
+									,BE1.V_CLAIM_NUMBER_R V_CLAIM_NUMBER_R
+									--,to_date( BE1.D_VALUATION_DATE_R , &apos;MM/DD/YYYY&apos;) D_VALUATION_DATE_R
+									,DT.D_CALENDAR_DATE_R D_VALUATION_DATE_R									 
+									,NVL(CO2.N_CLAIM_SK_R,-1) as N_CLAIM_SK_R
+									,NVL(PD2.N_POLICY_SK_R,-1) AS N_POLICY_SK_R
+									--,&apos;LTD_STG_BEST_ESTIMATE_RESERVES_R&apos; AS  Flag_type
+									,BE1.V_CLAIM_NUMBER_R	V_CLAIM_IDENTIFIER_R
+									, CAST(NULL AS VARCHAR(4)) V_COV_GRP_ID_R
+									FROM  atomic.STG_BEST_ESTIMATE_RESERVES_R BE1
+									--LEFT JOIN atomic.DIM_GRP_CLAIM_COVERAGE_GROUP_R CG2 ON
+									--	BE1.V_CLAIM_NUM_R = CG2.V_CLAIM_IDENTIFIER_R
+									--	AND CG2.V_ACTIVE_STATUS_R = &apos;Y&apos;
+
+
+
+									LEFT JOIN atomic.DIM_GRP_CLAIM_COVERAGE_R CO2
+										ON BE1.V_CLAIM_NUMBER_R = CO2.V_CLAIM_NUMBER_R
+										AND CO2.V_ACTIVE_STATUS_R = &apos;Y&apos;
+										--AND CG2.N_CLAIM_COVERAGE_SK_R = CO2.N_CLAIM_COVERAGE_SK_R
+										and N_CLAIM_CVRG_SEQUENCE_NUMBER_R is not null
+									LEFT JOIN atomic.DIM_GRP_POLICY_DIR_R PD2
+										ON (CASE WHEN SUBSTR(BE1.V_POLICY_NUMBER_R,1,3) = &apos;LSC&apos; THEN &apos;LTD&apos; ELSE  SUBSTR(BE1.V_POLICY_NUMBER_R,1,3) END)  = PD2.V_POLICY_PREFIX_R
+										AND (case when length(BE1.v_policy_number_r) &gt;= 13 then substr(BE1.v_policy_number_r, -10)
+										else substr(BE1.v_policy_number_r, -6)end) =  PD2.V_POLICY_SUFFIX_R
+										--AND SUBSTR(BE1.V_POLICY_NUMBER_R, 5,6) =  PD2.V_POLICY_SUFFIX_R
+										AND PD2.V_ACTIVE_STATUS_R = &apos;Y&apos;
+
+									LEFT JOIN atomic.FCT_GRP_WORKSHEET WS2
+										ON WS2.N_CLAIM_SK_R = CO2.N_CLAIM_SK_R
+										AND WS2.N_CLAIM_COVERAGE_SK_R = CO2.N_CLAIM_COVERAGE_SK_R
+										AND WS2.V_RPT_WORKSHEET_INDICATOR_R = &apos;Y&apos;
+									LEFT JOIN (SELECT * FROM DIM_TIME_R DT WHERE V_END_OF_FISCAL_MONTH_IND_R=&apos;Y&apos;)DT	
+										ON extract(month from TO_DATE( BE1.D_VALUATION_DATE_R , &apos;MM/DD/YYYY&apos;)) =extract (month from TO_DATE(DT.D_CALENDAR_DATE_R, &apos;dd-mon-yy&apos;) )
+										AND extract(YEAR from to_date( BE1.D_VALUATION_DATE_R , &apos;MM/DD/YYYY&apos;)) = EXTRACT (YEAR FROM to_date(DT.D_CALENDAR_DATE_R, &apos;dd-mon-yy&apos;) )
+									) BE
+
+					ON RS.V_CLAIM_NUMBER_R = BE.V_CLAIM_NUMBER_R
+                    AND TO_CHAR(RS.D_VALUATION_DATE_R, &apos;YYYYMM&apos;) = TO_CHAR(BE.D_VALUATION_DATE_R, &apos;YYYYMM&apos;)
+
+
+					FULL OUTER JOIN
+
+						(SELECT
+							&apos;L&apos; V_RESERVE_TYPE_IND_R
+							--,D_RESERVE_VALUATION_DATE_R
+							,LR.D_LOSS_DATE_R
+							--,DT.N_DATE_SK_R
+							--,DT.D_CALENDAR_DATE_R
+							,LR.N_GAAP_GROSS_RESERVE_R as N_RESERVE_DIRECT__GAAP__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_ASSUMED__GAAP__R
+							,LR.N_GAAP_CEDED_RESERVE_R as N_RESERVE_CEDED__GAAP__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_NET__GAAP__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_DIRECT__GAAP__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_ASSUMED__GAAP__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_CEDED__GAAP__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_NET__GAAP__R
+							,LR.N_STAT_GROSS_RESERVE_R as N_RESERVE_DIRECT__STAT__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_ASSUMED__STAT__R
+							,LR.N_STAT_CEDED_RESERVE_R as N_RESERVE_CEDED__STAT__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_NET__STAT__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_DIRECT__STAT__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_ASSUMED__STAT__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_CEDED__STAT__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_NET__STAT__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_ORIGINAL_RESERVE_R
+							--,CCG.N_RESERVE_AMOUNT_R N_ORIGINAL_RESERVE_R
+							--,CAST(NULL  AS DECIMAL(13,2)) N_CURRENT_RESERVE_R
+							,LR.N_FACE_AMOUNT_R as N_CURRENT_RESERVE_R
+							--,(CCG.N_RESERVE_AMOUNT_R  - CCG.N_WS_RELEASED_AMOUNT_R) N_CURRENT_RESERVE_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_GROSS_BENEFIT_R
+							--,WS.N_GROSS_BENEFIT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_NET_BENEFIT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHECK_NET_BENEFIT_R
+							--,WS.N_RPT_NET_BENEFIT_R N_CHECK_NET_BENEFIT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_FINANCIAL_NET_BENEFIT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_DIRECT_BEST_ESTMT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_ASSUMED_BEST_ESTMT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_CEDED_BEST_ESTMT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_NET_BEST_ESTIMATE_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RSRV_DIRECT_BEST_ESTMT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RSRV_ASSUMD_BEST_ESTMT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RSRV_CEDED_BEST_ESTMT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_NET_BEST_ESTMT_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_BEST_ESTIMATE_NET_BENEFIT_R
+							,CAST(NULL AS VARCHAR(100)) V_PRICING_SSDI_ESTIMATED_IND_R
+							,CAST(NULL AS VARCHAR(100)) V_BEST_ESTMT_RESERVE_MODEL_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_DIRECT__FIELD__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_ASSUMED__FIELD__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_CEDED__FIELD__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_RESERVE_NET__FIELD__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_DIRECT__FIELD__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_ASSUMED_FIELD_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_CEDED__FIELD__R
+							,CAST(NULL  AS DECIMAL(13,2)) N_CHG_RESERVE_NET__FIELD__R
+							--,CAST(NULL  AS DECIMAL(13,2)) N_UNADJUSTD_RSRV_DIRECT_GAAP_R
+							,LR.N_GAAP_GROSS_RESERVE_R as N_UNADJUSTD_RSRV_DIRECT_GAAP_R
+							--,CAST(NULL  AS DECIMAL(13,2)) N_UNADJUSTD_RSRV_DIRECT_STAT_R
+							,LR.N_STAT_GROSS_RESERVE_R as N_UNADJUSTD_RSRV_DIRECT_STAT_R
+							,NVL(PD.N_POLICY_SK_R, -1) N_POLICY_SK_R
+							,NVL(CD.N_CLAIM_SK_R,-1) N_CLAIM_SK_R
+							,CAST(NULL AS TIMESTAMP) D_RECORD_START_DATE_R
+							,CAST(NULL AS TIMESTAMP) D_RECORD_END_DATE_R
+							,CAST(NULL AS VARCHAR(100)) V_SOURCE_SYSTEM_NAME_R
+							,SYSTIMESTAMP T_EVENT_TIMESTAMP_R
+							,SYSTIMESTAMP FIC_MIS_DATE_R
+							,gn_sysdt_batchid N_BATCH_ID_R
+							,ROWNUM N_SEQUENCE_NUMBER_R
+							,SYSTIMESTAMP T_CREATION_DATE_R
+							,SYSTIMESTAMP T_LAST_MODIFIED_DATE_R
+							,&apos;PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR&apos; V_CREATED_BY_R
+							,&apos;PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR&apos; V_LAST_MODIFIED_BY_R
+              --,CAST(NULL AS DATE) D_RESERVE_VALUATION_DATE_R
+							--,DT.D_CALENDAR_DATE_R
+                            --,LAST_DAY(DT.D_CALENDAR_DATE_R) D_RESERVE_VALUATION_DATE_R
+							,gd_mis_cycle_date_r  AS D_RESERVE_VALUATION_DATE_R
+							,LR.V_PRODUCT_SUB_LINE_R V_COVERAGE_CODE_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_GAAP_IBNR_CEDED_R
+							,CAST(NULL  AS DECIMAL(13,2)) N_STAT_IBNR_CEDED_R
+							,REGEXP_REPLACE(LR.V_POLICY_NUMBER_R, &apos;\s*&apos;, &apos;&apos;) V_POLICY_NUMBER_R
+							,SUBSTR(LR.V_CLAIM_IDENTIFIER_R,0,LENGTH(LR.V_CLAIM_IDENTIFIER_R)-3) V_CLAIM_NUMBER_R
+							,CAST(NULL AS VARCHAR(100))  V_PRIVACY_INDICATOR_R
+							,LR.V_CLAIM_IDENTIFIER_R V_CLAIM_IDENTIFIER_R
+							,CCG.N_COV_GRP_ID_R V_COV_GRP_ID_R
+							,LR.V_STATUS_R V_CLAIM_STATUS_CODE_R
+							,LR.V_COVERAGE_R
+						FROM ATOMIC.STG_LIFE_RESERVES_HIST_R LR
+						LEFT JOIN (SELECT N_POLICY_SK_R, V_POLICY_PREFIX_R, V_POLICY_SUFFIX_R, V_POLICY_NUMBER_R FROM ATOMIC.DIM_GRP_POLICY_DIR_R WHERE V_ACTIVE_STATUS_R = &apos;Y&apos;   ) PD
+									ON LR.V_POLICY_PREFIX_R  = PD.V_POLICY_PREFIX_R
+									AND REGEXP_REPLACE(LR.V_POLICY_NUMBER_R, &apos;\s*&apos;, &apos;&apos;) = PD.V_POLICY_NUMBER_R
+						LEFT JOIN (SELECT N_CLAIM_SK_R,V_CLAIM_NUMBER_R FROM ATOMIC.DIM_GRP_CLAIM_DIR_R WHERE V_ACTIVE_STATUS_R=&apos;Y&apos;) CD
+									on SUBSTR(LR.V_CLAIM_IDENTIFIER_R,0,length(LR.V_CLAIM_IDENTIFIER_R)-3) = CD.V_CLAIM_NUMBER_R
+						LEFT JOIN (SELECT N_CLAIM_SK_R,N_COV_GRP_ID_R,V_CLAIM_IDENTIFIER_R,N_RESERVE_AMOUNT_R,N_WS_RELEASED_AMOUNT_R,N_CLAIM_COVERAGE_SK_R,N_CLAIM_COVERAGE_GROUP_SK_R,V_CLAIM_COVERAGE_CODE_R
+									FROM DIM_GRP_CLAIM_COVERAGE_GROUP_R WHERE V_ACTIVE_STATUS_R=&apos;Y&apos;) CCG
+									on CD.N_CLAIM_SK_R = CCG.N_CLAIM_SK_R
+									AND LR.V_CLAIM_IDENTIFIER_R=CCG.V_CLAIM_IDENTIFIER_R
+						LEFT JOIN MVW_PRODUCT_SK_LOOKUP PR
+								ON CCG.N_CLAIM_SK_R = PR.N_CLAIM_SK_R
+								AND CCG.V_CLAIM_COVERAGE_CODE_R = PR.V_CLAIM_COVERAGE_CODE_R
+						LEFT JOIN DIM_GRP_PRODUCT_R DP
+								ON PR.N_PRODUCT_SK_R = DP.N_PRODUCT_SK_R
+								AND DP.V_COVERAGE_TYPE_CODE_R = &apos;3&apos;
+								AND DP.V_COVERAGE_CATEGORY_R = &apos;Life - Non-Annuity&apos;
+								AND DP.V_COVERAGE_CODE_R NOT IN (&apos;ORL&apos;, &apos;WP&apos;, &apos;BWP&apos;, &apos;WPS&apos;, &apos;IWP&apos;)
+						LEFT JOIN FCT_GRP_WORKSHEET WS
+									ON WS.N_CLAIM_SK_R = CCG.N_CLAIM_SK_R
+									AND WS.N_CLAIM_COVERAGE_SK_R = CCG.N_CLAIM_COVERAGE_SK_R
+									AND WS.V_RPT_WORKSHEET_INDICATOR_R = &apos;Y&apos;
+									AND WS.N_CLAIM_COVERAGE_GROUP_SK_R = CCG.N_CLAIM_COVERAGE_GROUP_SK_R
+						LEFT JOIN (SELECT D_CALENDAR_DATE_R FROM DIM_TIME_R DT WHERE  V_END_OF_FISCAL_MONTH_IND_R=&apos;Y&apos;)DT
+                          ON  DT.D_CALENDAR_DATE_R = gd_mis_cycle_date_r 																					
+				  WHERE LR.D_VALUATION_DATE_R = gd_mis_date_be_r
+
+
+						)LF
+						ON RS.V_POLICY_NUMBER_R = LF.V_POLICY_NUMBER_R
+						AND BE.V_POLICY_NUMBER_R = LF.V_POLICY_NUMBER_R
+					)C
+			FULL OUTER JOIN
+					(SELECT --&apos;Prior&apos; as Flag_type,
+					Pr.*
+
+					FROM atomic.FCT_LG_RESERVE_DETAILS_R  Pr
+					WHERE
+					D_RESERVE_VALUATION_DATE_R = gd_mis_date_prev_r
+					--AND V_POLICY_NUMBER_R=&apos;LTD000162&apos;
+					AND
+					V_RESERVE_TYPE_IND_R = &apos;L&apos; and not  (
+					(       N_RESERVE_DIRECT__GAAP__R is null or          N_RESERVE_DIRECT__GAAP__R            =0)
+					and ( N_RESERVE_ASSUMED__GAAP__R is null or     N_RESERVE_ASSUMED__GAAP__R            =0)
+					and ( N_RESERVE_CEDED__GAAP__R is null or       N_RESERVE_CEDED__GAAP__R              =0)
+					and ( N_RESERVE_NET__GAAP__R is null or         N_RESERVE_NET__GAAP__R                =0)
+					--AND ( N_CHG_RESERVE_DIRECT__GAAP__R        is null or N_CHG_RESERVE_DIRECT__GAAP__R    =0)
+					--AND ( N_CHG_RESERVE_ASSUMED__GAAP__R    is null or N_CHG_RESERVE_ASSUMED__GAAP__R   =0)
+					--AND ( N_CHG_RESERVE_CEDED__GAAP__R      is null or N_CHG_RESERVE_CEDED__GAAP__R     =0)
+					--AND ( N_CHG_RESERVE_NET__GAAP__R        is null or N_CHG_RESERVE_NET__GAAP__R       =0)
+					and ( N_RESERVE_DIRECT__STAT__R  is null or       N_RESERVE_DIRECT__STAT__R             =0)
+					and ( N_RESERVE_ASSUMED__STAT__R is null or       N_RESERVE_ASSUMED__STAT__R            =0)
+					and ( N_RESERVE_CEDED__STAT__R  is null or        N_RESERVE_CEDED__STAT__R              =0)
+					and ( N_RESERVE_NET__STAT__R  is null or          N_RESERVE_NET__STAT__R                =0)
+					--and ( N_CHG_RESERVE_DIRECT__STAT__R  is null or  N_CHG_RESERVE_DIRECT__STAT__R   =0)
+					--and ( N_CHG_RESERVE_ASSUMED__STAT__R is null or  N_CHG_RESERVE_ASSUMED__STAT__R    =0)
+					--and ( N_CHG_RESERVE_CEDED__STAT__R   is null or  N_CHG_RESERVE_CEDED__STAT__R  =0)
+					--and ( N_CHG_RESERVE_NET__STAT__R     is null or  N_CHG_RESERVE_NET__STAT__R=0)
+					--and ( N_ORIGINAL_RESERVE_R  is null or             N_ORIGINAL_RESERVE_R                  =0)
+					--and ( N_CURRENT_RESERVE_R is null or               N_CURRENT_RESERVE_R                   =0)
+					--and ( N_GROSS_BENEFIT_R is null or                 N_GROSS_BENEFIT_R                     =0)
+					--and ( N_NET_BENEFIT_R is null or                   N_NET_BENEFIT_R                       =0)
+					--and ( N_CHECK_NET_BENEFIT_R is null or             N_CHECK_NET_BENEFIT_R                 =0)
+					--and ( N_FINANCIAL_NET_BENEFIT_R is null or         N_FINANCIAL_NET_BENEFIT_R             =0)
+					and ( N_RESERVE_DIRECT_BEST_ESTMT_R is null or     N_RESERVE_DIRECT_BEST_ESTMT_R         =0)
+					and ( N_RESERVE_ASSUMED_BEST_ESTMT_R is null or    N_RESERVE_ASSUMED_BEST_ESTMT_R        =0)
+					and ( N_RESERVE_CEDED_BEST_ESTMT_R is null or      N_RESERVE_CEDED_BEST_ESTMT_R          =0)
+					and ( N_RESERVE_NET_BEST_ESTIMATE_R is null or     N_RESERVE_NET_BEST_ESTIMATE_R         =0)
+					--AND (N_CHG_RSRV_DIRECT_BEST_ESTMT_R  is null or  N_CHG_RSRV_DIRECT_BEST_ESTMT_R    =0)
+					----AND (N_CHG_RSRV_ASSUMD_BEST_ESTMT_R  is null or  N_CHG_RSRV_ASSUMD_BEST_ESTMT_R =0)
+					--AND (N_CHG_RSRV_CEDED_BEST_ESTMT_R   is null or  N_CHG_RSRV_CEDED_BEST_ESTMT_R  =0)
+					--AND (N_CHG_RESERVE_NET_BEST_ESTMT_R  is null or  N_CHG_RESERVE_NET_BEST_ESTMT_R =0)
+					and ( N_BEST_ESTIMATE_NET_BENEFIT_R is null or    N_BEST_ESTIMATE_NET_BENEFIT_R          =0)
+					and ( N_RESERVE_DIRECT__FIELD__R is null or       N_RESERVE_DIRECT__FIELD__R            =0)
+					and ( N_RESERVE_ASSUMED__FIELD__R is null or      N_RESERVE_ASSUMED__FIELD__R           =0)
+					and ( N_RESERVE_CEDED__FIELD__R is null or        N_RESERVE_CEDED__FIELD__R             =0)
+					and ( N_RESERVE_NET__FIELD__R  is null or         N_RESERVE_NET__FIELD__R               =0)
+					--AND (N_CHG_RESERVE_DIRECT__FIELD__R    is null or N_CHG_RESERVE_DIRECT__FIELD__R     =0)
+					--AND (N_CHG_RESERVE_ASSUMED_FIELD_R  is null or N_CHG_RESERVE_ASSUMED_FIELD_R     =0)
+					--AND (N_CHG_RESERVE_CEDED__FIELD__R  is null or N_CHG_RESERVE_CEDED__FIELD__R     =0)
+					--AND (N_CHG_RESERVE_NET__FIELD__R    is null or N_CHG_RESERVE_NET__FIELD__R       =0)
+					and ( N_UNADJUSTD_RSRV_DIRECT_GAAP_R is null or    N_UNADJUSTD_RSRV_DIRECT_GAAP_R        =0)
+					and ( N_UNADJUSTD_RSRV_DIRECT_STAT_R is null or    N_UNADJUSTD_RSRV_DIRECT_STAT_R        =0)
+					and ( N_GAAP_IBNR_CEDED_R is null or               N_GAAP_IBNR_CEDED_R=0                   )
+					and ( N_STAT_IBNR_CEDED_R is null or               N_STAT_IBNR_CEDED_R=0                   )
+					) )P
+					ON --C.N_POLICY_SK_R = P.N_POLICY_SK_R AND
+					C.V_COVERAGE_CODE_R=P.V_COVERAGE_CODE_R  AND
+					C.V_CLAIM_IDENTIFIER_R=P.V_CLAIM_IDENTIFIER_R;
+
+lc_run_cnt:= SQL%ROWCOUNT;
+    COMMIT;
+
+	lc_count_type_r:= PKG_GRP_LOG_UTIL.gc_count_type_insert;
+
+    gc_trcmsg:=&apos;3.1 Inserted records :-&gt;&apos;||lc_run_cnt;
+
+
+	lt_end_time_r:= SYSTIMESTAMP;
+    lc_duration_r := EXTRACT(SECOND FROM (lt_end_time_r - lt_start_time_r)) +
+                     EXTRACT(MINUTE FROM (lt_end_time_r - lt_start_time_r)) * 60 +
+                     EXTRACT(HOUR FROM (lt_end_time_r - lt_start_time_r)) * 3600;	
+
+
+	 PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r
+	 (
+		p_job_id_r                    =&gt; gn_out_job_id,
+		p_batch_id_r                  =&gt; gn_sysdt_batchid,
+		p_message_type_r              =&gt; lv_message_type_r,
+		p_code_location_r             =&gt; gc_main_loadedby,
+		p_message_r                   =&gt; gc_trcmsg,
+		p_count_type_r                =&gt; lc_count_type_r,
+		p_count_r                     =&gt; lc_run_cnt,
+		p_duration_r                  =&gt; lc_duration_r,
+		p_created_by_r                =&gt; gc_job_name,
+		out_prcs_job_log_message_id_r =&gt; ln_job_log_message_id_r
+	);	
+
+
+	pkg_grp_log_util.prc_update_log(
+      						gn_out_job_id                   --p_job_id
+							,gc_success_status              --p_job_status
+							,gc_errmsg                      --p_err_msg
+							,gc_trcmsg                      --p_trc_msg
+							,gc_main_loadedby               --p_log_util_called_by_r
+							);
+
+
+EXCEPTION
+WHEN OTHERS THEN
+
+	IF gc_errmsg IS NULL THEN	
+		gc_errmsg :=SUBSTR(SQLERRM,1,4000);
+	    gc_trcmsg :=&apos;1.z Error in main - &apos;||gc_errmsg;
+	END IF;
+
+
+
+    pkg_grp_log_util.prc_update_log_message_r
+			( 
+			n_prcs_job_log_message_id_r =&gt; ln_job_log_message_id_r,
+			p_err_msg 					=&gt; gc_trcmsg 
+				);
+
+
+	pkg_grp_log_util.prc_update_log
+      (
+        gn_out_job_id                   	--p_job_id
+        ,gc_error_status                	--p_job_status
+        ,gc_errmsg                       	--p_err_msg
+        ,gc_trcmsg					     	--p_trc_msg
+        ,gc_main_loadedby               	--p_log_util_called_by_r
+      );
+    RAISE;
+
+	END PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_TMP_PREV;
+
+--Procedure to load FCT_LG_RESERVE_DETAILS_R table for previous month	
+PROCEDURE PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R IS
+
+	lv_message_type_r             	PRCS_JOB_LOG_MESSAGE_R.v_message_type_r%TYPE    := PKG_GRP_LOG_UTIL.gc_message_type_info;
+	ln_job_log_message_id_r         NUMBER;
+	lt_start_time_r 	TIMESTAMP;
+	lt_end_time_r 		TIMESTAMP;
+	lc_run_cnt          PRCS_JOB_LOG_MESSAGE_R.N_COUNT_R%TYPE 	 		:=0;
+	lc_count_type_r 	PRCS_JOB_LOG_MESSAGE_R.v_count_type_r%TYPE      := PKG_GRP_LOG_UTIL.gc_count_type_insert;
+	lc_duration_r       PRCS_JOB_LOG_MESSAGE_R.T_DURATION_R%TYPE 		:=0;
+	LV_FAIL_BEST_ESTIM	NUMBER;
+BEGIN
+
+
+
+	pkg_grp_log_util.prc_insert_log
+                       ( p_source              =&gt; gc_source
+					    ,p_job_nm              =&gt; gc_job_name
+                        ,p_job_status          =&gt; gc_running_status
+                        ,p_err_msg             =&gt; null
+                        ,p_trc_msg             =&gt; null
+                        ,p_n_batch_id          =&gt; gn_sysdt_batchid
+                        ,p_log_util_called_by_r=&gt; gc_main_loadedby
+						,out_job_id            =&gt; gn_out_job_id
+						);
+
+
+
+Update Atomic.FCT_LG_RESERVE_DETAILS_R set 
+			 N_GROSS_BENEFIT_R = NULL
+			,N_CHECK_NET_BENEFIT_R= NULL
+			,N_RESERVE_DIRECT_BEST_ESTMT_R= NULL
+			,N_CHG_RSRV_DIRECT_BEST_ESTMT_R= NULL
+			,N_BEST_ESTIMATE_NET_BENEFIT_R= NULL
+			,N_RESERVE_DIRECT__FIELD__R= NULL
+			,N_CHG_RESERVE_DIRECT__FIELD__R= NULL
+			,N_RESERVE_DIRECT__STAT__R= NULL
+            ,N_RESERVE_DIRECT__GAAP__R= NULL
+			,V_PRICING_SSDI_ESTIMATED_IND_R = NULL
+			,V_BEST_ESTMT_RESERVE_MODEL_R= NULL
+			where V_RESERVE_TYPE_IND_R=&apos;L&apos; AND D_RESERVE_VALUATION_DATE_R = gd_mis_cycle_date_r;
+
+lc_run_cnt:= SQL%ROWCOUNT;
+COMMIT;
+
+
+		lc_count_type_r:= PKG_GRP_LOG_UTIL.gc_count_type_update;
+		gC_TRCMSG:= &apos;1 Updated data in FCT_LG_RESERVE_DETAILS_R for L Indicator record count and Valuation_Date :-&gt;&apos;||lc_run_cnt||&apos;-&apos;||gd_mis_cycle_date_r;
+
+
+		PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r
+	 (
+		p_job_id_r                    =&gt; gn_out_job_id,
+		p_batch_id_r                  =&gt; gn_sysdt_batchid,
+		p_message_type_r              =&gt; lv_message_type_r,
+		p_code_location_r             =&gt; gc_main_loadedby,
+		p_message_r                   =&gt; gc_trcmsg,
+		p_count_type_r                =&gt; lc_count_type_r,
+		p_count_r                     =&gt; lc_run_cnt,
+		p_duration_r                  =&gt; NULL,
+		p_created_by_r                =&gt; gc_job_name,
+		out_prcs_job_log_message_id_r =&gt; ln_job_log_message_id_r
+	);
+
+	lt_start_time_r:= SYSTIMESTAMP;
+
+		gc_trcmsg:=&apos;2 Merging the data to fct_lg_reserve_Details_r table for previous month&apos;;		
+
+		PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r(
+						p_job_id_r                    	=&gt; gn_out_job_id,
+						p_batch_id_r                  	=&gt; gn_sysdt_batchid,
+						p_message_type_r              	=&gt; lv_message_type_r,
+						p_code_location_r             	=&gt; gc_main_loadedby,
+						p_message_r                   	=&gt; gc_trcmsg,
+						p_count_type_r                	=&gt; NULL,
+						p_count_r                     	=&gt; NULL,
+						p_duration_r                  	=&gt; NULL,
+						p_created_by_r                	=&gt; gc_job_name,
+						out_prcs_job_log_message_id_r 	=&gt; ln_job_log_message_id_r
+						);
+
+
+
+MERGE INTO ATOMIC.FCT_LG_RESERVE_DETAILS_R TGT
+USING (
+
+	SELECT 
+		N_GROSS_BENEFIT_R
+	   ,N_CHECK_NET_BENEFIT_R 
+	   ,N_RESERVE_DIRECT_BEST_ESTMT_R 
+	   ,N_CHG_RSRV_DIRECT_BEST_ESTMT_R
+	   ,N_BEST_ESTIMATE_NET_BENEFIT_R
+	   ,V_PRICING_SSDI_ESTIMATED_IND_R 
+	   ,V_BEST_ESTMT_RESERVE_MODEL_R 
+	   ,N_RESERVE_DIRECT__FIELD__R
+	   ,V_COVERAGE_CODE_R
+	   ,V_CLAIM_IDENTIFIER_R									
+	   ,D_RESERVE_VALUATION_DATE_R
+	   ,N_POLICY_SK_R
+	   ,N_CLAIM_SK_R
+	   ,N_CHG_RESERVE_DIRECT__FIELD__R
+	   ,V_RESERVE_TYPE_IND_R
+       ,N_RESERVE_DIRECT__STAT__R
+       ,N_RESERVE_DIRECT__GAAP__R
+	   ,V_POLICY_NUMBER_R ,V_CLAIM_NUMBER_R
+	   ,ROWNUM AS N_SEQUENCE_NUMBER_R
+	FROM (
+			SELECT
+			 N_GROSS_BENEFIT_R
+			,N_CHECK_NET_BENEFIT_R 
+			,N_RESERVE_DIRECT_BEST_ESTMT_R 
+			,N_CHG_RSRV_DIRECT_BEST_ESTMT_R
+			,N_BEST_ESTIMATE_NET_BENEFIT_R
+			,V_PRICING_SSDI_ESTIMATED_IND_R 
+			,V_BEST_ESTMT_RESERVE_MODEL_R 
+			,N_RESERVE_DIRECT__FIELD__R
+			,V_COVERAGE_CODE_R
+			,V_CLAIM_IDENTIFIER_R									
+			,D_RESERVE_VALUATION_DATE_R
+			,N_POLICY_SK_R
+			,N_CLAIM_SK_R
+			,N_CHG_RESERVE_DIRECT__FIELD__R
+			,V_RESERVE_TYPE_IND_R
+            ,N_RESERVE_DIRECT__STAT__R
+            ,N_RESERVE_DIRECT__GAAP__R
+			,V_POLICY_NUMBER_R ,V_CLAIM_NUMBER_R
+			,ROW_NUMBER() OVER(PARTITION BY V_CLAIM_IDENTIFIER_R,D_RESERVE_VALUATION_DATE_R,N_POLICY_SK_R,N_CLAIM_SK_R,V_RESERVE_TYPE_IND_R 
+            ORDER BY V_CLAIM_IDENTIFIER_R,D_RESERVE_VALUATION_DATE_R,N_POLICY_SK_R,N_CLAIM_SK_R,V_RESERVE_TYPE_IND_R)rn
+			FROM(
+
+					 SELECT
+					 MAX(N_GROSS_BENEFIT_R) AS N_GROSS_BENEFIT_R
+					,MAX(N_CHECK_NET_BENEFIT_R) AS N_CHECK_NET_BENEFIT_R
+					,MAX(N_RESERVE_DIRECT_BEST_ESTMT_R) AS N_RESERVE_DIRECT_BEST_ESTMT_R 
+					,MAX(N_CHG_RSRV_DIRECT_BEST_ESTMT_R) AS N_CHG_RSRV_DIRECT_BEST_ESTMT_R
+					,MAX(N_BEST_ESTIMATE_NET_BENEFIT_R) AS N_BEST_ESTIMATE_NET_BENEFIT_R
+					,V_PRICING_SSDI_ESTIMATED_IND_R 
+					,V_BEST_ESTMT_RESERVE_MODEL_R 
+					,MAX(N_RESERVE_DIRECT__FIELD__R) AS N_RESERVE_DIRECT__FIELD__R
+					,MAX(N_CHG_RESERVE_DIRECT__FIELD__R) AS N_CHG_RESERVE_DIRECT__FIELD__R
+					,V_COVERAGE_CODE_R
+					,V_CLAIM_IDENTIFIER_R									
+					,D_RESERVE_VALUATION_DATE_R
+					,N_POLICY_SK_R
+					,N_CLAIM_SK_R
+					,V_RESERVE_TYPE_IND_R
+					,MAX(N_RESERVE_DIRECT__STAT__R) AS N_RESERVE_DIRECT__STAT__R
+                    ,MAX(N_RESERVE_DIRECT__GAAP__R) AS N_RESERVE_DIRECT__GAAP__R
+					,V_POLICY_NUMBER_R ,V_CLAIM_NUMBER_R
+					FROM ATOMIC.FCT_LG_RESERVE_DETAILS_R_TMP_PREV
+					WHERE V_RESERVE_TYPE_IND_R=&apos;L&apos; AND D_RESERVE_VALUATION_DATE_R= gd_mis_cycle_date_r
+					GROUP BY  V_PRICING_SSDI_ESTIMATED_IND_R,V_BEST_ESTMT_RESERVE_MODEL_R,V_COVERAGE_CODE_R,V_CLAIM_IDENTIFIER_R,D_RESERVE_VALUATION_DATE_R,N_POLICY_SK_R,N_CLAIM_SK_R,V_RESERVE_TYPE_IND_R,V_POLICY_NUMBER_R ,V_CLAIM_NUMBER_R
+			)
+
+)WHERE rn=1 )SRC
+ON  
+      (TGT.D_RESERVE_VALUATION_DATE_R = SRC.D_RESERVE_VALUATION_DATE_R
+       AND TGT.V_CLAIM_IDENTIFIER_R  = SRC.V_CLAIM_IDENTIFIER_R
+	   AND TGT.N_POLICY_SK_R = SRC.N_POLICY_SK_R
+	   AND TGT.N_CLAIM_SK_R = SRC.N_CLAIM_SK_R
+	   AND TGT.V_RESERVE_TYPE_IND_R = SRC.V_RESERVE_TYPE_IND_R)
+
+WHEN MATCHED THEN 
+    UPDATE SET 
+			 TGT.N_GROSS_BENEFIT_R = SRC.N_GROSS_BENEFIT_R
+			,TGT.N_CHECK_NET_BENEFIT_R = SRC.N_CHECK_NET_BENEFIT_R
+			,TGT.N_RESERVE_DIRECT_BEST_ESTMT_R = SRC.N_RESERVE_DIRECT_BEST_ESTMT_R
+			,TGT.N_CHG_RSRV_DIRECT_BEST_ESTMT_R = SRC.N_CHG_RSRV_DIRECT_BEST_ESTMT_R
+			,TGT.N_BEST_ESTIMATE_NET_BENEFIT_R = SRC.N_BEST_ESTIMATE_NET_BENEFIT_R
+			,TGT.V_PRICING_SSDI_ESTIMATED_IND_R = SRC.V_PRICING_SSDI_ESTIMATED_IND_R
+			,TGT.V_BEST_ESTMT_RESERVE_MODEL_R = SRC.V_BEST_ESTMT_RESERVE_MODEL_R
+			,TGT.N_RESERVE_DIRECT__FIELD__R = SRC.N_RESERVE_DIRECT__FIELD__R
+			,TGT.N_CHG_RESERVE_DIRECT__FIELD__R = SRC.N_CHG_RESERVE_DIRECT__FIELD__R
+			,TGT.N_RESERVE_DIRECT__STAT__R = SRC.N_RESERVE_DIRECT__STAT__R
+			,TGT.N_RESERVE_DIRECT__GAAP__R = SRC.N_RESERVE_DIRECT__GAAP__R
+
+
+WHERE TGT.D_RESERVE_VALUATION_DATE_R = SRC.D_RESERVE_VALUATION_DATE_R
+       AND TGT.V_CLAIM_IDENTIFIER_R  = SRC.V_CLAIM_IDENTIFIER_R
+	   AND TGT.N_POLICY_SK_R = SRC.N_POLICY_SK_R
+	   AND TGT.N_CLAIM_SK_R = SRC.N_CLAIM_SK_R
+	   AND TGT.V_RESERVE_TYPE_IND_R = SRC.V_RESERVE_TYPE_IND_R
+
+WHEN NOT MATCHED THEN
+	INSERT (N_GROSS_BENEFIT_R,N_CHECK_NET_BENEFIT_R,N_RESERVE_DIRECT_BEST_ESTMT_R,N_CHG_RSRV_DIRECT_BEST_ESTMT_R,N_BEST_ESTIMATE_NET_BENEFIT_R
+,V_PRICING_SSDI_ESTIMATED_IND_R,V_BEST_ESTMT_RESERVE_MODEL_R,N_RESERVE_DIRECT__FIELD__R,N_CHG_RESERVE_DIRECT__FIELD__R
+,N_RESERVE_DIRECT__STAT__R,N_RESERVE_DIRECT__GAAP__R,V_RESERVE_TYPE_IND_R,N_POLICY_SK_R,N_CLAIM_SK_R,D_RECORD_START_DATE_R
+,D_RECORD_END_DATE_R,V_SOURCE_SYSTEM_NAME_R,T_EVENT_TIMESTAMP_R,FIC_MIS_DATE_R ,N_BATCH_ID_R ,N_SEQUENCE_NUMBER_R ,T_CREATION_DATE_R
+,T_LAST_MODIFIED_DATE_R,V_CREATED_BY_R ,V_LAST_MODIFIED_BY_R ,D_RESERVE_VALUATION_DATE_R ,V_COVERAGE_CODE_R ,V_POLICY_NUMBER_R ,V_CLAIM_NUMBER_R 
+,N_LOAD_RUN_ID_R,V_CLAIM_IDENTIFIER_R)
+
+	VALUES (SRC.N_GROSS_BENEFIT_R,SRC.N_CHECK_NET_BENEFIT_R,SRC.N_RESERVE_DIRECT_BEST_ESTMT_R,SRC.N_CHG_RSRV_DIRECT_BEST_ESTMT_R,SRC.N_BEST_ESTIMATE_NET_BENEFIT_R
+,SRC.V_PRICING_SSDI_ESTIMATED_IND_R,SRC.V_BEST_ESTMT_RESERVE_MODEL_R,SRC.N_RESERVE_DIRECT__FIELD__R,SRC.N_CHG_RESERVE_DIRECT__FIELD__R
+,SRC.N_RESERVE_DIRECT__STAT__R,SRC.N_RESERVE_DIRECT__GAAP__R,&apos;L&apos;,SRC.N_POLICY_SK_R,SRC.N_CLAIM_SK_R,NULL
+,NULL,NULL,SYSTIMESTAMP,SYSTIMESTAMP ,gn_sysdt_batchid ,SRC.N_SEQUENCE_NUMBER_R,SYSTIMESTAMP
+,SYSTIMESTAMP,&apos;PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR&apos; ,&apos;PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR&apos;,SRC.D_RESERVE_VALUATION_DATE_R ,SRC.V_COVERAGE_CODE_R ,SRC.V_POLICY_NUMBER_R ,SRC.V_CLAIM_NUMBER_R 
+,1,SRC.V_CLAIM_IDENTIFIER_R);
+
+lc_run_cnt:= SQL%ROWCOUNT;
+    COMMIT;
+
+	lc_count_type_r:= PKG_GRP_LOG_UTIL.gc_count_type_merge;
+
+    gc_trcmsg:=&apos;2.1 Merged record count and Reserve_Valuation_Date :-&gt;&apos;||lc_run_cnt||&apos;-&apos;||gd_mis_cycle_date_r;
+
+
+	lt_end_time_r:= SYSTIMESTAMP;
+    lc_duration_r := EXTRACT(SECOND FROM (lt_end_time_r - lt_start_time_r)) +
+                     EXTRACT(MINUTE FROM (lt_end_time_r - lt_start_time_r)) * 60 +
+                     EXTRACT(HOUR FROM (lt_end_time_r - lt_start_time_r)) * 3600;	
+
+
+	 PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r
+	 (
+		p_job_id_r                    =&gt; gn_out_job_id,
+		p_batch_id_r                  =&gt; gn_sysdt_batchid,
+		p_message_type_r              =&gt; lv_message_type_r,
+		p_code_location_r             =&gt; gc_main_loadedby,
+		p_message_r                   =&gt; gc_trcmsg,
+		p_count_type_r                =&gt; lc_count_type_r,
+		p_count_r                     =&gt; lc_run_cnt,
+		p_duration_r                  =&gt; lc_duration_r,
+		p_created_by_r                =&gt; gc_job_name,
+		out_prcs_job_log_message_id_r =&gt; ln_job_log_message_id_r
+	);	
+
+	lt_start_time_r:= SYSTIMESTAMP;
+
+		gc_trcmsg:=&apos;2.2 Merging reins fields in fct_lg_reserve_Details_r table for new claim_identifier&apos;;		
+
+		PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r(
+						p_job_id_r                    	=&gt; gn_out_job_id,
+						p_batch_id_r                  	=&gt; gn_sysdt_batchid,
+						p_message_type_r              	=&gt; lv_message_type_r,
+						p_code_location_r             	=&gt; gc_main_loadedby,
+						p_message_r                   	=&gt; gc_trcmsg,
+						p_count_type_r                	=&gt; NULL,
+						p_count_r                     	=&gt; NULL,
+						p_duration_r                  	=&gt; NULL,
+						p_created_by_r                	=&gt; gc_job_name,
+						out_prcs_job_log_message_id_r 	=&gt; ln_job_log_message_id_r
+						);
+
+
+	MERGE INTO ATOMIC.FCT_LG_RESERVE_DETAILS_R FLRDR
+	USING (
+			  SELECT
+				  N_CLAIM_SK_R,
+				  V_CLAIM_NUMBER_R,
+				  V_PRIMARY_REINSURER_R,
+				  CASE WHEN nvl(N_SECONDARY_REINSURER_REINS_PCT_R, 0) &lt;= 0 THEN NULL ELSE V_SECONDARY_REINSURER_R END AS V_SECONDARY_REINSURER_R,
+				  CASE WHEN nvl(N_TERNARY_REINSURER_REINS_PCT_R, 0) &lt;= 0 THEN NULL ELSE V_TERNARY_REINSURER_R END AS V_TERNARY_REINSURER_R,
+				  CASE 
+					WHEN nvl(N_TOTAL_REINSURER_REINS_PCT, 0) &lt;= 0 THEN NULL						
+					ELSE N_TOTAL_REINSURER_REINS_PCT 
+				  END AS N_TOTAL_REINSURER_REINS_PCT,
+				  N_PRIMARY_REINSURER_REINS_PCT_R,
+				  CASE WHEN nvl(N_SECONDARY_REINSURER_REINS_PCT_R, 0) &lt;= 0 THEN NULL ELSE N_SECONDARY_REINSURER_REINS_PCT_R END AS N_SECONDARY_REINSURER_REINS_PCT_R,
+				  CASE WHEN nvl(N_TERNARY_REINSURER_REINS_PCT_R, 0) &lt;= 0 THEN NULL ELSE N_TERNARY_REINSURER_REINS_PCT_R END AS N_TERNARY_REINSURER_REINS_PCT_R,
+				  N_PRIMARY_REINSURER_REINS_SHARE_PCT_R,
+				  CASE WHEN nvl(N_SECONDARY_REINSURER_REINS_PCT_R, 0) &lt;= 0 THEN NULL ELSE N_SECONDARY_REINSURER_REINS_SHARE_PCT_R END AS N_SECONDARY_REINSURER_REINS_SHARE_PCT_R,
+				  CASE WHEN nvl(N_TERNARY_REINSURER_REINS_PCT_R, 0) &lt;= 0 THEN NULL ELSE N_TERNARY_REINSURER_REINS_SHARE_PCT_R END AS N_TERNARY_REINSURER_REINS_SHARE_PCT_R
+			  FROM
+				  ATOMIC.STG_GRP_REINSURER_CLAIM_PCT_R
+              WHERE (V_CLAIM_NUMBER_R LIKE &apos;%LTD%&apos; OR V_CLAIM_NUMBER_R LIKE &apos;%VPL%&apos; OR V_CLAIM_NUMBER_R LIKE &apos;%VLT%&apos;)
+              AND N_PRIMARY_REINSURER_REINS_PCT_R &gt; 0 
+              AND V_PRIMARY_REINSURER_R IS NOT NULL	
+              AND N_TOTAL_REINSURER_REINS_PCT &gt; 0
+		  )
+	sgrcpr ON ( FLRDR.v_claim_number_r = sgrcpr.v_claim_number_r
+		   AND FLRDR.N_CLAIM_SK_R = sgrcpr.N_CLAIM_SK_R
+		   AND FLRDR.D_RESERVE_VALUATION_DATE_R=gd_mis_cycle_date_r
+		   AND TRUNC(FLRDR.T_CREATION_DATE_R) = TRUNC(sysdate)
+           )
+	WHEN MATCHED THEN UPDATE
+	SET FLRDR.v_primary_reinsurer_r = sgrcpr.v_primary_reinsurer_r,
+		FLRDR.v_secondary_reinsurer_r = sgrcpr.v_secondary_reinsurer_r,
+		FLRDR.v_ternary_reinsurer_r = sgrcpr.v_ternary_reinsurer_r,
+		FLRDR.N_TOTAL_REINSURANCE_PCT_R = sgrcpr.N_TOTAL_REINSURER_REINS_PCT,
+		FLRDR.N_PRIMARY_REINSURER_REINSURANCE_PCT_R = sgrcpr.n_primary_reinsurer_reins_pct_r,
+		FLRDR.n_secondary_reinsurer_reinsurance_pct_r = sgrcpr.n_secondary_reinsurer_reins_pct_r,
+		FLRDR.n_ternary_reinsurer_reinsurance_pct_r = sgrcpr.n_ternary_reinsurer_reins_pct_r,
+		FLRDR.N_PRIMARY_REINSURER_REINS_SHARE_PCT_R = sgrcpr.N_PRIMARY_REINSURER_REINS_SHARE_PCT_R,
+		FLRDR.N_SECONDARY_REINSURER_REINS_SHARE_PCT_R = sgrcpr.N_SECONDARY_REINSURER_REINS_SHARE_PCT_R,
+		FLRDR.N_TERNARY_REINSURER_REINS_SHARE_PCT_R = sgrcpr.N_TERNARY_REINSURER_REINS_SHARE_PCT_R;
+
+	lc_run_cnt:= SQL%ROWCOUNT;
+    COMMIT;
+
+	lc_count_type_r:= PKG_GRP_LOG_UTIL.gc_count_type_merge;
+
+    gc_trcmsg:=&apos;2.3 Merged reins field for new claim_identifier count and Reserve_Valuation_Date :-&gt;&apos;||lc_run_cnt||&apos;-&apos;||gd_mis_cycle_date_r;
+
+
+	lt_end_time_r:= SYSTIMESTAMP;
+    lc_duration_r := EXTRACT(SECOND FROM (lt_end_time_r - lt_start_time_r)) +
+                     EXTRACT(MINUTE FROM (lt_end_time_r - lt_start_time_r)) * 60 +
+                     EXTRACT(HOUR FROM (lt_end_time_r - lt_start_time_r)) * 3600;	
+
+
+	 PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r
+	 (
+		p_job_id_r                    =&gt; gn_out_job_id,
+		p_batch_id_r                  =&gt; gn_sysdt_batchid,
+		p_message_type_r              =&gt; lv_message_type_r,
+		p_code_location_r             =&gt; gc_main_loadedby,
+		p_message_r                   =&gt; gc_trcmsg,
+		p_count_type_r                =&gt; lc_count_type_r,
+		p_count_r                     =&gt; lc_run_cnt,
+		p_duration_r                  =&gt; lc_duration_r,
+		p_created_by_r                =&gt; gc_job_name,
+		out_prcs_job_log_message_id_r =&gt; ln_job_log_message_id_r
+	);	
+
+	gc_trcmsg:=&apos;2.4 Capturing Audit Controls for Reserves Best Estimate STG2Fact&apos; ;
+	PKG_GRP_LOG_UTIL.prc_ins_prcs_job_log_message_r
+	 (
+		p_job_id_r                    =&gt; gn_out_job_id,
+		p_batch_id_r                  =&gt; gn_sysdt_batchid,
+		p_message_type_r              =&gt; lv_message_type_r,
+		p_code_location_r             =&gt; gc_main_loadedby,
+		p_message_r                   =&gt; gc_trcmsg,
+		p_count_type_r                =&gt; NULL,
+		p_count_r                     =&gt; NULL,
+		p_duration_r                  =&gt; NULL,
+		p_created_by_r                =&gt; gc_job_name,
+		out_prcs_job_log_message_id_r =&gt; ln_job_log_message_id_r
+	);	
+
+	PRC_GRP_AUDIT_CONTROL_PROCESS (&apos;EDW&apos;,&apos;RESERVES_BEST_ESTIMATE&apos;,&apos;STG&apos;,&apos;FCT&apos;);	
+
+	SELECT COUNT(*) INTO LV_FAIL_BEST_ESTIM
+		FROM ATOMIC.PRCS_GRP_CONTROL_AUDIT_DETAIL_R
+			WHERE   V_SOURCE_SYSTEM_R=&apos;EDW&apos; 
+								AND TRUNC(T_CREATION_DATE_R) =TRUNC(SYSDATE)
+								AND V_MAIN_ENTITY_R=&apos;RESERVES_BEST_ESTIMATE&apos;
+								AND V_SOURCE_LAYER_NAME_R=&apos;STG&apos;
+								AND V_TARGET_LAYER_NAME_R=&apos;FCT&apos;
+								AND	UPPER(trim(V_STATUS_R))=&apos;FAILED&apos;							
+								AND N_RUN_ID_R =(SELECT MAX(N_RUN_ID_R) FROM ATOMIC.PRCS_GRP_CONTROL_AUDIT_DETAIL_R
+													WHERE v_source_system_r=&apos;EDW&apos; AND TRUNC(T_CREATION_DATE_R) =TRUNC(SYSDATE)
+															AND V_MAIN_ENTITY_R=&apos;RESERVES_BEST_ESTIMATE&apos; AND V_SOURCE_LAYER_NAME_R=&apos;STG&apos;
+															AND V_TARGET_LAYER_NAME_R=&apos;FCT&apos;);
+
+	IF LV_FAIL_BEST_ESTIM &gt; 0 
+		THEN
+			gc_trcmsg:=&apos;Aduit Controls: Mismatch of RESERVES Data, &apos;||&apos;Stage to Fact Failed for RESERVES_BEST_ESTIMATE: &apos;||LV_FAIL_BEST_ESTIM;
+		RAISE_APPLICATION_ERROR(-20001, gc_trcmsg);
+	END IF;
+
+	pkg_grp_log_util.prc_update_log(
+      						gn_out_job_id                   --p_job_id
+							,gc_success_status              --p_job_status
+							,gc_errmsg                      --p_err_msg
+							,gc_trcmsg                      --p_trc_msg
+							,gc_main_loadedby               --p_log_util_called_by_r
+							);
+
+
+EXCEPTION
+WHEN OTHERS THEN
+
+	IF gc_errmsg IS NULL THEN	
+		gc_errmsg :=SUBSTR(SQLERRM,1,4000);
+	    gc_trcmsg :=&apos;1.z Error in main - &apos;||gc_errmsg;
+	END IF;
+
+
+
+    pkg_grp_log_util.prc_update_log_message_r
+			( 
+			n_prcs_job_log_message_id_r =&gt; ln_job_log_message_id_r,
+			p_err_msg 					=&gt; gc_trcmsg 
+				);
+
+
+	pkg_grp_log_util.prc_update_log
+      (
+        gn_out_job_id                   	--p_job_id
+        ,gc_error_status                	--p_job_status
+        ,gc_errmsg                       	--p_err_msg
+        ,gc_trcmsg					     	--p_trc_msg
+        ,gc_main_loadedby               	--p_log_util_called_by_r
+      );
+    RAISE;
+
+END PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R;
+
+END PKG_GRP_LOAD_FCT_LG_RESERVE_DETAILS_BEST_ESTIMATE_RESERVES_PREV_MONTH_R;"

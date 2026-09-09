@@ -1,0 +1,9 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"Error when tokenlize(10200) near: DD(82,94)","errorType":"SyntaxError","coordinates":[{"x":82,"y":94,"hashCode":"0"},{"x":82,"y":96,"hashCode":"0"}],"originCoordinates":[{"x":82,"y":94},{"x":82,"y":96}]},{"errorMessage":"Error when tokenlize(10200) near: )(82,109)","errorType":"SyntaxError","coordinates":[{"x":82,"y":109,"hashCode":"0"},{"x":82,"y":110,"hashCode":"0"}],"originCoordinates":[{"x":82,"y":109},{"x":82,"y":110}]},{"errorMessage":"Error when tokenlize(10200) near: DD(82,141)","errorType":"SyntaxError","coordinates":[{"x":82,"y":141,"hashCode":"0"},{"x":82,"y":143,"hashCode":"0"}],"originCoordinates":[{"x":82,"y":141},{"x":82,"y":143}]},{"errorMessage":"Error when tokenlize(10200) near: )(82,156)","errorType":"SyntaxError","coordinates":[{"x":82,"y":156,"hashCode":"0"},{"x":82,"y":157,"hashCode":"0"}],"originCoordinates":[{"x":82,"y":156},{"x":82,"y":157}]},{"errorMessage":"syntax error, state:1948(10102) near: ;(82,93)","errorType":"SyntaxError","coordinates":[{"x":82,"y":93,"hashCode":"0"},{"x":82,"y":94,"hashCode":"0"}],"originCoordinates":[{"x":82,"y":93},{"x":82,"y":94}]},{"errorMessage":"no_root_node(-1000) near: no root node(0,0)","errorType":"SyntaxError","coordinates":[{"x":0,"y":0,"hashCode":"0"},{"x":0,"y":12,"hashCode":"0"}],"originCoordinates":[]}]}
+Error log:
+
+Error when tokenlize(10200) near: DD(82,94)
+Error when tokenlize(10200) near: )(82,109)
+Error when tokenlize(10200) near: DD(82,141)
+Error when tokenlize(10200) near: )(82,156)
+syntax error, state:1948(10102) near: ;(82,93)
+no_root_node(-1000) near: no root node(0,0)

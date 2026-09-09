@@ -49,6 +49,7 @@ class SQLObjectRef:
     static_sql: str                 # Raw static SQL if inline SQL found
     remote_script: str              # Remote script path if SSH pattern
     notes: str                      # Additional context from comments/description
+    column_lineage: str = ""        # Serialized 'TGT_COL=SRC_TABLE.SRC_COL|TGT_COL2=(CONST)' pairs
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -692,12 +693,137 @@ class ShellParser:
 
     # ── Pattern 5: Static SQL ─────────────────────────────────────────────
 
+    def _extract_select_into_map(self, sql_block: str) -> dict:
+        """Map variable names populated via 'SELECT col1, col2 INTO var1, var2 FROM table ...'
+        to (source_table, source_column) tuples, pairing SELECT columns and INTO vars
+        positionally against the statement's driving (first) FROM table.
+
+        Used to resolve INSERT INTO target (...) VALUES (var1, var2, ...) statements
+        that populate a target table entirely from local PL/SQL variables rather than
+        a direct INSERT ... SELECT — a common pattern in small audit/log shell scripts
+        (e.g. edw_grp_load_t_rpt_sch.sh) where table_references would otherwise stay empty.
+        """
+        var_map: dict = {}
+        for m in re.finditer(
+            r'SELECT\s+(?P<cols>.*?)\s+INTO\s+(?P<vars>[\w\s,]+?)\s+FROM\s+(?P<rest>.*?);',
+            sql_block, re.IGNORECASE | re.DOTALL
+        ):
+            cols_str = m.group('cols')
+            vars_str = m.group('vars')
+            rest = m.group('rest')
+
+            first_table_m = re.match(r'\s*(\S+)', rest)
+            if not first_table_m:
+                continue
+            table = self._clean_table_name(first_table_m.group(1))
+            if not table or table.upper() == 'DUAL':
+                continue
+
+            select_cols = self._split_balanced(cols_str, ',')
+            into_vars = [v.strip().upper() for v in vars_str.split(',') if v.strip()]
+
+            for var, col_expr in zip(into_vars, select_cols):
+                col_clean = self._simplify_column_expr(col_expr)
+                if var and col_clean:
+                    var_map[var] = (table, col_clean)
+
+        return var_map
+
+    def _simplify_column_expr(self, expr: str) -> str:
+        """Reduce a simple column expression to its bare column name.
+        Strips a single wrapping function call (e.g. TO_NUMBER(x) -> x) and any
+        table/alias qualifier (e.g. a.col -> COL). Returns '' if the expression
+        isn't a simple column reference (e.g. a literal or multi-arg expression).
+        """
+        col_clean = expr.strip()
+        fn_m = re.match(r'^\w+\s*\(\s*([\w.]+)\s*\)$', col_clean)
+        if fn_m:
+            col_clean = fn_m.group(1)
+        if '.' in col_clean:
+            col_clean = col_clean.split('.')[-1]
+        if re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', col_clean):
+            return col_clean.upper()
+        return ""
+
+    def _extract_balanced(self, s: str, open_idx: int) -> str:
+        """Return the substring between the parenthesis at s[open_idx] and its match,
+        respecting nested parens and single-quoted string literals."""
+        depth = 0
+        in_str = False
+        start = open_idx + 1
+        i = open_idx
+        while i < len(s):
+            ch = s[i]
+            if in_str:
+                if ch == "'":
+                    if i + 1 < len(s) and s[i + 1] == "'":
+                        i += 1
+                    else:
+                        in_str = False
+            else:
+                if ch == "'":
+                    in_str = True
+                elif ch == '(':
+                    depth += 1
+                elif ch == ')':
+                    depth -= 1
+                    if depth == 0:
+                        return s[start:i]
+            i += 1
+        return s[start:]
+
+    def _split_balanced(self, s: str, sep: str = ',') -> list[str]:
+        """Split a string on sep, ignoring separators inside nested parens or string literals."""
+        parts = []
+        depth = 0
+        in_str = False
+        current = []
+        for ch in s:
+            if in_str:
+                current.append(ch)
+                if ch == "'":
+                    in_str = False
+            else:
+                if ch == "'":
+                    in_str = True
+                    current.append(ch)
+                elif ch == '(':
+                    depth += 1
+                    current.append(ch)
+                elif ch == ')':
+                    depth -= 1
+                    current.append(ch)
+                elif ch == sep and depth == 0:
+                    parts.append(''.join(current))
+                    current = []
+                else:
+                    current.append(ch)
+        if current:
+            parts.append(''.join(current))
+        return [p.strip() for p in parts]
+
     def _extract_static_sql(self, content: str, filename: str, description: str) -> list[SQLObjectRef]:
-        """Extract static INSERT INTO ... SELECT FROM statements."""
+        """Extract static INSERT INTO ... SELECT FROM statements.
+
+        Also resolves INSERT INTO target (...) VALUES (var1, var2, ...) statements
+        where the values are local variables previously populated by a
+        'SELECT ... INTO vars FROM source_table' — the source table is then
+        attributed as a source for the target via variable resolution.
+
+        Column-level lineage is captured where possible ('column_lineage' field):
+          - INSERT INTO t (c1, c2) VALUES (v1, v2): each target column is paired with
+            the (source_table, source_column) the value variable was populated from.
+          - INSERT INTO t (c1, c2) SELECT s1, s2 FROM src: each target column is paired
+            positionally with its SELECT expression against the driving source table.
+        Columns that resolve to a literal/expression rather than a traceable column
+        are marked '(CONST)'.
+        """
         refs = []
         sql_blocks = self._extract_sql_blocks(content)
 
         for sql_block in sql_blocks:
+            var_map = None  # lazily computed per block, only if needed
+
             # Find INSERT INTO ... SELECT ... FROM patterns
             for m in re.finditer(
                 r'INSERT\s+(?:/\*.*?\*/\s*)?INTO\s+(\S+)\s*(.*?)(?:;|\bEND\b)',
@@ -719,11 +845,80 @@ class ShellParser:
                     if src and not src.startswith('('):
                         source_tables.append(src)
 
+                # Parse a leading target column list, e.g. "(c1, c2, ...)", and
+                # whichever of VALUES(...) / SELECT ... FROM follows it — needed
+                # for column-level pairing below.
+                target_cols = []
+                value_exprs = []
+                insert_kind = None  # 'VALUES' or 'SELECT'
+                stripped_rest = rest.lstrip()
+                if stripped_rest.startswith('('):
+                    col_list_str = self._extract_balanced(stripped_rest, 0)
+                    target_cols = [c.strip().upper() for c in self._split_balanced(col_list_str, ',') if c.strip()]
+                    after_cols = stripped_rest[len(col_list_str) + 2:]
+                    values_hdr_m = re.match(r'\s*VALUES\s*\(', after_cols, re.IGNORECASE)
+                    if values_hdr_m:
+                        vals_str = self._extract_balanced(after_cols, values_hdr_m.end() - 1)
+                        value_exprs = self._split_balanced(vals_str, ',')
+                        insert_kind = 'VALUES'
+                    else:
+                        select_hdr_m = re.match(r'\s*SELECT\s+(?P<cols>.*?)\s+FROM\s+',
+                                                 after_cols, re.IGNORECASE | re.DOTALL)
+                        if select_hdr_m:
+                            value_exprs = self._split_balanced(select_hdr_m.group('cols'), ',')
+                            insert_kind = 'SELECT'
+
+                # No direct FROM/JOIN found — this is likely an INSERT ... VALUES (...)
+                # form. Resolve each value token against variables populated by an
+                # earlier 'SELECT ... INTO vars FROM table' in the same SQL block.
+                via_vars = False
+                values_m = re.search(r'VALUES\s*\(', rest, re.IGNORECASE) if not source_tables else None
+                if values_m:
+                    if var_map is None:
+                        var_map = self._extract_select_into_map(sql_block)
+                    if var_map:
+                        vals_str = self._extract_balanced(rest, values_m.end() - 1)
+                        for tok in self._split_balanced(vals_str, ','):
+                            tok_clean = tok.strip().upper()
+                            resolved = var_map.get(tok_clean)
+                            if resolved:
+                                via_vars = True
+                                if resolved[0] not in source_tables:
+                                    source_tables.append(resolved[0])
+
+                # Build column-level lineage pairs (target_col -> source_table.source_col / (CONST))
+                column_pairs = []
+                if target_cols and value_exprs and len(target_cols) == len(value_exprs):
+                    if insert_kind == 'VALUES':
+                        if var_map is None:
+                            var_map = self._extract_select_into_map(sql_block)
+                        for tgt_col, expr in zip(target_cols, value_exprs):
+                            resolved = var_map.get(expr.strip().upper()) if var_map else None
+                            if resolved:
+                                column_pairs.append(f"{tgt_col}={resolved[0]}.{resolved[1]}")
+                            else:
+                                column_pairs.append(f"{tgt_col}=(CONST)")
+                    elif insert_kind == 'SELECT':
+                        primary_source = source_tables[0] if source_tables else ''
+                        for tgt_col, expr in zip(target_cols, value_exprs):
+                            col_clean = self._simplify_column_expr(expr)
+                            if col_clean and primary_source:
+                                column_pairs.append(f"{tgt_col}={primary_source}.{col_clean}")
+                            else:
+                                column_pairs.append(f"{tgt_col}=(CONST)")
+                column_lineage = '|'.join(column_pairs)
+
                 if target_table:
                     # Truncate the static SQL for readability
                     raw_sql = m.group(0).strip()
                     if len(raw_sql) > 500:
                         raw_sql = raw_sql[:500] + "..."
+
+                    if via_vars:
+                        notes = (f"INSERT INTO {target_table} VALUES (...) sourced from "
+                                 f"{', '.join(source_tables)} via SELECT-INTO variable resolution")
+                    else:
+                        notes = f"INSERT INTO {target_table} SELECT FROM {', '.join(source_tables)}"
 
                     refs.append(SQLObjectRef(
                         shell_script=filename,
@@ -737,7 +932,8 @@ class ShellParser:
                         table_references=source_tables,
                         static_sql=raw_sql,
                         remote_script="",
-                        notes=f"INSERT INTO {target_table} SELECT FROM {', '.join(source_tables)}"
+                        notes=notes,
+                        column_lineage=column_lineage
                     ))
 
         return refs
@@ -988,7 +1184,7 @@ def write_csv(refs: list[SQLObjectRef], output_path: Path):
     fieldnames = [
         'shell_script', 'pattern_type', 'object_type', 'schema',
         'object_name', 'sub_object', 'is_parameterized', 'param_position',
-        'table_references', 'static_sql', 'remote_script', 'notes'
+        'table_references', 'static_sql', 'remote_script', 'notes', 'column_lineage'
     ]
     with open(output_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

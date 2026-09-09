@@ -33,13 +33,20 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from generate_master_recommendations import VS_CONSIDER, _normalize_status
+
 SCRIPT_DIR   = Path(__file__).resolve().parent
 OUTPUT_DIR   = SCRIPT_DIR / "output"
 VALIDATED_DIR = OUTPUT_DIR / "hop_reduction_recommendations_validated"
 GRAPH_JSON   = OUTPUT_DIR / "tidal_dependency_graph.json"
 AGGREGATE_XLSX = OUTPUT_DIR / "verified_savings_simulation_aggregate.xlsx"
 
-STATUS_CONSIDER = "Good Recommendation - Consider"
+# Canonical "Consider" label (matches generate_master_recommendations._normalize_status
+# output) — the raw "Recommendation Status" free text varies across reviewers
+# ("Good recommandation can be consider", "Good Recomondation - Consider", etc.),
+# so status matching below always goes through _normalize_status() rather than
+# an exact string compare.
+STATUS_CONSIDER = VS_CONSIDER
 
 # All four recognised status values (for ordered display)
 STATUS_ORDER = [
@@ -88,9 +95,13 @@ def simulate_verified(recommendations: list, graph: dict) -> dict:
         if rec.get("verified_hop_savings", 0) > 0:
             jobs = rec.get("affected_jobs", [])
             if len(jobs) > 1:
-                if rec.get("category", "").startswith("D."):
+                cat = rec.get("category", "")
+                if cat.startswith("D."):
                     # Serial chain: keep shallowest (last) job
                     candidates = jobs[:-1]
+                elif cat.startswith("E. MV Shared Across RPTs"):
+                    # affected_jobs = [mv_job_to_decommission] + consumers (kept, SQL modified in place)
+                    candidates = jobs[:1]
                 else:
                     # Keep canonical first job, remove the rest
                     candidates = jobs[1:]
@@ -195,6 +206,7 @@ def read_validated_xlsx(path: Path) -> tuple:
 
         status = str(_get(row, "Recommendation Status") or "").strip()
         status_counts[status if status else "(blank)"] += 1
+        norm_status = _normalize_status(status)
 
         category = str(_get(row, "Category") or "")
         raw_jobs = str(_get(row, "Affected Jobs") or "")
@@ -228,9 +240,10 @@ def read_validated_xlsx(path: Path) -> tuple:
             "implementation_decision": str(_get(row, "Implementation Decision") or ""),
             "execution_wave":        str(_get(row, "Execution Wave") or ""),
             "recommendation_status": status,
+            "recommendation_status_normalized": norm_status,
         })
 
-    consider_recs = [r for r in all_recs if r["recommendation_status"] == STATUS_CONSIDER]
+    consider_recs = [r for r in all_recs if r["recommendation_status_normalized"] == STATUS_CONSIDER]
     return rpt_table, all_recs, consider_recs, dict(status_counts)
 
 
@@ -381,7 +394,7 @@ def write_verified_tab(
         ws.cell(row=row, column=1, value=s)
         ws.cell(row=row, column=2, value=cnt)
         ws.cell(row=row, column=3, value=pct)
-        if s == STATUS_CONSIDER:
+        if _normalize_status(s) == STATUS_CONSIDER:
             for ci in range(1, 4):
                 ws.cell(row=row, column=ci).fill = _GN_FILL
         row += 1

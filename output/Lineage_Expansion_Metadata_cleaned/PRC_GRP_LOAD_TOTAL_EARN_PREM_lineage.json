@@ -1,0 +1,2531 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "v_source_system_name_r",
+                        "coordinates": [
+                          {
+                            "x": 4,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 4,
+                            "y": 51,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1074"
+                      },
+                      {
+                        "name": "cycle_date",
+                        "coordinates": [
+                          {
+                            "x": 5,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 5,
+                            "y": 39,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1075"
+                      },
+                      {
+                        "name": "n_policy_sk_r",
+                        "coordinates": [
+                          {
+                            "x": 6,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 6,
+                            "y": 42,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1076"
+                      },
+                      {
+                        "name": "n_customer_billgroup_id_r",
+                        "coordinates": [
+                          {
+                            "x": 7,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 7,
+                            "y": 54,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1077"
+                      },
+                      {
+                        "name": "n_policy_billgroup_id_r",
+                        "coordinates": [
+                          {
+                            "x": 8,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 8,
+                            "y": 52,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1078"
+                      },
+                      {
+                        "name": "duedate",
+                        "coordinates": [
+                          {
+                            "x": 9,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 9,
+                            "y": 36,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1079"
+                      },
+                      {
+                        "name": "monthspaid",
+                        "coordinates": [
+                          {
+                            "x": 10,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 10,
+                            "y": 39,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1080"
+                      },
+                      {
+                        "name": "lastpaiddue",
+                        "coordinates": [
+                          {
+                            "x": 11,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 11,
+                            "y": 40,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1081"
+                      },
+                      {
+                        "name": "v_tpa_indicator_r",
+                        "coordinates": [
+                          {
+                            "x": 12,
+                            "y": 29,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 12,
+                            "y": 46,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1082"
+                      },
+                      {
+                        "source": "system",
+                        "name": "RelationRows",
+                        "coordinates": [
+                          {
+                            "x": 3,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 3,
+                            "y": 40,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1003"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 13,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 40,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "fct_rpt_earn_due_prem_temp2",
+                    "id": "1004",
+                    "name": "fct_rpt_earn_due_prem_temp2",
+                    "type": "table"
+                  },
+                  {
+                    "columns": [
+                      {
+                        "name": "v_source_system_name_r",
+                        "coordinates": [
+                          {
+                            "x": 15,
+                            "y": 33,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 15,
+                            "y": 57,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1019"
+                      },
+                      {
+                        "name": "cycle_date",
+                        "coordinates": [
+                          {
+                            "x": 16,
+                            "y": 33,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 16,
+                            "y": 45,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1020"
+                      },
+                      {
+                        "name": "n_policy_sk_r",
+                        "coordinates": [
+                          {
+                            "x": 17,
+                            "y": 33,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 17,
+                            "y": 48,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1021"
+                      },
+                      {
+                        "name": "n_customer_billgroup_id_r",
+                        "coordinates": [
+                          {
+                            "x": 18,
+                            "y": 33,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 18,
+                            "y": 60,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1022"
+                      },
+                      {
+                        "name": "n_policy_billgroup_id_r",
+                        "coordinates": [
+                          {
+                            "x": 19,
+                            "y": 33,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 19,
+                            "y": 58,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1023"
+                      },
+                      {
+                        "name": "v_due_date",
+                        "coordinates": [
+                          {
+                            "x": 20,
+                            "y": 33,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 20,
+                            "y": 43,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1024"
+                      },
+                      {
+                        "name": "monthspaid",
+                        "coordinates": [
+                          {
+                            "x": 21,
+                            "y": 33,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 21,
+                            "y": 45,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1025"
+                      },
+                      {
+                        "name": "premiumdue",
+                        "coordinates": [
+                          {
+                            "x": 22,
+                            "y": 44,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 22,
+                            "y": 56,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1026"
+                      },
+                      {
+                        "name": "v_tpa_indicator_r",
+                        "coordinates": [
+                          {
+                            "x": 23,
+                            "y": 33,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 23,
+                            "y": 52,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1027"
+                      },
+                      {
+                        "name": "bgtermdate",
+                        "coordinates": [
+                          {
+                            "x": 28,
+                            "y": 39,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 28,
+                            "y": 51,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1028"
+                      },
+                      {
+                        "name": "poltermdate",
+                        "coordinates": [
+                          {
+                            "x": 30,
+                            "y": 41,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 30,
+                            "y": 54,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1029"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 25,
+                        "y": 33,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 25,
+                        "y": 37,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "dual",
+                    "id": "1018",
+                    "name": "dual",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [
+    {
+      "id": "1",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1032",
+        "column": "v_source_system_name_r",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 15,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 15,
+            "y": 57,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1019",
+          "column": "v_source_system_name_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 15,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 15,
+              "y": 57,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1033",
+        "column": "cycle_date",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 16,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 16,
+            "y": 45,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1020",
+          "column": "cycle_date",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 16,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 16,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1034",
+        "column": "n_policy_sk_r",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 17,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 17,
+            "y": 48,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1021",
+          "column": "n_policy_sk_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 17,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 17,
+              "y": 48,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1035",
+        "column": "n_customer_billgroup_id_r",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 18,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 18,
+            "y": 60,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1022",
+          "column": "n_customer_billgroup_id_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 18,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 18,
+              "y": 60,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1036",
+        "column": "n_policy_billgroup_id_r",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 19,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 19,
+            "y": 58,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1023",
+          "column": "n_policy_billgroup_id_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 19,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 19,
+              "y": 58,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1037",
+        "column": "v_due_date",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 20,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 20,
+            "y": 43,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1024",
+          "column": "v_due_date",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 20,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 20,
+              "y": 43,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1038",
+        "column": "monthspaid",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 21,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 21,
+            "y": 45,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1025",
+          "column": "monthspaid",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 21,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 21,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1039",
+        "column": "add_months(i.premiumdue, i.monthspaid * - 1)",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 22,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 22,
+            "y": 77,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1042",
+          "column": "add_months",
+          "parentId": "1041",
+          "parentName": "add_months",
+          "coordinates": [
+            {
+              "x": 22,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 22,
+              "y": 43,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "type": "fdd",
+      "effectType": "function",
+      "target": {
+        "id": "1042",
+        "column": "add_months",
+        "parentId": "1041",
+        "parentName": "add_months",
+        "coordinates": [
+          {
+            "x": 22,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 22,
+            "y": 43,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1026",
+          "column": "premiumdue",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 22,
+              "y": 44,
+              "hashCode": "0"
+            },
+            {
+              "x": 22,
+              "y": 56,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "type": "fdd",
+      "effectType": "function",
+      "target": {
+        "id": "1042",
+        "column": "add_months",
+        "parentId": "1041",
+        "parentName": "add_months",
+        "coordinates": [
+          {
+            "x": 22,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 22,
+            "y": 43,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1025",
+          "column": "monthspaid",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 21,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 21,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1043",
+        "column": "v_tpa_indicator_r",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 23,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 23,
+            "y": 52,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1027",
+          "column": "v_tpa_indicator_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 23,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 23,
+              "y": 52,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "type": "fdd",
+      "effectType": "function",
+      "target": {
+        "id": "1046",
+        "column": "last_day",
+        "parentId": "1045",
+        "parentName": "last_day",
+        "coordinates": [
+          {
+            "x": 27,
+            "y": 51,
+            "hashCode": "0"
+          },
+          {
+            "x": 27,
+            "y": 59,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1049",
+          "column": "trunc",
+          "parentId": "1048",
+          "parentName": "trunc",
+          "coordinates": [
+            {
+              "x": 27,
+              "y": 60,
+              "hashCode": "0"
+            },
+            {
+              "x": 27,
+              "y": 65,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "type": "fdd",
+      "effectType": "function",
+      "target": {
+        "id": "1049",
+        "column": "trunc",
+        "parentId": "1048",
+        "parentName": "trunc",
+        "coordinates": [
+          {
+            "x": 27,
+            "y": 60,
+            "hashCode": "0"
+          },
+          {
+            "x": 27,
+            "y": 65,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1020",
+          "column": "cycle_date",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 16,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 16,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1074",
+        "column": "v_source_system_name_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 4,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 4,
+            "y": 51,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1032",
+          "column": "v_source_system_name_r",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 15,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 15,
+              "y": 57,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "15",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1075",
+        "column": "cycle_date",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 5,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 5,
+            "y": 39,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1033",
+          "column": "cycle_date",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 16,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 16,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "16",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1076",
+        "column": "n_policy_sk_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 6,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 6,
+            "y": 42,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1034",
+          "column": "n_policy_sk_r",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 17,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 17,
+              "y": 48,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "17",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1077",
+        "column": "n_customer_billgroup_id_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 7,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 7,
+            "y": 54,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1035",
+          "column": "n_customer_billgroup_id_r",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 18,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 18,
+              "y": 60,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "18",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1078",
+        "column": "n_policy_billgroup_id_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 8,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 8,
+            "y": 52,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1036",
+          "column": "n_policy_billgroup_id_r",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 19,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 19,
+              "y": 58,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "19",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1079",
+        "column": "duedate",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 9,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 9,
+            "y": 36,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1037",
+          "column": "v_due_date",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 20,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 20,
+              "y": 43,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "20",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1080",
+        "column": "monthspaid",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 10,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 10,
+            "y": 39,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1038",
+          "column": "monthspaid",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 21,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 21,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "21",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1081",
+        "column": "lastpaiddue",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 11,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 11,
+            "y": 40,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1039",
+          "column": "add_months(i.premiumdue, i.monthspaid * - 1)",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 22,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 22,
+              "y": 77,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "22",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1082",
+        "column": "v_tpa_indicator_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 12,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 12,
+            "y": 46,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1043",
+          "column": "v_tpa_indicator_r",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 23,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 23,
+              "y": 52,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "14",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "23",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1062",
+        "column": "v_source_system_name_r",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 45,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 45,
+            "y": 53,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1019",
+          "column": "v_source_system_name_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 15,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 15,
+              "y": 57,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "24",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1063",
+        "column": "cycle_date",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 46,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 46,
+            "y": 41,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1020",
+          "column": "cycle_date",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 16,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 16,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "25",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1064",
+        "column": "n_policy_sk_r",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 47,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 47,
+            "y": 44,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1021",
+          "column": "n_policy_sk_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 17,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 17,
+              "y": 48,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "26",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1065",
+        "column": "n_customer_billgroup_id_r",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 48,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 48,
+            "y": 56,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1022",
+          "column": "n_customer_billgroup_id_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 18,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 18,
+              "y": 60,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "27",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1066",
+        "column": "n_policy_billgroup_id_r",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 49,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 49,
+            "y": 54,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1023",
+          "column": "n_policy_billgroup_id_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 19,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 19,
+              "y": 58,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "28",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1067",
+        "column": "v_due_date",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 50,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 50,
+            "y": 55,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1026",
+          "column": "premiumdue",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 22,
+              "y": 44,
+              "hashCode": "0"
+            },
+            {
+              "x": 22,
+              "y": 56,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "29",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1068",
+        "column": "monthspaid",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 51,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 51,
+            "y": 41,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1025",
+          "column": "monthspaid",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 21,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 21,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "30",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1069",
+        "column": "add_months(i.premiumdue, i.monthspaid * - 1)",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 52,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 52,
+            "y": 73,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1072",
+          "column": "add_months",
+          "parentId": "1071",
+          "parentName": "add_months",
+          "coordinates": [
+            {
+              "x": 52,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 52,
+              "y": 39,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "31",
+      "type": "fdd",
+      "effectType": "function",
+      "target": {
+        "id": "1072",
+        "column": "add_months",
+        "parentId": "1071",
+        "parentName": "add_months",
+        "coordinates": [
+          {
+            "x": 52,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 52,
+            "y": 39,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1026",
+          "column": "premiumdue",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 22,
+              "y": 44,
+              "hashCode": "0"
+            },
+            {
+              "x": 22,
+              "y": 56,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "32",
+      "type": "fdd",
+      "effectType": "function",
+      "target": {
+        "id": "1072",
+        "column": "add_months",
+        "parentId": "1071",
+        "parentName": "add_months",
+        "coordinates": [
+          {
+            "x": 52,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 52,
+            "y": 39,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1025",
+          "column": "monthspaid",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 21,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 21,
+              "y": 45,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "33",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "1073",
+        "column": "v_tpa_indicator_r",
+        "parentId": "1061",
+        "parentName": "INSERT-SELECT-2",
+        "coordinates": [
+          {
+            "x": 53,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 53,
+            "y": 48,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1027",
+          "column": "v_tpa_indicator_r",
+          "parentId": "1018",
+          "parentName": "dual",
+          "coordinates": [
+            {
+              "x": 23,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 23,
+              "y": 52,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "34",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1074",
+        "column": "v_source_system_name_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 4,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 4,
+            "y": 51,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1062",
+          "column": "v_source_system_name_r",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 45,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 45,
+              "y": 53,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "35",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1075",
+        "column": "cycle_date",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 5,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 5,
+            "y": 39,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1063",
+          "column": "cycle_date",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 46,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 46,
+              "y": 41,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "36",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1076",
+        "column": "n_policy_sk_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 6,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 6,
+            "y": 42,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1064",
+          "column": "n_policy_sk_r",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 47,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 47,
+              "y": 44,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "37",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1077",
+        "column": "n_customer_billgroup_id_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 7,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 7,
+            "y": 54,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1065",
+          "column": "n_customer_billgroup_id_r",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 48,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 48,
+              "y": 56,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "38",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1078",
+        "column": "n_policy_billgroup_id_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 8,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 8,
+            "y": 52,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1066",
+          "column": "n_policy_billgroup_id_r",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 49,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 49,
+              "y": 54,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "39",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1079",
+        "column": "duedate",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 9,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 9,
+            "y": 36,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1067",
+          "column": "v_due_date",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 50,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 50,
+              "y": 55,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "40",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1080",
+        "column": "monthspaid",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 10,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 10,
+            "y": 39,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1068",
+          "column": "monthspaid",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 51,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 51,
+              "y": 41,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "41",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1081",
+        "column": "lastpaiddue",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 11,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 11,
+            "y": 40,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1069",
+          "column": "add_months(i.premiumdue, i.monthspaid * - 1)",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 52,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 52,
+              "y": 73,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "42",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1082",
+        "column": "v_tpa_indicator_r",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 12,
+            "y": 29,
+            "hashCode": "0"
+          },
+          {
+            "x": 12,
+            "y": 46,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1073",
+          "column": "v_tpa_indicator_r",
+          "parentId": "1061",
+          "parentName": "INSERT-SELECT-2",
+          "coordinates": [
+            {
+              "x": 53,
+              "y": 29,
+              "hashCode": "0"
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "59",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "43",
+      "type": "fdr",
+      "effectType": "select",
+      "target": {
+        "id": "1030",
+        "column": "RelationRows",
+        "parentId": "1031",
+        "parentName": "INSERT-SELECT-1",
+        "coordinates": [
+          {
+            "x": 15,
+            "y": 33,
+            "hashCode": "0"
+          },
+          {
+            "x": 23,
+            "y": 52,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1024",
+          "column": "v_due_date",
+          "parentId": "1018",
+          "parentName": "dual",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 20,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 20,
+              "y": 43,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "1028",
+          "column": "bgtermdate",
+          "parentId": "1018",
+          "parentName": "dual",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 28,
+              "y": 39,
+              "hashCode": "0"
+            },
+            {
+              "x": 28,
+              "y": 51,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "1029",
+          "column": "poltermdate",
+          "parentId": "1018",
+          "parentName": "dual",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 30,
+              "y": 41,
+              "hashCode": "0"
+            },
+            {
+              "x": 30,
+              "y": 54,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "1046",
+          "column": "last_day",
+          "parentId": "1045",
+          "parentName": "last_day",
+          "clauseType": "unknown",
+          "coordinates": [
+            {
+              "x": 27,
+              "y": 51,
+              "hashCode": "0"
+            },
+            {
+              "x": 27,
+              "y": 59,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "44",
+      "type": "fdr",
+      "effectType": "insert",
+      "target": {
+        "id": "1003",
+        "column": "RelationRows",
+        "parentId": "1004",
+        "parentName": "fct_rpt_earn_due_prem_temp2",
+        "coordinates": [
+          {
+            "x": 3,
+            "y": 13,
+            "hashCode": "0"
+          },
+          {
+            "x": 3,
+            "y": 40,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1030",
+          "column": "RelationRows",
+          "parentId": "1031",
+          "parentName": "INSERT-SELECT-1",
+          "coordinates": [
+            {
+              "x": 15,
+              "y": 33,
+              "hashCode": "0"
+            },
+            {
+              "x": 23,
+              "y": 52,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "id": "1014",
+      "name": "Query Insert-1",
+      "procedureName": "batchQueries",
+      "queryHashId": "ce96bf7afa1bcb5fabb2102da6e3dd84",
+      "type": "sstinsert",
+      "coordinate": "[3,1,0],[31,75,0]"
+    },
+    {
+      "id": "1059",
+      "name": "Query Insert-2",
+      "procedureName": "batchQueries",
+      "queryHashId": "4a26406361180d123901f5c1a5f40d5a",
+      "type": "sstinsert",
+      "coordinate": "[33,1,0],[55,34,0]"
+    }
+  ],
+  "errors": [
+    {
+      "errorMessage": "syntax error, state:20(10102) near: Insert(5,1)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 5,
+          "y": 1,
+          "hashCode": "0"
+        },
+        {
+          "x": 5,
+          "y": 7,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 5,
+          "y": 1
+        },
+        {
+          "x": 5,
+          "y": 7
+        }
+      ]
+    },
+    {
+      "errorMessage": "syntax error, state:20(10102) near: Insert(5,1)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 5,
+          "y": 1,
+          "hashCode": "0"
+        },
+        {
+          "x": 5,
+          "y": 7,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 5,
+          "y": 1
+        },
+        {
+          "x": 5,
+          "y": 7
+        }
+      ]
+    },
+    {
+      "errorMessage": "end of input, state:652(10102) near: FCT_RPT_EARN_PRIOR_DUE_PREM_TEMP(57,17)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 57,
+          "y": 17,
+          "hashCode": "0"
+        },
+        {
+          "x": 57,
+          "y": 49,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 57,
+          "y": 17
+        },
+        {
+          "x": 57,
+          "y": 49
+        }
+      ]
+    },
+    {
+      "errorMessage": "syntax error, state:651(10102) near: FCT_RPT_EARN_FINAL_DUE_PREM_TEMP(3,19)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 3,
+          "y": 19,
+          "hashCode": "0"
+        },
+        {
+          "x": 3,
+          "y": 51,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 3,
+          "y": 19
+        },
+        {
+          "x": 3,
+          "y": 51
+        }
+      ]
+    },
+    {
+      "errorMessage": "no_root_node(-1000) near: no root node(0,0)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 0,
+          "y": 0,
+          "hashCode": "0"
+        },
+        {
+          "x": 0,
+          "y": 12,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": []
+    }
+  ]
+}

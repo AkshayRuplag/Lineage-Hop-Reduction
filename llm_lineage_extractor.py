@@ -83,6 +83,100 @@ def load_azure_client():
     return client, deployment_name
 
 
+# ── AWS Bedrock (Claude Sonnet 4) setup ─────────────────────────────────────
+
+BEDROCK_MODEL_ID = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+
+
+class _BedrockMessage:
+    def __init__(self, content):
+        self.content = content
+
+
+class _BedrockChoice:
+    def __init__(self, content, finish_reason):
+        self.message = _BedrockMessage(content)
+        self.finish_reason = finish_reason
+
+
+class _BedrockResponse:
+    def __init__(self, content, finish_reason):
+        self.choices = [_BedrockChoice(content, finish_reason)]
+
+
+class _BedrockChatCompletions:
+    """Mimics OpenAI's client.chat.completions.create() on top of Bedrock Converse."""
+
+    def __init__(self, brt_client, default_model_id):
+        self._brt = brt_client
+        self._default_model = default_model_id
+
+    def create(self, model=None, messages=None, max_completion_tokens=32000, **_ignored):
+        model_id = model or self._default_model
+        system_blocks = []
+        conv_messages = []
+        for m in messages or []:
+            role, text = m.get('role'), m.get('content', '')
+            if role == 'system':
+                system_blocks.append({'text': text})
+            else:
+                conv_messages.append({'role': role, 'content': [{'text': text}]})
+
+        kwargs = {'system': system_blocks} if system_blocks else {}
+        response = self._brt.converse(
+            modelId=model_id,
+            messages=conv_messages,
+            inferenceConfig={'maxTokens': max_completion_tokens},
+            **kwargs,
+        )
+        content_blocks = response.get('output', {}).get('message', {}).get('content', [])
+        text = ''.join(b.get('text', '') for b in content_blocks if 'text' in b)
+        finish_reason = response.get('stopReason', 'stop')
+        return _BedrockResponse(text, finish_reason)
+
+
+class BedrockChatClient:
+    """Thin adapter so call_llm() can use Bedrock via the same `.chat.completions.create()` API."""
+
+    def __init__(self, brt_client, default_model_id):
+        self.chat = type('_Chat', (), {})()
+        self.chat.completions = _BedrockChatCompletions(brt_client, default_model_id)
+
+
+def load_bedrock_client():
+    """Load an AWS Bedrock (Claude Sonnet 4) client using local AWS CLI credentials."""
+    import boto3
+    from botocore.config import Config as BotoConfig
+
+    model_id = os.environ.get('BEDROCK_MODEL_ID', BEDROCK_MODEL_ID)
+    region = (os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION')
+              or 'us-east-1')
+    bedrock_config = BotoConfig(
+        retries={'max_attempts': 5, 'mode': 'adaptive'},
+        max_pool_connections=10,   # Lower for Bedrock (rate limiting)
+        read_timeout=300,          # Longer for LLM responses
+    )
+    brt = boto3.client('bedrock-runtime', region_name=region, config=bedrock_config)
+    # Cheap credentials check so we fail fast (and fall back to Azure) if AWS CLI isn't configured
+    boto3.client('sts', region_name=region).get_caller_identity()
+    return BedrockChatClient(brt, model_id), model_id
+
+
+def load_llm_client():
+    """Load the LLM client: AWS Bedrock (Claude Sonnet 4) at priority one, falling
+    back to Azure OpenAI (gpt-5-mini) if Bedrock/AWS credentials aren't available."""
+    try:
+        client, model_id = load_bedrock_client()
+        print(f"Using AWS Bedrock ({model_id})\n")
+        return client, model_id
+    except Exception as e:
+        print(f"  [WARN] AWS Bedrock unavailable ({e}); falling back to Azure OpenAI…")
+        print("Loading Azure OpenAI client from .env …")
+        client, deployment = load_azure_client()
+        print(f"  Model: {deployment}\n")
+        return client, deployment
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _strip_comments(sql: str) -> str:
@@ -960,11 +1054,9 @@ def main():
         import sys
         sys.modules[__name__].__dict__['MAX_CHUNK_CHARS'] = args.max_chunk
 
-    # Load LLM client
+    # Load LLM client — Bedrock (Claude Sonnet 4) first, Azure (gpt-5-mini) fallback
     if not args.dry_run:
-        print("Loading Azure OpenAI client from .env …")
-        client, deployment = load_azure_client()
-        print(f"  Model: {deployment}\n")
+        client, deployment = load_llm_client()
     else:
         client, deployment = None, 'DRY-RUN'
 

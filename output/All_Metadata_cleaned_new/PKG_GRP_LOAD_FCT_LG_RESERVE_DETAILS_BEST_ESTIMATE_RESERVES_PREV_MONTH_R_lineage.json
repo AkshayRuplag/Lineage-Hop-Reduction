@@ -1,0 +1,1535 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "N_GROSS_BENEFIT_R",
+                        "coordinates": [
+                          {
+                            "x": 75,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 75,
+                            "y": 22,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "9"
+                      },
+                      {
+                        "name": "N_CHECK_NET_BENEFIT_R",
+                        "coordinates": [
+                          {
+                            "x": 76,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 76,
+                            "y": 26,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "11"
+                      },
+                      {
+                        "name": "N_RESERVE_DIRECT_BEST_ESTMT_R",
+                        "coordinates": [
+                          {
+                            "x": 77,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 77,
+                            "y": 34,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "13"
+                      },
+                      {
+                        "name": "N_CHG_RSRV_DIRECT_BEST_ESTMT_R",
+                        "coordinates": [
+                          {
+                            "x": 78,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 78,
+                            "y": 35,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "15"
+                      },
+                      {
+                        "name": "N_BEST_ESTIMATE_NET_BENEFIT_R",
+                        "coordinates": [
+                          {
+                            "x": 79,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 79,
+                            "y": 34,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "17"
+                      },
+                      {
+                        "name": "N_RESERVE_DIRECT__FIELD__R",
+                        "coordinates": [
+                          {
+                            "x": 80,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 80,
+                            "y": 31,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "19"
+                      },
+                      {
+                        "name": "N_CHG_RESERVE_DIRECT__FIELD__R",
+                        "coordinates": [
+                          {
+                            "x": 81,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 81,
+                            "y": 35,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "21"
+                      },
+                      {
+                        "name": "N_RESERVE_DIRECT__STAT__R",
+                        "coordinates": [
+                          {
+                            "x": 82,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 82,
+                            "y": 30,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "23"
+                      },
+                      {
+                        "name": "N_RESERVE_DIRECT__GAAP__R",
+                        "coordinates": [
+                          {
+                            "x": 83,
+                            "y": 14,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 83,
+                            "y": 39,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "25"
+                      },
+                      {
+                        "name": "V_PRICING_SSDI_ESTIMATED_IND_R",
+                        "coordinates": [
+                          {
+                            "x": 84,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 84,
+                            "y": 35,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "27"
+                      },
+                      {
+                        "name": "V_BEST_ESTMT_RESERVE_MODEL_R",
+                        "coordinates": [
+                          {
+                            "x": 85,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 85,
+                            "y": 33,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "29"
+                      },
+                      {
+                        "name": "V_RESERVE_TYPE_IND_R",
+                        "coordinates": [
+                          {
+                            "x": 86,
+                            "y": 10,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 86,
+                            "y": 30,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "30"
+                      },
+                      {
+                        "name": "&apos",
+                        "coordinates": [
+                          {
+                            "x": 86,
+                            "y": 31,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 86,
+                            "y": 36,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "31"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 74,
+                        "y": 8,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 74,
+                        "y": 39,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+                    "id": "4",
+                    "name": "FCT_LG_RESERVE_DETAILS_R",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [
+    {
+      "id": "1",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "9",
+        "column": "N_GROSS_BENEFIT_R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 75,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 75,
+            "y": 22,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "8",
+          "column": "N_GROSS_BENEFIT_R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 75,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 75,
+              "y": 22,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "2",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "11",
+        "column": "N_CHECK_NET_BENEFIT_R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 76,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 76,
+            "y": 26,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "10",
+          "column": "N_CHECK_NET_BENEFIT_R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 76,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 76,
+              "y": 26,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "3",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "13",
+        "column": "N_RESERVE_DIRECT_BEST_ESTMT_R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 77,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 77,
+            "y": 34,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "12",
+          "column": "N_RESERVE_DIRECT_BEST_ESTMT_R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 77,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 77,
+              "y": 34,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "4",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "15",
+        "column": "N_CHG_RSRV_DIRECT_BEST_ESTMT_R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 78,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 78,
+            "y": 35,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "14",
+          "column": "N_CHG_RSRV_DIRECT_BEST_ESTMT_R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 78,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 78,
+              "y": 35,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "5",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "17",
+        "column": "N_BEST_ESTIMATE_NET_BENEFIT_R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 79,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 79,
+            "y": 34,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "16",
+          "column": "N_BEST_ESTIMATE_NET_BENEFIT_R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 79,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 79,
+              "y": 34,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "6",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "19",
+        "column": "N_RESERVE_DIRECT__FIELD__R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 80,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 80,
+            "y": 31,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "18",
+          "column": "N_RESERVE_DIRECT__FIELD__R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 80,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 80,
+              "y": 31,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "7",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "21",
+        "column": "N_CHG_RESERVE_DIRECT__FIELD__R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 81,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 81,
+            "y": 35,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "20",
+          "column": "N_CHG_RESERVE_DIRECT__FIELD__R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 81,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 81,
+              "y": 35,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "8",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "23",
+        "column": "N_RESERVE_DIRECT__STAT__R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 82,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 82,
+            "y": 30,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "22",
+          "column": "N_RESERVE_DIRECT__STAT__R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 82,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 82,
+              "y": 30,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "9",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "25",
+        "column": "N_RESERVE_DIRECT__GAAP__R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 83,
+            "y": 14,
+            "hashCode": "0"
+          },
+          {
+            "x": 83,
+            "y": 39,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "24",
+          "column": "N_RESERVE_DIRECT__GAAP__R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 83,
+              "y": 14,
+              "hashCode": "0"
+            },
+            {
+              "x": 83,
+              "y": 39,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "10",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "27",
+        "column": "V_PRICING_SSDI_ESTIMATED_IND_R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 84,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 84,
+            "y": 35,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "26",
+          "column": "V_PRICING_SSDI_ESTIMATED_IND_R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 84,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 84,
+              "y": 35,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "11",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "29",
+        "column": "V_BEST_ESTMT_RESERVE_MODEL_R",
+        "parentId": "4",
+        "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+        "coordinates": [
+          {
+            "x": 85,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 85,
+            "y": 33,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "28",
+          "column": "V_BEST_ESTMT_RESERVE_MODEL_R",
+          "parentId": "7",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 85,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 85,
+              "y": 33,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "12",
+      "type": "fdr",
+      "effectType": "update",
+      "target": {
+        "id": "6",
+        "column": "RelationRows",
+        "parentId": "7",
+        "parentName": "UPDATE-SET-1",
+        "coordinates": [
+          {
+            "x": 74,
+            "y": 1,
+            "hashCode": "0"
+          },
+          {
+            "x": 86,
+            "y": 37,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "30",
+          "column": "V_RESERVE_TYPE_IND_R",
+          "parentId": "4",
+          "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 86,
+              "y": 10,
+              "hashCode": "0"
+            },
+            {
+              "x": 86,
+              "y": 30,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "31",
+          "column": "&apos",
+          "parentId": "4",
+          "parentName": "Atomic.FCT_LG_RESERVE_DETAILS_R",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 86,
+              "y": 31,
+              "hashCode": "0"
+            },
+            {
+              "x": 86,
+              "y": 36,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "id": "5",
+      "name": "Query Update-1",
+      "procedureName": "batchQueries",
+      "queryHashId": "d164d4a7a637b7635a3c8b855556121d",
+      "type": "sstupdate",
+      "coordinate": "[74,1,0],[86,37,0]"
+    }
+  ],
+  "errors": [
+    {
+      "errorMessage": "Error when tokenlize(10200) near: L(153,39)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 153,
+          "y": 39,
+          "hashCode": "0"
+        },
+        {
+          "x": 153,
+          "y": 40,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 153,
+          "y": 39
+        },
+        {
+          "x": 153,
+          "y": 40
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: AND(153,47)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 153,
+          "y": 47,
+          "hashCode": "0"
+        },
+        {
+          "x": 153,
+          "y": 50,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 153,
+          "y": 47
+        },
+        {
+          "x": 153,
+          "y": 50
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: L(190,68)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 190,
+          "y": 68,
+          "hashCode": "0"
+        },
+        {
+          "x": 190,
+          "y": 69,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 190,
+          "y": 68
+        },
+        {
+          "x": 190,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: ,(190,75)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 190,
+          "y": 75,
+          "hashCode": "0"
+        },
+        {
+          "x": 190,
+          "y": 76,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 190,
+          "y": 75
+        },
+        {
+          "x": 190,
+          "y": 76
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR(192,21)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 192,
+          "y": 21,
+          "hashCode": "0"
+        },
+        {
+          "x": 192,
+          "y": 63,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 192,
+          "y": 21
+        },
+        {
+          "x": 192,
+          "y": 63
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: ,(192,70)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 192,
+          "y": 70,
+          "hashCode": "0"
+        },
+        {
+          "x": 192,
+          "y": 71,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 192,
+          "y": 70
+        },
+        {
+          "x": 192,
+          "y": 71
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: PRC_GRP_LOAD_FCT_LG_RESERVE_DETAILS_R_INCR(192,77)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 192,
+          "y": 77,
+          "hashCode": "0"
+        },
+        {
+          "x": 192,
+          "y": 119,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 192,
+          "y": 77
+        },
+        {
+          "x": 192,
+          "y": 119
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: ,(192,125)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 192,
+          "y": 125,
+          "hashCode": "0"
+        },
+        {
+          "x": 192,
+          "y": 126,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 192,
+          "y": 125
+        },
+        {
+          "x": 192,
+          "y": 126
+        }
+      ]
+    },
+    {
+      "errorMessage": "syntax error, state:637(10102) near: ;(72,11)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 72,
+          "y": 11,
+          "hashCode": "0"
+        },
+        {
+          "x": 72,
+          "y": 12,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 72,
+          "y": 11
+        },
+        {
+          "x": 72,
+          "y": 12
+        }
+      ]
+    },
+    {
+      "errorMessage": "no_root_node(-1000) near: no root node(0,0)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 0,
+          "y": 0,
+          "hashCode": "0"
+        },
+        {
+          "x": 0,
+          "y": 12,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": []
+    },
+    {
+      "errorMessage": "syntax error, state:675(10102) near: ;(153,38)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 153,
+          "y": 38,
+          "hashCode": "0"
+        },
+        {
+          "x": 153,
+          "y": 39,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 153,
+          "y": 38
+        },
+        {
+          "x": 153,
+          "y": 39
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: =(9,63)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 9,
+          "y": 63,
+          "hashCode": "0"
+        },
+        {
+          "x": 9,
+          "y": 64,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 9,
+          "y": 63
+        },
+        {
+          "x": 9,
+          "y": 64
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: =(10,61)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 10,
+          "y": 61,
+          "hashCode": "0"
+        },
+        {
+          "x": 10,
+          "y": 62,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 10,
+          "y": 61
+        },
+        {
+          "x": 10,
+          "y": 62
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: =(12,51)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 12,
+          "y": 51,
+          "hashCode": "0"
+        },
+        {
+          "x": 12,
+          "y": 52,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 12,
+          "y": 51
+        },
+        {
+          "x": 12,
+          "y": 52
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: =(16,63)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 16,
+          "y": 63,
+          "hashCode": "0"
+        },
+        {
+          "x": 16,
+          "y": 64,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 16,
+          "y": 63
+        },
+        {
+          "x": 16,
+          "y": 64
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: =(17,61)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 17,
+          "y": 61,
+          "hashCode": "0"
+        },
+        {
+          "x": 17,
+          "y": 62,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 17,
+          "y": 61
+        },
+        {
+          "x": 17,
+          "y": 62
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: =(19,63)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 19,
+          "y": 63,
+          "hashCode": "0"
+        },
+        {
+          "x": 19,
+          "y": 64,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 19,
+          "y": 63
+        },
+        {
+          "x": 19,
+          "y": 64
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: =(20,61)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 20,
+          "y": 61,
+          "hashCode": "0"
+        },
+        {
+          "x": 20,
+          "y": 62,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 20,
+          "y": 61
+        },
+        {
+          "x": 20,
+          "y": 62
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: %(23,50)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 23,
+          "y": 50,
+          "hashCode": "0"
+        },
+        {
+          "x": 23,
+          "y": 51,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 23,
+          "y": 50
+        },
+        {
+          "x": 23,
+          "y": 51
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: OR(23,62)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 23,
+          "y": 62,
+          "hashCode": "0"
+        },
+        {
+          "x": 23,
+          "y": 64,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 23,
+          "y": 62
+        },
+        {
+          "x": 23,
+          "y": 64
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: %(23,93)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 23,
+          "y": 93,
+          "hashCode": "0"
+        },
+        {
+          "x": 23,
+          "y": 94,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 23,
+          "y": 93
+        },
+        {
+          "x": 23,
+          "y": 94
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: OR(23,105)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 23,
+          "y": 105,
+          "hashCode": "0"
+        },
+        {
+          "x": 23,
+          "y": 107,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 23,
+          "y": 105
+        },
+        {
+          "x": 23,
+          "y": 107
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: %(23,136)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 23,
+          "y": 136,
+          "hashCode": "0"
+        },
+        {
+          "x": 23,
+          "y": 137,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 23,
+          "y": 136
+        },
+        {
+          "x": 23,
+          "y": 137
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: )(23,147)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 23,
+          "y": 147,
+          "hashCode": "0"
+        },
+        {
+          "x": 23,
+          "y": 148,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 23,
+          "y": 147
+        },
+        {
+          "x": 23,
+          "y": 148
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: 0(24,56)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 24,
+          "y": 56,
+          "hashCode": "0"
+        },
+        {
+          "x": 24,
+          "y": 57,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 24,
+          "y": 56
+        },
+        {
+          "x": 24,
+          "y": 57
+        }
+      ]
+    },
+    {
+      "errorMessage": "Error when tokenlize(10200) near: 0(26,52)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 26,
+          "y": 52,
+          "hashCode": "0"
+        },
+        {
+          "x": 26,
+          "y": 53,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 26,
+          "y": 52
+        },
+        {
+          "x": 26,
+          "y": 53
+        }
+      ]
+    },
+    {
+      "errorMessage": "syntax error, state:1610(10102) near: &lt(9,59)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 9,
+          "y": 59,
+          "hashCode": "0"
+        },
+        {
+          "x": 9,
+          "y": 62,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 9,
+          "y": 59
+        },
+        {
+          "x": 9,
+          "y": 62
+        }
+      ]
+    },
+    {
+      "errorMessage": "no_root_node(-1000) near: no root node(0,0)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 0,
+          "y": 0,
+          "hashCode": "0"
+        },
+        {
+          "x": 0,
+          "y": 12,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": []
+    }
+  ]
+}

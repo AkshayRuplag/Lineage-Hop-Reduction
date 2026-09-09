@@ -1,0 +1,11 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"Error when tokenlize(10200) near: L(3,79)","errorType":"SyntaxError","coordinates":[{"x":3,"y":79,"hashCode":"0"},{"x":3,"y":80,"hashCode":"0"}],"originCoordinates":[{"x":3,"y":79},{"x":3,"y":80}]},{"errorMessage":"Error when tokenlize(10200) near: ,(3,86)","errorType":"SyntaxError","coordinates":[{"x":3,"y":86,"hashCode":"0"},{"x":3,"y":87,"hashCode":"0"}],"originCoordinates":[{"x":3,"y":86},{"x":3,"y":87}]},{"errorMessage":"Error when tokenlize(10200) near: W(3,93)","errorType":"SyntaxError","coordinates":[{"x":3,"y":93,"hashCode":"0"},{"x":3,"y":94,"hashCode":"0"}],"originCoordinates":[{"x":3,"y":93},{"x":3,"y":94}]},{"errorMessage":"Error when tokenlize(10200) near: )(3,100)","errorType":"SyntaxError","coordinates":[{"x":3,"y":100,"hashCode":"0"},{"x":3,"y":101,"hashCode":"0"}],"originCoordinates":[{"x":3,"y":100},{"x":3,"y":101}]},{"errorMessage":"syntax error, state:2009(10102) near: ;(3,78)","errorType":"SyntaxError","coordinates":[{"x":3,"y":78,"hashCode":"0"},{"x":3,"y":79,"hashCode":"0"}],"originCoordinates":[{"x":3,"y":78},{"x":3,"y":79}]},{"errorMessage":"no_root_node(-1000) near: no root node(0,0)","errorType":"SyntaxError","coordinates":[{"x":0,"y":0,"hashCode":"0"},{"x":0,"y":12,"hashCode":"0"}],"originCoordinates":[]},{"errorMessage":"syntax error, state:637(10102) near: ;(117,12)","errorType":"SyntaxError","coordinates":[{"x":117,"y":12,"hashCode":"0"},{"x":117,"y":13,"hashCode":"0"}],"originCoordinates":[{"x":117,"y":12},{"x":117,"y":13}]},{"errorMessage":"no_root_node(-1000) near: no root node(0,0)","errorType":"SyntaxError","coordinates":[{"x":0,"y":0,"hashCode":"0"},{"x":0,"y":12,"hashCode":"0"}],"originCoordinates":[]}]}
+Error log:
+
+Error when tokenlize(10200) near: L(3,79)
+Error when tokenlize(10200) near: ,(3,86)
+Error when tokenlize(10200) near: W(3,93)
+Error when tokenlize(10200) near: )(3,100)
+syntax error, state:2009(10102) near: ;(3,78)
+no_root_node(-1000) near: no root node(0,0)
+syntax error, state:637(10102) near: ;(117,12)
+no_root_node(-1000) near: no root node(0,0)

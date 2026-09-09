@@ -193,7 +193,11 @@ def _normalize_status(raw: str) -> str:
 def load_validation_statuses() -> dict:
     """
     Read all validated workbooks from VALIDATED_DIR.
-    Each file has a "Hop Recommendations" sheet with a "Recommendation Status" column.
+    Supports two layouts:
+      - Per-RPT / legacy override files: "Hop Recommendations" sheet, header on row 1.
+      - Full team-validated master files (e.g. a "..._final_standard_*.xlsx" export or
+        any "master_*"/"MASTER_*" file): "Master Recommendations" sheet, banner on row 1,
+        header on row 2.
 
     Returns: dedup_key → canonical status string
     """
@@ -202,29 +206,38 @@ def load_validation_statuses() -> dict:
         return {}
 
     status_map: dict = {}
-    # Master override file(s) must be processed LAST and OVERWRITE any
-    # per-RPT entry for the same key — it is the latest, most authoritative
+    # Master/authoritative file(s) must be processed LAST and OVERWRITE any
+    # per-RPT entry for the same key — they are the latest, most authoritative
     # data-team review pass (see module docstring cascade order).
+    def _is_master_file(name: str) -> bool:
+        n = name.lower()
+        return n.startswith("master_") or "final_standard" in n
+
     files = sorted(VALIDATED_DIR.glob("*.xlsx"),
-                    key=lambda p: (p.name.startswith("master_"), p.name))
+                    key=lambda p: (_is_master_file(p.name), p.name))
     if not files:
         print(f"  -> No validated workbooks found in {VALIDATED_DIR}")
         return {}
 
     matched = 0
     for fpath in files:
-        is_master = fpath.name.startswith("master_")
+        is_master = _is_master_file(fpath.name)
         wb = openpyxl.load_workbook(fpath, read_only=True)
-        if "Hop Recommendations" not in wb.sheetnames:
+        if "Hop Recommendations" in wb.sheetnames:
+            ws = wb["Hop Recommendations"]
+            header_row_idx = 0   # header is the first row
+        elif "Master Recommendations" in wb.sheetnames:
+            ws = wb["Master Recommendations"]
+            header_row_idx = 1   # row 0 is a merged banner, header is row 1
+        else:
             wb.close()
             continue
-        ws = wb["Hop Recommendations"]
         rows = list(ws.iter_rows(values_only=True))
-        if not rows:
+        if len(rows) <= header_row_idx:
             wb.close()
             continue
 
-        headers = [str(h) if h is not None else "" for h in rows[0]]
+        headers = [str(h) if h is not None else "" for h in rows[header_row_idx]]
         h_idx   = {h: i for i, h in enumerate(headers) if h}
 
         # Find the four validation columns (case-insensitive, whitespace-tolerant)
@@ -240,7 +253,7 @@ def load_validation_statuses() -> dict:
             wb.close()
             continue
 
-        for row in rows[1:]:
+        for row in rows[header_row_idx + 1:]:
             if not row[0]:
                 continue
             d = {h: (row[i] if i < len(row) else None) for h, i in h_idx.items()}
@@ -2633,8 +2646,33 @@ def main() -> None:
             rec["val_comments"]        = ""
             rec["val_agreement"]       = ""
             rec["val_review_by"]       = ""
+
+        # E. category MVs are hardcoded to 0 verified hop savings at detection time
+        # ("no blind elimination" — shared across RPTs, can't be credited from a
+        # single-RPT view). Once the data team has done that cross-RPT coordination
+        # and confirmed removal (✅ Consider), credit the savings the detector already
+        # computed for this MV (current_hops / global runtime) instead of leaving 0.
+        if (rec.get("Category", "") or "").startswith("E.") \
+                and rec["validation_status"] == VS_CONSIDER \
+                and rec["global_hop_savings"] == 0:
+            rec["global_hop_savings"] = _toint(rec.get("Current Hops", 1)) or 1
+            override_min = _tofloat(rec.get("Global Est Runtime Saved (min)", 0))
+            if override_min > 0:
+                rec["global_est_min"] = override_min
+
     print(f"      Matched: {matched_count}/{len(records)} recs  "
           f"({len(records)-matched_count} marked {VS_PENDING})")
+
+    e_confirmed = [
+        r for r in records
+        if (r.get("Category", "") or "").startswith("E.") and r["validation_status"] == VS_CONSIDER
+    ]
+    if e_confirmed:
+        print(f"      E. category recs confirmed by data team (✅ Consider): "
+              f"{len(e_confirmed)} — hop savings credited instead of 0:")
+        for r in e_confirmed:
+            print(f"        {r.get('ID','')} | {r.get('Target Table','')} | "
+                  f"{r['global_hop_savings']} hops")
 
     # Print phase summary to console
     phase_groups: dict[int, list] = defaultdict(list)

@@ -1,0 +1,7 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"end of input, state:1734(10102) near: ;(201,45)","errorType":"SyntaxError","coordinates":[{"x":201,"y":45,"hashCode":"0"},{"x":201,"y":46,"hashCode":"0"}],"originCoordinates":[{"x":201,"y":45},{"x":201,"y":46}]},{"errorMessage":"no_root_node(-1000) near: no root node(0,0)","errorType":"SyntaxError","coordinates":[{"x":0,"y":0,"hashCode":"0"},{"x":0,"y":12,"hashCode":"0"}],"originCoordinates":[]},{"errorMessage":"end of input, state:1734(10102) near: ;(201,45)","errorType":"SyntaxError","coordinates":[{"x":201,"y":45,"hashCode":"0"},{"x":201,"y":46,"hashCode":"0"}],"originCoordinates":[{"x":201,"y":45},{"x":201,"y":46}]},{"errorMessage":"no_root_node(-1000) near: no root node(0,0)","errorType":"SyntaxError","coordinates":[{"x":0,"y":0,"hashCode":"0"},{"x":0,"y":12,"hashCode":"0"}],"originCoordinates":[]}]}
+Error log:
+
+end of input, state:1734(10102) near: ;(201,45)
+no_root_node(-1000) near: no root node(0,0)
+end of input, state:1734(10102) near: ;(201,45)
+no_root_node(-1000) near: no root node(0,0)

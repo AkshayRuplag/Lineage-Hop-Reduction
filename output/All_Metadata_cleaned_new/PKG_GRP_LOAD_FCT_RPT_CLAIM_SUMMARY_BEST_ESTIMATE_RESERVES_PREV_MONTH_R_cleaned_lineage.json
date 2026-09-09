@@ -1,0 +1,7 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"Error when tokenlize(10200) near: L(33,39)","errorType":"SyntaxError","coordinates":[{"x":33,"y":39,"hashCode":"0"},{"x":33,"y":40,"hashCode":"0"}],"originCoordinates":[{"x":33,"y":39},{"x":33,"y":40}]},{"errorMessage":"Error when tokenlize(10200) near: AND(33,47)","errorType":"SyntaxError","coordinates":[{"x":33,"y":47,"hashCode":"0"},{"x":33,"y":50,"hashCode":"0"}],"originCoordinates":[{"x":33,"y":47},{"x":33,"y":50}]},{"errorMessage":"syntax error, state:675(10102) near: ;(33,38)","errorType":"SyntaxError","coordinates":[{"x":33,"y":38,"hashCode":"0"},{"x":33,"y":39,"hashCode":"0"}],"originCoordinates":[{"x":33,"y":38},{"x":33,"y":39}]},{"errorMessage":"no_root_node(-1000) near: no root node(0,0)","errorType":"SyntaxError","coordinates":[{"x":0,"y":0,"hashCode":"0"},{"x":0,"y":12,"hashCode":"0"}],"originCoordinates":[]}]}
+Error log:
+
+Error when tokenlize(10200) near: L(33,39)
+Error when tokenlize(10200) near: AND(33,47)
+syntax error, state:675(10102) near: ;(33,38)
+no_root_node(-1000) near: no root node(0,0)

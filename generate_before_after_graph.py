@@ -33,8 +33,11 @@ GRAPH_JSON  = OUTPUT_DIR / "tidal_dependency_graph.json"
 OUTPUT_HTML = OUTPUT_DIR / "before_after_hop_reduction.html"
 D3_PATH     = OUTPUT_DIR / "d3.v7.min.js"
 
-# Canonical "Validation Status" label written by generate_master_recommendations.py
+# Canonical "Validation Status" labels written by generate_master_recommendations.py
 VS_CONSIDER = "\u2705 Consider"
+VS_PENDING  = "\u23f3 Validation Pending"
+# Pending recs are treated as actionable (same as Consider) until the data team reviews them
+ACTIONABLE_STATUSES = {VS_CONSIDER, VS_PENDING}
 
 
 # ── Simulation (tracks which rec removed each job) ────────────────────────────
@@ -49,10 +52,30 @@ def simulate_with_tracking(recommendations: list, graph: dict) -> dict:
 
     job_to_rec: dict = {}   # job_id -> {rec_id, category, target_table}
     for rec in recommendations:
-        if rec.get("verified_hop_savings", 0) > 0:
+        cat = rec.get("category", "")
+        is_shared_mv = cat.startswith("E. MV Shared Across RPTs")
+        # E. recs are hardcoded to 0 verified hop savings in the master workbook
+        # until cross-RPT validated (see generate_master_recommendations.py); once
+        # a rec is actionable (Consider/Pending) here, still flag its MV removal
+        # in every RPT graph it appears in, independent of that savings number.
+        if rec.get("verified_hop_savings", 0) > 0 or is_shared_mv:
             jobs = rec.get("affected_jobs", [])
             if len(jobs) > 1:
-                candidates = jobs[:-1] if rec.get("category", "").startswith("D.") else jobs[1:]
+                n_hops = rec.get("verified_hop_savings", 0)
+                if cat.startswith("D."):
+                    candidates = jobs[:-1]
+                elif is_shared_mv:
+                    # affected_jobs = [mv_job_to_decommission] + consumers (kept, SQL modified in place)
+                    candidates = jobs[:1]
+                elif cat.startswith("E. MV Indicator-Chain Elimination Candidate"):
+                    # affected_jobs = [chain_producers... (kept)] + [chain_mvs... + upd_job (removed)];
+                    # verified_hop_savings == len(chain_mvs) + 1 == size of the trailing removable
+                    # segment (see analyze_hop_reduction_merged.py). Do NOT default to jobs[1:] here —
+                    # the producer list can have more than one entry, and those are real upstream
+                    # load jobs (e.g. the main RPT load) that must stay, not be flagged for removal.
+                    candidates = jobs[-n_hops:] if 0 < n_hops < len(jobs) else []
+                else:
+                    candidates = jobs[1:]
                 for j in candidates:
                     if j not in root_set and j not in job_to_rec:
                         job_to_rec[j] = {
@@ -87,13 +110,20 @@ def simulate_with_tracking(recommendations: list, graph: dict) -> dict:
         if remaining_nodes[nid].get("depth", -1) >= 0
     ]
 
+    # Node counts exclude FORWARD_BFS nodes (source == "FORWARD_BFS") so the
+    # sidebar total matches the default-visible graph (showUnlinked=false hides
+    # them) and the basis recommendations were actually generated against —
+    # they were never part of the hop-reduction dependency chain to begin with.
+    linked_total    = sum(1 for n in graph["nodes"] if n.get("source") != "FORWARD_BFS")
+    linked_removed  = sum(1 for j in job_to_rec if node_map.get(j, {}).get("source") != "FORWARD_BFS")
+
     return {
         "removed_jobs": sorted(job_to_rec.keys()),
         "job_to_rec":   job_to_rec,
         "original_max_depth":  max((n["depth"] for n in graph["nodes"]), default=0),
         "new_max_depth":       max(connected_depths, default=0),
-        "original_node_count": len(graph["nodes"]),
-        "new_node_count":      len(remaining_nodes),
+        "original_node_count": linked_total,
+        "new_node_count":      linked_total - linked_removed,
     }
 
 
@@ -167,7 +197,7 @@ def build_enhanced_data(all_graphs: dict, master_recs: list) -> dict:
     Returns enhanced_data[rpt] = {nodes, links, removed_jobs, job_to_rec,
                                    consider_recs, job_optimizations, sim_stats}
     """
-    consider_recs_all = [r for r in master_recs if r["validation_status"] == VS_CONSIDER]
+    consider_recs_all = [r for r in master_recs if r["validation_status"] in ACTIONABLE_STATUSES]
     enhanced = {}
 
     for rpt_table, graph in sorted(all_graphs.items()):
@@ -1343,7 +1373,9 @@ def main() -> None:
     print(f"Loading master recommendations ({MASTER_XLSX.name}) ...")
     master_recs = read_master_recommendations(MASTER_XLSX)
     n_consider = sum(1 for r in master_recs if r["validation_status"] == VS_CONSIDER)
-    print(f"  {len(master_recs)} total recs, {n_consider} marked '{VS_CONSIDER}'\n")
+    n_pending  = sum(1 for r in master_recs if r["validation_status"] == VS_PENDING)
+    print(f"  {len(master_recs)} total recs, {n_consider} marked '{VS_CONSIDER}', "
+          f"{n_pending} marked '{VS_PENDING}' (both treated as actionable)\n")
 
     print("Building enhanced graph data ...")
     enhanced_data = build_enhanced_data(all_graphs, master_recs)

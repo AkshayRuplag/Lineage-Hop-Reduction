@@ -1,0 +1,37 @@
+-- Cleaned for lineage: PKG_GRP_LOAD_RPT_SALES_REP_R_PRC_GET_CUR_DATA
+
+INSERT  INTO RPT_SALES_REP_R_EXG stg  
+       SELECT  
+			(CASE  WHEN FCT_SALES_REP_SHARE.v_sales_rep_sequence_r = 'P' THEN DIM_GRP_SALES_REPRESENTATIVE_R.N_EMPLOYEE_ID_R END) AS V_PRIMARY_SALES_REP_EMPLOYEE_ID_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.V_SALES_REP_SEQUENCE_R = 'P' THEN DIM_GRP_SALES_REPRESENTATIVE_R.V_FIRST_NAME_R || ' ' ||DIM_GRP_SALES_REPRESENTATIVE_R.V_MIDDLE_NAME_R || ' ' || DIM_GRP_SALES_REPRESENTATIVE_R.V_LAST_NAME_R END) AS V_PRIMARY_SALES_REP_NAME_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.v_sales_rep_sequence_r = 'P' THEN DIM_GRP_SALES_REPRESENTATIVE_R.V_REGIONAL_OFFICE_NAME_R END) AS V_PRIMARY_SALES_REP_rso_R
+			,DIM_GRP_SALES_REPRESENTATIVE_R.D_RECORD_START_DATE_R AS D_SALES_REP_EFF_DATE_R
+			,FCT_SALES_REP_SHARE.N_SALES_REP_SHARE_R AS N_SALES_REP_SHARE_PCT_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.v_sales_rep_sequence_r = 'S' THEN DIM_GRP_SALES_REPRESENTATIVE_R.N_EMPLOYEE_ID_R END ) AS V_SECONDARY_SALES_REP_EMPLOYEE_ID_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.V_SALES_REP_SEQUENCE_R = 'S' THEN DIM_GRP_SALES_REPRESENTATIVE_R.V_FIRST_NAME_R || ' ' ||DIM_GRP_SALES_REPRESENTATIVE_R.V_MIDDLE_NAME_R || ' ' || DIM_GRP_SALES_REPRESENTATIVE_R.V_LAST_NAME_R END) AS V_SECONDARY_SALES_REP_NAME_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.v_sales_rep_sequence_r = 'S' THEN DIM_GRP_SALES_REPRESENTATIVE_R.V_REGIONAL_OFFICE_NAME_R END) AS V_secondary_SALES_REP_rso_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.v_sales_rep_sequence_r = 'S' THEN FCT_SALES_REP_SHARE.N_SALES_REP_SHARE_R END) AS n_secondary_sales_rep_share_pct_r
+			,(CASE  WHEN FCT_SALES_REP_SHARE.v_sales_rep_sequence_r = 'T' THEN DIM_GRP_SALES_REPRESENTATIVE_R.N_EMPLOYEE_ID_R END) AS V_tertiary_SALES_REP_EMPLOYEE_ID_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.V_SALES_REP_SEQUENCE_R = 'T' THEN DIM_GRP_SALES_REPRESENTATIVE_R.V_FIRST_NAME_R || ' ' ||DIM_GRP_SALES_REPRESENTATIVE_R.V_MIDDLE_NAME_R || ' ' || DIM_GRP_SALES_REPRESENTATIVE_R.V_LAST_NAME_R END) AS V_tertiary_SALES_REP_NAME_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.v_sales_rep_sequence_r = 'T' THEN DIM_GRP_SALES_REPRESENTATIVE_R.V_REGIONAL_OFFICE_NAME_R END) AS V_tertiary_SALES_REP_rso_R
+			,(CASE  WHEN FCT_SALES_REP_SHARE.v_sales_rep_sequence_r = 'T' THEN FCT_SALES_REP_SHARE.N_SALES_REP_SHARE_R END) AS n_tertiary_sales_rep_share_pct_r
+			,FCT_SALES_REP_SHARE.N_SALES_REPRESENTATIVE_SK_R AS N_SALES_REPRESENTATIVE_SK_R
+			,dim_grp_policy_dir_r.n_policy_sk_r AS n_policy_sk_r
+			,gc_main_loadedby                                              v_last_modified_by_r
+			,gd_sysdate                                                    t_creation_date_r
+			,gc_main_loadedby                                              v_created_by_r
+			,gd_sysdate                                                    t_last_modified_date_r
+			,GN_CURRENT_MONTH                                              N_YEARMONTH_R
+			,'Y'                        								   v_rpt_active_status_r
+			,gn_sysdt_batchid                                              n_batch_id_r
+			,V_SALES_REP_NUMBER_R                                          
+			from  atomic.FCT_SALES_REP_SHARE
+			left outer join atomic.DIM_GRP_SALES_REPRESENTATIVE_R
+			On FCT_SALES_REP_SHARE.N_SALES_REPRESENTATIVE_SK_R = DIM_GRP_SALES_REPRESENTATIVE_R.N_SALES_REPRESENTATIVE_SK_R
+			and DIM_GRP_SALES_REPRESENTATIVE_R.v_active_status_r = 'Y'
+			and FCT_SALES_REP_SHARE.D_SALES_REP_END_DATE_R is null
+			LEFT OUTER JOIN atomic.dim_grp_policy_dir_r
+			on dim_grp_policy_dir_r.V_ACTIVE_STATUS_R = 'Y'
+            AND FCT_SALES_REP_SHARE.V_POLICY_NUMBER_R = dim_grp_policy_dir_r.V_POLICY_NUMBER_R
+			and FCT_SALES_REP_SHARE.D_SALES_REP_END_DATE_R IS NULL
+			where FCT_SALES_REP_SHARE.V_SALES_REP_SEQUENCE_R<>'Z';

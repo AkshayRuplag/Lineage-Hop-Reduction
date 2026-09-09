@@ -1,0 +1,103 @@
+--------------------------------------------------------
+--  DDL for Procedure PRC_GRP_LOAD_RPT_PREMIUM_R_MGIS
+--------------------------------------------------------
+set define off;
+
+  CREATE OR REPLACE EDITIONABLE PROCEDURE "ATOMIC"."PRC_GRP_LOAD_RPT_PREMIUM_R_MGIS" 
+
+AS
+BEGIN
+    --Delete data if exists for MGIS
+DELETE FROM ATOMIC.RPT_PREMIUM_R WHERE V_SOURCE_SYSTEM_NAME_R = 'MGIS' AND N_REPORTMONTH_R = CAST(TO_CHAR(TRUNC(sysdate, 'MM'), 'YYYYMM') AS INTEGER);
+    commit;
+
+    -- Insert data into the target table
+ INSERT INTO ATOMIC.RPT_PREMIUM_R
+(
+V_Operator_ID_R,
+V_Premium_Coverage_Code_R,
+D_Premium_Due_Date_R,
+n_Premium_Month_Paid_R,
+D_Premium_Paid_To_Date_R,
+n_Premium_Payment_Id_R,
+V_Premium_Payment_Premium_Type_R,
+D_Premium_Transaction_Date_R,
+V_SOURCE_SYSTEM_NAME_R,
+N_BATCH_ID_R  ,
+N_REPORTMONTH_R
+,V_PREMIUM_COVERAGE_DESCRIPTION_R
+,V_PREMIUM_PRODUCT_LINE_R
+,V_PREMIUM_PRODUCT_LINE_DESCRIPTION_R
+,V_PREMIUM_SUB_LINE_CODE_R
+,V_PRODUCT_LINE_CODE_R
+,D_PREMIUM_MAX_DUE_DATE_R
+,D_Premium_Src_Transaction_Date_R		-- Added New Column for MGIS 5500 Report --2026-04-15						 
+)
+Select
+V_Operator_ID_R,
+V_Premium_Coverage_Code_R,
+D_Premium_Due_Date_R,
+n_Premium_Month_Paid_R,
+D_Premium_Paid_To_Date_R,
+n_Premium_Payment_Id_R,
+V_Premium_Payment_Premium_Type_R,
+D_Premium_Transaction_Date_R,
+V_SOURCE_SYSTEM_NAME_R,
+N_BATCH_ID_R  ,
+N_REPORTMONTH_R
+,V_PREMIUM_COVERAGE_DESCRIPTION_R
+,V_PREMIUM_PRODUCT_LINE_R
+,V_PREMIUM_PRODUCT_LINE_DESCRIPTION_R
+,V_PREMIUM_SUB_LINE_CODE_R
+,V_PRODUCT_LINE_CODE_R
+,D_PREMIUM_MAX_DUE_DATE_R
+,D_Premium_Src_Transaction_Date_R			-- Added New Column for MGIS 5500 Report --2026-04-15					 
+from(
+Select		  
+A.V_USER_NAME_R AS V_Operator_ID_R,
+A.V_COVERAGECODE_R AS V_Premium_Coverage_Code_R,
+A.D_DUE_DATE_R AS D_Premium_Due_Date_R,
+EXTRACT( MONTH  FROM A.D_DUE_DATE_R) AS  n_Premium_Month_Paid_R,
+A.D_PAID_TO_DATE_R as D_Premium_Paid_To_Date_R,
+A.N_SRC_PREMIUM_PAYMENT_ID_R as n_Premium_Payment_Id_R,
+A.N_PREMIUM_TYPE_R as V_Premium_Payment_Premium_Type_R,
+A.D_TRANSACTION_DATE_R as D_Premium_Transaction_Date_R,
+A.V_SOURCE_SYSTEM_NAME_R,
+A.N_BATCH_ID_R  ,
+CAST(TO_CHAR(TRUNC(sysdate, 'MM'), 'YYYYMM') AS INTEGER) AS N_REPORTMONTH_R
+,E.V_COVERAGE_DESC_R as V_PREMIUM_COVERAGE_DESCRIPTION_R
+,E.V_PRODUCT_LINE_R   as  V_PREMIUM_PRODUCT_LINE_R
+,E.V_BASIC_PRODUCT_LINE_DESC_R as V_PREMIUM_PRODUCT_LINE_DESCRIPTION_R
+,E.V_PRODUCT_SUB_LINE_CODE_R as V_PREMIUM_SUB_LINE_CODE_R
+,E.V_BASIC_PRODUCT_LINE_CODE_R as  V_PRODUCT_LINE_CODE_R
+ ,A.D_DUE_DATE_R AS  D_PREMIUM_MAX_DUE_DATE_R
+ ,A.D_SRC_TRANSACTION_DATE_R AS D_Premium_Src_Transaction_Date_R		-- Added New Column for MGIS 5500 Report --2026-04-15														
+FROM FCT_BILLING_POLICY_PREMIUM_R A
+LEFT JOIN DIM_GRP_PRODUCT_R E
+ON A.V_COVERAGECODE_R = E.V_COVERAGE_CODE_R	
+ where A.V_SOURCE_SYSTEM_NAME_R   ='MGIS' ) 
+GROUP BY
+V_Operator_ID_R,
+V_Premium_Coverage_Code_R,
+D_Premium_Due_Date_R,
+n_Premium_Month_Paid_R,
+D_Premium_Paid_To_Date_R,
+n_Premium_Payment_Id_R,
+V_Premium_Payment_Premium_Type_R,
+D_Premium_Transaction_Date_R,
+V_SOURCE_SYSTEM_NAME_R,
+N_BATCH_ID_R  ,
+N_REPORTMONTH_R 
+,V_PREMIUM_COVERAGE_DESCRIPTION_R
+,V_PREMIUM_PRODUCT_LINE_R
+,V_PREMIUM_PRODUCT_LINE_DESCRIPTION_R
+,V_PREMIUM_SUB_LINE_CODE_R
+,V_PRODUCT_LINE_CODE_R
+,D_PREMIUM_MAX_DUE_DATE_R
+,D_Premium_Src_Transaction_Date_R;					 										
+commit;
+END;
+
+/
+
+  GRANT EXECUTE ON "ATOMIC"."PRC_GRP_LOAD_RPT_PREMIUM_R_MGIS" TO "ATOMIC_ALL_RO";

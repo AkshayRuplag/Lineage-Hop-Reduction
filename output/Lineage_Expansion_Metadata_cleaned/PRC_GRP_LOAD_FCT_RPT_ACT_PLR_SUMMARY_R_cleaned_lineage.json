@@ -1,0 +1,5 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"syntax error, state:651(10102) near: table(3,17)","errorType":"SyntaxError","coordinates":[{"x":3,"y":17,"hashCode":"0"},{"x":3,"y":22,"hashCode":"0"}],"originCoordinates":[{"x":3,"y":17},{"x":3,"y":22}]},{"errorMessage":"no_root_node(-1000) near: no root node(0,0)","errorType":"SyntaxError","coordinates":[{"x":0,"y":0,"hashCode":"0"},{"x":0,"y":12,"hashCode":"0"}],"originCoordinates":[]}]}
+Error log:
+
+syntax error, state:651(10102) near: table(3,17)
+no_root_node(-1000) near: no root node(0,0)

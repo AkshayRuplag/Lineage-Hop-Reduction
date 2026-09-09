@@ -71,6 +71,31 @@ def load_all_graphs():
         return json.load(f)
 
 
+def strip_forward_bfs_nodes(all_graphs: dict) -> dict:
+    """
+    Forward-view nodes (source == 'FORWARD_BFS') were added later by walking
+    downstream from known jobs to surface consumers. They're useful for the
+    visual lineage graph but were not present when prior recommendation runs
+    (and the data-team's validated master) were produced, so hop-reduction
+    detectors must ignore them to stay consistent with existing validations.
+    """
+    filtered = {}
+    for rpt_table, graph in all_graphs.items():
+        drop_ids = {n["id"] for n in graph.get("nodes", []) if n.get("source") == "FORWARD_BFS"}
+        if not drop_ids:
+            filtered[rpt_table] = graph
+            continue
+        filtered[rpt_table] = {
+            **graph,
+            "nodes": [n for n in graph.get("nodes", []) if n["id"] not in drop_ids],
+            "links": [
+                lnk for lnk in graph.get("links", [])
+                if lnk.get("source") not in drop_ids and lnk.get("target") not in drop_ids
+            ],
+        }
+    return filtered
+
+
 def load_lineage():
     wb = openpyxl.load_workbook(str(LINEAGE_XLSX), read_only=True)
     ws = wb[wb.sheetnames[0]]
@@ -1528,12 +1553,22 @@ def detect_mv_elimination(
     mv_nodes = [n for n in graph["nodes"] if n["category"] == "MV"]
     recommendations = []
     for mv in mv_nodes:
+        # Step 0 — drop shared logging/status side-effect tables from the MV's own
+        # target identity.  Generic refresh procedures (e.g. PROC_REFRESH_GRP_M_VIEW_TBLS)
+        # write to a shared execution-log table for every table they refresh; when the
+        # actual (parameterized) business target isn't captured in tgt_tables, the log
+        # table would otherwise be mistaken for the MV itself. If nothing legitimate
+        # remains, this MV has no resolvable business target — skip it entirely.
+        real_mv_tgts = [t for t in (mv.get("tgt_tables") or []) if not _is_log_or_debug_table(t)]
+        if not real_mv_tgts:
+            continue
+
         # Step 1 — filter out VIEW_ synthetic nodes (SQL VIEW definitions, not Tidal jobs)
         # Step 2 — filter to DIRECT data consumers only: the consumer's src_tables must
         #           contain at least one of the MV's tgt_tables.  Jobs connected only via
         #           Tidal scheduling/orchestration edges or through an intermediate SQL VIEW
         #           are NOT real data consumers and would produce a false positive E. finding.
-        mv_tgts = {t.upper() for t in (mv.get("tgt_tables") or [])}
+        mv_tgts = {t.upper() for t in real_mv_tgts}
         consumers = {
             c for c in children.get(mv["id"], set())
             if not c.upper().startswith("VIEW_")
@@ -1556,6 +1591,31 @@ def detect_mv_elimination(
                     for s in (node_map.get(c, {}).get("src_tables") or [])
                 }
             }
+
+        # ── Parser-gap fallback ────────────────────────────────────────────
+        # Some MVs are consumed ONLY as JOIN-only lookup sources
+        # (e.g. "LEFT JOIN MVW_PRODUCT_SK_LOOKUP_MIN_MV_SSL") or via legacy
+        # comma-style joins. The column-level SQL parser that populates
+        # src_tables only traces INSERT/SELECT column mappings, not
+        # FROM/JOIN-only references, so these consumers are invisible to the
+        # strict direct-consumer filter above even though the MV IS actively
+        # used. If the MV's target table is confirmed as an active input
+        # source in the LLM script summaries, treat its Tidal scheduling
+        # children (excluding VIEW_ synthetic nodes) as parser-gap-confirmed
+        # consumers instead of silently dropping the MV from all findings.
+        parser_gap_confirmed = False
+        if not consumers and not global_consumers and mv_tgts & _summary_input_sources:
+            fallback_consumers = {
+                c for c in children.get(mv["id"], set())
+                if not c.upper().startswith("VIEW_")
+            }
+            if fallback_consumers:
+                consumers = fallback_consumers
+                global_consumers = {
+                    c for c in (global_children.get(mv["id"], set()) if global_children else fallback_consumers)
+                    if not c.upper().startswith("VIEW_")
+                } or fallback_consumers
+                parser_gap_confirmed = True
 
         # If no direct data consumers exist anywhere, skip: this MV is consumed only
         # through a SQL VIEW (lineage gap) — not a Tidal hop reduction opportunity.
@@ -1586,13 +1646,23 @@ def detect_mv_elimination(
         wave2 = [c for c, _rt in consumer_runtime_pairs[wave1_n:]]
 
         # Pre-build reusable display variables for both E-category branches
-        _tgt_display = ", ".join(sorted(mv.get("tgt_tables", []) or [])) or mv["id"]
+        _tgt_display = ", ".join(sorted(real_mv_tgts)) or mv["id"]
         _wave1_bullets = "\n".join(f"     \u2022 {c}" for c in wave1) if wave1 else "     (none)"
         _wave2_bullets = "\n".join(f"     \u2022 {c}" for c in wave2) if wave2 else ""
         _decom_steps = (
             f"  \u2022 Remove Tidal job '{mv['id']}' from the Tidal schedule.\n"
             f"  \u2022 Drop table '{_tgt_display}' from the database.\n"
             f"  \u2022 Remove all Tidal scheduler dependency edges pointing to this job."
+        )
+
+        parser_gap_note = (
+            "\nNOTE: This MV has no column-level lineage consumers — it is used only "
+            "as a JOIN-only lookup source (e.g. LEFT JOIN / comma-join) which the "
+            "column-level SQL parser does not trace. Confirmed as an active input "
+            "source via LLM script summaries; consumer list below is derived from "
+            "Tidal scheduling edges and should be manually verified against each "
+            "consumer's SQL before implementation."
+            if parser_gap_confirmed else ""
         )
 
         # If globally shared, do not recommend elimination based on single-RPT view.
@@ -1649,6 +1719,7 @@ def detect_mv_elimination(
                         f"Cannot be removed for one RPT in isolation \u2014 a coordinated "
                         f"global migration across all {len(global_consumers)} consumer(s) is required."
                         + shared_complexity_note
+                        + parser_gap_note
                     ),
                     "affected_jobs": [mv["id"]] + sorted(global_consumers),
                     "impacted_rpts": sorted(impacted_rpts),
@@ -1748,6 +1819,7 @@ def detect_mv_elimination(
                     f"pre-computation hop from the pipeline."
                     + (f"\n{usage_note.strip()}" if usage_note else "")
                     + (f"\n{complexity_note}" if complexity_note else "")
+                    + parser_gap_note
                 ),
                 "affected_jobs": [mv["id"]] + sorted(consumers),
                 "impacted_rpts": sorted(impacted_rpts),
@@ -4799,10 +4871,14 @@ def simulate_after_top_n(recommendations, graph, top_n=10):
         if rec.get("verified_hop_savings", 0) > 0:
             jobs = rec.get("affected_jobs", [])
             if len(jobs) > 1:
-                if rec.get("category", "").startswith("D."):
+                cat = rec.get("category", "")
+                if cat.startswith("D."):
                     # Serial chain: keep shallowest job (jobs[-1]) to preserve
                     # pipeline connectivity; remove the upstream chain members.
                     candidates = jobs[:-1]
+                elif cat.startswith("E. MV Shared Across RPTs"):
+                    # affected_jobs = [mv_job_to_decommission] + consumers (kept, SQL modified in place)
+                    candidates = jobs[:1]
                 else:
                     candidates = jobs[1:]
                 removed_jobs.update(j for j in candidates if j not in root_set)
@@ -5790,6 +5866,7 @@ def main(rpt_table=None, preloaded_all_graphs=None, preloaded_all_lineage=None):
         else:
             with open(GRAPH_JSON, "r", encoding="utf-8") as f:
                 all_graphs = json.load(f)
+        all_graphs = strip_forward_bfs_nodes(all_graphs)
         if RPT_TABLE not in all_graphs:
             print(f"\nERROR: RPT_TABLE '{RPT_TABLE}' not found in graph JSON.")
             print(f"Available tables: {sorted(all_graphs.keys())}")

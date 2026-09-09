@@ -1,0 +1,5 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"syntax error, state:20(10102) near: Insert(5,1)","errorType":"SyntaxError","coordinates":[{"x":5,"y":1,"hashCode":"0"},{"x":5,"y":7,"hashCode":"0"}],"originCoordinates":[{"x":5,"y":1},{"x":5,"y":7}]},{"errorMessage":"syntax error, state:20(10102) near: Insert(5,1)","errorType":"SyntaxError","coordinates":[{"x":5,"y":1,"hashCode":"0"},{"x":5,"y":7,"hashCode":"0"}],"originCoordinates":[{"x":5,"y":1},{"x":5,"y":7}]}]}
+Error log:
+
+syntax error, state:20(10102) near: Insert(5,1)
+syntax error, state:20(10102) near: Insert(5,1)

@@ -56,7 +56,7 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "output"
 
-# 8 target RPT tables and their root jobs
+# 14 target RPT tables and their root jobs
 RPT_ROOT_JOBS = {
     "RPT_CLAIM_DTL_R":              "EDP_GRP_EDW_LOAD_RPT_CLAIM_DTL_R_UPD_IND_COLS",  #"EDP_GRP_EDW_LOAD_RPT_CLAIM_DTL_R-19",
     "RPT_CLAIM_NOTE_R":             "EDP_GRP_EDW_LOAD_RPT_CLAIM_NOTE_R-18",
@@ -72,6 +72,25 @@ RPT_ROOT_JOBS = {
     "RPT_GRP_PRODUCT_R":          "EDP_GRP_EDW_LOAD_RPT_GRP_PRODUCT_R-14",
     "RPT_EMPLOYEE_R":             "EDP_GRP_EDW_LOAD_RPT_EMPLOYEE_R-13",
     "RPT_POLICY_DTL_R":           "EDP_GRP_EDW_LOAD_RPT_POLICY_DTL_R-16",
+    "RPT_AGENT_POLICY_R":	      "EDP_GRP_EDW_LOAD_RPT_AGENT_POLICY_R-UW-10",
+    "RPT_AGENT_R":	                "EDP_GRP_EDW_LOAD_RPT_AGENT_R-UW-11",
+    "RPT_BILLGROUP_R":	            "EDP_GRP_EDW_LOAD_RPT_BILLGROUP_R-UW-1",
+    "RPT_COMMISSIONS_R":	        "EDP_GRP_EDW_LOAD_RPT_COMMISSIONS_R-UW-10",
+    "RPT_EOI_APPLICANT_R":	        "EDP_GRP_EDW_LOAD_RPT_EOI_APPLICANT_R-UW-8",
+    "RPT_FCT_INCURRED_SUMMARY_R":	"EDP_GRP_EDW_LOAD_RPT_FCT_INCURRED_SUMMARY_R-UW-8",
+    "RPT_FCT_RPT_ANN_PREM_SUMMARY_R": "EDP_GRP_EDW_LOAD_RPT_FCT_RPT_ANN_PREM_SUMMARY_R-UW-6",
+    "RPT_FCT_RPT_PREMIUM_SUMMARY_R": "EDP_GRP_EDW_LOAD_RPT_FCT_RPT_PREMIUM_SUMMARY_R-27",
+    "RPT_PAYEE_DTL_R":	            "EDP_GRP_EDW_LOAD_RPT_PAYEE_DTL_R",
+    "RPT_POSTED_SUSPENSE_R":	    "EDP_GRP_EDW_LOAD_RPT_POSTED_SUSPENSE_R-UW-1",
+    "RPT_PREMIUM_DTL_R":	        "EDP_GRP_EDW_LOAD_RPT_PREMIUM_DTL_R-UW-3",
+    "RPT_PREMIUM_R":	            "EDP_GRP_EDW_LOAD_RPT_PREMIUM_R-UW-2",
+    "RPT_QUOTES_DTL_R":	            "EDP_GRP_EDW_LOAD_RPT_QUOTES_DTL_R-26",
+    "RPT_QUOTES_R":	                "EDP_GRP_EDW_LOAD_RPT_QUOTES_R-25",
+    "RPT_RATE_R":	                "EDP_GRP_EDW_LOAD_RPT_RATE_R-UW-9",
+    "RPT_RESERVE_DETAILS_R":	    "EDP_GRP_EDW_LOAD_RPT_RESERVE_DETAILS_R-UW-4",
+    "RPT_SALES_REP_R":	            "EDP_GRP_EDW_LOAD_RPT_FCT_RPT_SALES_REP_R-29",
+    "RPT_SUSPENSE_DTL_R":	        "EDP_GRP_EDW_LOAD_RPT_SUSPENSE_DTL_R-UW-2",
+    "RPT_WORKSHEET_DTL_R":	        "EDP_GRP_EDW_LOAD_RPT_WORKSHEET_DTL_R-15",
 
 }
 
@@ -427,6 +446,8 @@ def build_forward_rows(depth_map: dict, tidal: dict, shell_parsed: dict,
                     status = 'NEEDS_INVESTIGATION'
                 elif obj_type == 'MATERIALIZED_VIEW':
                     status = 'MV_REFRESH_ONLY'
+                elif obj_type == 'INSERT_SELECT':
+                    status = 'STATIC_SQL_PARSED'
                 else:
                     status = 'SQL_OBJECT_IDENTIFIED'
                 sub_raw = ref.get('sub_object', '')
@@ -443,14 +464,18 @@ def build_forward_rows(depth_map: dict, tidal: dict, shell_parsed: dict,
                     'SQL_OBJECT_SCHEMA': ref.get('schema', ''),
                     'PACKAGE_NAME': pkg_name_val,
                     'PROC_NAME': proc_name_val,
-                    'FULL_OBJECT': resolved_name if obj_type == 'MATERIALIZED_VIEW' else '',
+                    'FULL_OBJECT': resolved_name if obj_type in ('MATERIALIZED_VIEW', 'INSERT_SELECT') else '',
                     'PATTERN_TYPE': ref.get('pattern_type', ''),
                     'SHELL_TABLE_REFS': ref.get('table_references', ''),
                     'IN_TYPE_PARAM': '',
-                    'SRC_TABLE': '',
-                    'TGT_TABLE': ref.get('table_references', '') if obj_type in ('MATERIALIZED_VIEW', 'UNKNOWN', 'ERROR') else '',
-                    'SOURCE_COL': '',
-                    'TARGET_COL': '',
+                    # INSERT_SELECT: object_name/resolved_name IS the real target, and
+                    # table_references holds the actual SOURCE table(s) parsed from the
+                    # shell's inline SQL — do not swap them.
+                    'SRC_TABLE': ref.get('table_references', '') if obj_type == 'INSERT_SELECT' else '',
+                    'TGT_TABLE': (resolved_name if obj_type == 'INSERT_SELECT'
+                                  else ref.get('table_references', '') if obj_type in ('MATERIALIZED_VIEW', 'UNKNOWN', 'ERROR') else ''),
+                    'SOURCE_COL': _parse_shell_column_lineage(ref.get('column_lineage', ''))[1] if obj_type == 'INSERT_SELECT' else '',
+                    'TARGET_COL': _parse_shell_column_lineage(ref.get('column_lineage', ''))[0] if obj_type == 'INSERT_SELECT' else '',
                     'IS_PARAMETERIZED': is_param,
                     'LINEAGE_STATUS': status,
                     'NOTES': f"Downstream consumer of {root_job} \u2014 {info['depth']} hop(s) away (forward BFS)",
@@ -503,13 +528,81 @@ def _infer_table_from_job(job_name: str) -> str:
     return None
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# DDL-based object-type lookup (ground truth, independent of naming convention)
+# ─────────────────────────────────────────────────────────────────────────────
+# Table/job naming conventions in this codebase are not reliably followed
+# (e.g. RPT_CLAIM_DTL_R_TOTBENPERDYS_MV_SSL and DIM_GRP_CLAIM_PRODUCT_MV are
+# both actually CREATE MATERIALIZED VIEW objects despite RPT_/DIM_ prefixes).
+# Each All_Metadata/<OBJECT_NAME>.sql file contains the actual DDL for that
+# object, so we parse the real CREATE statement once and use it as the
+# authoritative classification signal ahead of any name-based heuristic.
+_DDL_OBJECT_TYPES: dict[str, str] | None = None
+_DDL_CREATE_RE = re.compile(
+    r'CREATE\s+(?:OR\s+REPLACE\s+)?(MATERIALIZED\s+VIEW|GLOBAL\s+TEMPORARY\s+TABLE|VIEW|TABLE)\s+',
+    re.IGNORECASE,
+)
+
+
+def _load_ddl_object_types() -> dict[str, str]:
+    """Scan All_Metadata/*.sql once and map OBJECT_NAME (upper, from filename) ->
+    category ("MV", "VIEW", "GTT", "TABLE") based on the object's real CREATE DDL."""
+    global _DDL_OBJECT_TYPES
+    if _DDL_OBJECT_TYPES is not None:
+        return _DDL_OBJECT_TYPES
+
+    mapping: dict[str, str] = {}
+    metadata_dir = BASE_DIR / "All_Metadata"
+    if metadata_dir.is_dir():
+        for sql_file in metadata_dir.glob("*.sql"):
+            try:
+                text = sql_file.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            m = _DDL_CREATE_RE.search(text)
+            if not m:
+                continue
+            ddl_kind = m.group(1).upper().replace(" ", "_")
+            if ddl_kind == "MATERIALIZED_VIEW":
+                category = "MV"
+            elif ddl_kind == "GLOBAL_TEMPORARY_TABLE":
+                category = "GTT"
+            elif ddl_kind == "VIEW":
+                category = "VIEW"
+            else:
+                category = "TABLE"
+            mapping[sql_file.stem.upper()] = category
+
+    _DDL_OBJECT_TYPES = mapping
+    return mapping
+
+
 def _classify_job_category(job_name: str, table_name: str) -> str:
-    """Classify a job into a data layer category."""
+    """Classify a job into a data layer category.
+
+    Ground truth first: if the target table has a known DDL (All_Metadata),
+    trust the real CREATE statement kind over any naming convention, since
+    naming is not consistently followed (e.g. DIM_/FCT_/RPT_-prefixed objects
+    that are actually materialized views).
+    """
     upper = job_name.upper()
     if table_name:
         tn = table_name.upper()
-        if tn.startswith("RPT_"): return "RPT"
+        ddl_types = _load_ddl_object_types()
+        ddl_kind = ddl_types.get(tn)
+        if ddl_kind == "MV":
+            return "MV"
+        if ddl_kind == "GTT":
+            return "STG"
+        if ddl_kind == "VIEW":
+            return "MV" if tn.startswith("VW_") else "RPT"
+        # ddl_kind == "TABLE", or no DDL found — fall back to naming heuristics.
+        # MV suffix must win over the RPT_ prefix check: many materialized views
+        # are named RPT_<TABLE>_<SOMETHING>_MV_SSL (e.g. RPT_CLAIM_DTL_R_TOTBENPERDYS_MV_SSL),
+        # which would otherwise be misclassified as "RPT" and skipped by every
+        # MV-elimination detector even though they are genuine materialized views.
         if "_MV_SSL" in tn or tn.startswith("VW_"): return "MV"
+        if tn.startswith("RPT_"): return "RPT"
         if tn.startswith("FCT_") or tn.startswith("VUE_FCT_"): return "FCT"
         if tn.startswith("DIM_"): return "DIM"
         if tn.startswith("STG_"): return "STG"
@@ -1070,6 +1163,49 @@ def tag_difw_framework_procs(combined: list[dict]) -> int:
     return tagged
 
 
+# Standalone maintenance procs called directly from shell scripts (not via DIFW/PKG)
+# that gather/rebuild statistics or indexes rather than move data — they have no
+# genuine source-to-target lineage regardless of which table name is passed in.
+_UTILITY_NO_LINEAGE_PROCS: frozenset = frozenset({
+    'PRC_GRP_GATHER_TABLE_IDX_STATS',
+    'PRC_REBUILD_INDEXES',
+    'PRC_TRUNC_PARTITION',
+})
+
+
+def tag_utility_no_lineage_procs(combined: list[dict]) -> int:
+    """Tag standalone gather-stats/rebuild-index/truncate-partition proc calls as
+    UTILITY_NO_LINEAGE.
+
+    e.g. edw_grp_gather_tbl_idx_stats.sh calls atomic.prc_grp_gather_table_idx_stats
+    (v_tbl_name, ln_degree) — a DBMS_STATS-style call that only refreshes Oracle
+    optimizer statistics for the named table/index. The TIDAL param (e.g.
+    'WP_BENEFIT_PAYMENT_HIST_MV 8') identifies the table being analyzed, not a
+    data source or target, so there is no real column-level lineage to resolve.
+    TGT_TABLE is still populated from the param for visibility/traceability.
+
+    Returns count of tagged rows.
+    """
+    tagged = 0
+    for row in combined:
+        proc_upper = (row.get('PROC_NAME') or '').upper()
+        if proc_upper not in _UTILITY_NO_LINEAGE_PROCS:
+            continue
+        if row.get('LINEAGE_STATUS') != 'SQL_OBJECT_IDENTIFIED':
+            continue
+        row['LINEAGE_STATUS'] = 'UTILITY_NO_LINEAGE'
+        if not row.get('TGT_TABLE'):
+            params = (row.get('TIDAL_PARAMS') or '').strip()
+            if params:
+                row['TGT_TABLE'] = _strip_quotes(params.split()[0])
+        row['NOTES'] = (
+            (row.get('NOTES') or '')
+            + ' | Statistics/index maintenance utility — no data source/target lineage'
+        ).strip(' |')
+        tagged += 1
+    return tagged
+
+
 # ── Delete-preprocess proc metadata ──────────────────────────────────────────
 # Maps (PACKAGE_NAME_UPPER, PROC_NAME_UPPER) → (tgt_table, src_tables, description)
 # These procs contain only DELETE statements so Gudu/LLM cannot produce SELECT→INSERT
@@ -1164,6 +1300,51 @@ def enrich_delete_preprocess_procs(combined: list[dict]) -> int:
                 + f'Delete/partition-management proc — no SELECT→INSERT lineage available. '
                   f'Review {pkg_upper}.{proc_upper} SQL definition for source/target tables.'
             )
+        tagged += 1
+    return tagged
+
+
+def tag_unresolved_hybrid_main_as_passthrough(combined: list[dict]) -> int:
+    """Reclassify Hybrid-package MAIN rows that Gudu/LLM couldn't resolve.
+
+    Some packages are flagged 'Hybrid' (main has its own DML + calls children)
+    because MAIN contains a BULK COLLECT/FORALL INSERT loop — but that INSERT
+    reads from a local PL/SQL collection populated via a REF CURSOR opened by
+    a *child* procedure (e.g. PRC_GET_CUR_DATA), not from a real SELECT inside
+    MAIN itself. There is no column-level lineage for the LLM to find in MAIN;
+    the true SRC/TGT is already captured on the child proc's own row.
+
+    Downgrades such MAIN rows from SQL_OBJECT_IDENTIFIED to ORCHESTRATOR_ONLY
+    once at least one sibling row (same PACKAGE_NAME + DEPENDENT_JOB) already
+    has COMPLETE lineage, referencing those child rows in NOTES.
+
+    Returns the number of rows reclassified.
+    """
+    # Group COMPLETE child procs by (package, dependent_job) for lookup
+    complete_children: dict = {}
+    for row in combined:
+        if row.get('LINEAGE_STATUS') == 'COMPLETE' and row.get('PACKAGE_NAME'):
+            key = (row.get('PACKAGE_NAME', '').upper(), row.get('DEPENDENT_JOB', ''))
+            complete_children.setdefault(key, []).append(row.get('PROC_NAME', ''))
+
+    tagged = 0
+    for row in combined:
+        if row.get('LINEAGE_STATUS') != 'SQL_OBJECT_IDENTIFIED':
+            continue
+        if row.get('PROC_NAME', '').upper() != 'MAIN':
+            continue
+        key = (row.get('PACKAGE_NAME', '').upper(), row.get('DEPENDENT_JOB', ''))
+        siblings = complete_children.get(key)
+        if not siblings:
+            continue
+
+        row['LINEAGE_STATUS'] = 'ORCHESTRATOR_ONLY'
+        row['NOTES'] = (
+            (row.get('NOTES') or '').rstrip('| ')
+            + (' | ' if row.get('NOTES') else '')
+            + f"MAIN's INSERT is a BULK COLLECT/FORALL pass-through from a child proc's "
+              f"REF CURSOR \u2014 actual lineage already captured in: {', '.join(sorted(set(siblings)))}"
+        ).strip(' |')
         tagged += 1
     return tagged
 
@@ -1684,19 +1865,23 @@ def combine_lineage(rpt_data: list[dict], tidal: dict, shell_parsed: dict) -> tu
                     'SQL_OBJECT_SCHEMA': ref.get('schema', ''),
                     'PACKAGE_NAME': pkg_name_val,
                     'PROC_NAME': proc_name_val,
-                    'FULL_OBJECT': resolved_name if obj_type == 'MATERIALIZED_VIEW' else '',
+                    'FULL_OBJECT': resolved_name if obj_type in ('MATERIALIZED_VIEW', 'INSERT_SELECT') else '',
                     'PATTERN_TYPE': pattern,
                     'SHELL_TABLE_REFS': _clean_refs,
                     'IN_TYPE_PARAM': _in_type_val,
-                    'SRC_TABLE': '',
-                    # Only pre-populate TGT_TABLE from shell refs for MV/UNKNOWN/INSERT_SELECT
-                    # types. For PROCEDURE/PACKAGE types, leave empty so gudu enrichment sets
-                    # the correct targets. Prevents shell display variables from locking in
-                    # wrong TGT_TABLE (e.g. TABLE_NAME=FCT_CLAIM_PAYMENT_DETAIL_R in a script
-                    # that never passes it to the proc).
-                    'TGT_TABLE': _clean_refs if obj_type in ('MATERIALIZED_VIEW', 'UNKNOWN', 'ERROR', 'INSERT_SELECT') else '',
-                    'SOURCE_COL': '',
-                    'TARGET_COL': '',
+                    # INSERT_SELECT: resolved_name/object_name IS the real target table, and
+                    # _clean_refs (shell parser table_references) holds the actual SOURCE
+                    # table(s) — do not swap them into TGT_TABLE.
+                    'SRC_TABLE': _clean_refs if obj_type == 'INSERT_SELECT' else '',
+                    # Only pre-populate TGT_TABLE from shell refs for MV/UNKNOWN types (where
+                    # the ref IS the target). For PROCEDURE/PACKAGE types, leave empty so gudu
+                    # enrichment sets the correct targets. Prevents shell display variables from
+                    # locking in wrong TGT_TABLE (e.g. TABLE_NAME=FCT_CLAIM_PAYMENT_DETAIL_R in a
+                    # script that never passes it to the proc).
+                    'TGT_TABLE': (resolved_name if obj_type == 'INSERT_SELECT'
+                                  else _clean_refs if obj_type in ('MATERIALIZED_VIEW', 'UNKNOWN', 'ERROR') else ''),
+                    'SOURCE_COL': _parse_shell_column_lineage(ref.get('column_lineage', ''))[1] if obj_type == 'INSERT_SELECT' else '',
+                    'TARGET_COL': _parse_shell_column_lineage(ref.get('column_lineage', ''))[0] if obj_type == 'INSERT_SELECT' else '',
                     'TIDAL_PARAMS': tidal_params,
                     'IS_PARAMETERIZED': is_param,
                     'LINEAGE_STATUS': status,
@@ -1740,6 +1925,22 @@ def combine_lineage(rpt_data: list[dict], tidal: dict, shell_parsed: dict) -> tu
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPER FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _parse_shell_column_lineage(column_lineage: str) -> tuple[str, str]:
+    """Parse shell_parser.py's 'TGT_COL=SRC_TABLE.SRC_COL|TGT_COL2=(CONST)' string into
+    aligned pipe-separated (TARGET_COL, SOURCE_COL) strings, matching the format
+    produced by _col_mappings_to_aligned_strings() for Gudu/LLM lineage."""
+    if not column_lineage:
+        return '', ''
+    tgt_parts, src_parts = [], []
+    for pair in column_lineage.split('|'):
+        if '=' not in pair:
+            continue
+        tgt, src = pair.split('=', 1)
+        tgt_parts.append(tgt.strip())
+        src_parts.append(src.strip())
+    return ' | '.join(tgt_parts), ' | '.join(src_parts)
+
 
 def _resolve_sql_object(row: dict) -> str:
     """Build the FULL_OBJECT key from PACKAGE_NAME + PROC_NAME.
@@ -2129,6 +2330,67 @@ NORMALIZED_FIELDS = _NORM_BASE + [
 ]
 
 
+def _iter_normalized_rows(combined: list[dict], merged_lookup: dict):
+    """Yield one granular row dict per (job, target_col, source_col) mapping.
+
+    Shared by write_column_normalized() (full CSV) and write_attribute_main()
+    (12-column xlsx subset) so both stay in sync with the same row-building logic.
+    Every yielded dict has all COMBINED_FIELDS keys plus the five granular
+    TARGET_TABLE/TARGET_COLUMN/SOURCE_TABLE/SOURCE_COLUMN/TRANSFORMATION fields.
+    """
+    for row in combined:
+        # ── DIFW_QUERY rows: SOURCE_COL/TARGET_COL are parenthesized comma-separated
+        # lists with 1:1 positional mapping. Normalize each pair into its own row.
+        if row.get('LINEAGE_SOURCE') == 'DIFW_QUERY' and row.get('TARGET_COL'):
+            tgt_cols = _parse_difw_col_list(row.get('TARGET_COL', ''))
+            src_cols = _parse_difw_col_list(row.get('SOURCE_COL', ''))
+            src_table = row.get('SRC_TABLE', '')
+            tgt_table = row.get('TGT_TABLE', '')
+            for i, tgt_col in enumerate(tgt_cols):
+                src_col = src_cols[i] if i < len(src_cols) else ''
+                # Skip audit/system columns — they have no business lineage
+                # (e.g. T_CREATION_DATE_R mapped to SYSDATE by the DIFW framework).
+                src_col_bare = src_col.split('.')[-1].strip().upper()
+                if src_col_bare in _DIFW_AUDIT_COLUMNS:
+                    continue
+                yield {**row,
+                    'TARGET_TABLE':  tgt_table,
+                    'TARGET_COLUMN': tgt_col,
+                    'SOURCE_TABLE':  src_table,
+                    'SOURCE_COLUMN': src_col,
+                    'TRANSFORMATION': 'Direct',
+                }
+            continue
+
+        # ── Gudu / LLM rows: use col_mappings from merged_lookup ──
+        match = _find_llm_match(row, merged_lookup)
+        if not match:
+            continue
+        col_mappings = match.get('col_mappings')
+        if not col_mappings:
+            continue
+        for grp in col_mappings:
+            sources = grp.get('sources', [])
+            if not sources:
+                # Constant / Expression — no source column
+                yield {**row,
+                    'TARGET_TABLE':  grp['tgt_table'],
+                    'TARGET_COLUMN': grp['tgt_col'],
+                    'SOURCE_TABLE':  '',
+                    'SOURCE_COLUMN': '',
+                    'TRANSFORMATION': 'Constant / Expression',
+                }
+            else:
+                for src in sources:
+                    yield {**row,
+                        'TARGET_TABLE':  grp['tgt_table'],
+                        'TARGET_COLUMN': grp['tgt_col'],
+                        'SOURCE_TABLE':  src.get('src_table', ''),
+                        'SOURCE_COLUMN': src.get('src_col', ''),
+                        'TRANSFORMATION': src.get('transformation', ''),
+                    }
+
+
 def write_column_normalized(combined: list[dict], merged_lookup: dict, output_path: Path):
     """Write normalized column-level lineage: one row per (job, target_col, source_col) mapping.
 
@@ -2142,61 +2404,73 @@ def write_column_normalized(combined: list[dict], merged_lookup: dict, output_pa
     with open(output_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=NORMALIZED_FIELDS, extrasaction='ignore')
         writer.writeheader()
-        for row in combined:
-            # ── DIFW_QUERY rows: SOURCE_COL/TARGET_COL are parenthesized comma-separated
-            # lists with 1:1 positional mapping. Normalize each pair into its own row.
-            if row.get('LINEAGE_SOURCE') == 'DIFW_QUERY' and row.get('TARGET_COL'):
-                tgt_cols = _parse_difw_col_list(row.get('TARGET_COL', ''))
-                src_cols = _parse_difw_col_list(row.get('SOURCE_COL', ''))
-                src_table = row.get('SRC_TABLE', '')
-                tgt_table = row.get('TGT_TABLE', '')
-                for i, tgt_col in enumerate(tgt_cols):
-                    src_col = src_cols[i] if i < len(src_cols) else ''
-                    # Skip audit/system columns — they have no business lineage
-                    # (e.g. T_CREATION_DATE_R mapped to SYSDATE by the DIFW framework).
-                    src_col_bare = src_col.split('.')[-1].strip().upper()
-                    if src_col_bare in _DIFW_AUDIT_COLUMNS:
-                        continue
-                    writer.writerow({**row,
-                        'TARGET_TABLE':  tgt_table,
-                        'TARGET_COLUMN': tgt_col,
-                        'SOURCE_TABLE':  src_table,
-                        'SOURCE_COLUMN': src_col,
-                        'TRANSFORMATION': 'Direct',
-                    })
-                    norm_count += 1
-                continue
-
-            # ── Gudu / LLM rows: use col_mappings from merged_lookup ──
-            match = _find_llm_match(row, merged_lookup)
-            if not match:
-                continue
-            col_mappings = match.get('col_mappings')
-            if not col_mappings:
-                continue
-            for grp in col_mappings:
-                sources = grp.get('sources', [])
-                if not sources:
-                    # Constant / Expression — no source column
-                    writer.writerow({**row,
-                        'TARGET_TABLE':  grp['tgt_table'],
-                        'TARGET_COLUMN': grp['tgt_col'],
-                        'SOURCE_TABLE':  '',
-                        'SOURCE_COLUMN': '',
-                        'TRANSFORMATION': 'Constant / Expression',
-                    })
-                    norm_count += 1
-                else:
-                    for src in sources:
-                        writer.writerow({**row,
-                            'TARGET_TABLE':  grp['tgt_table'],
-                            'TARGET_COLUMN': grp['tgt_col'],
-                            'SOURCE_TABLE':  src.get('src_table', ''),
-                            'SOURCE_COLUMN': src.get('src_col', ''),
-                            'TRANSFORMATION': src.get('transformation', ''),
-                        })
-                        norm_count += 1
+        for norm_row in _iter_normalized_rows(combined, merged_lookup):
+            writer.writerow(norm_row)
+            norm_count += 1
     return norm_count
+
+
+# attribute_main.xlsx column order/names — a job-attribute-level subset of
+# column_level_normalized.csv (DEPENDENT_JOB -> JOB_NAME, PROC_NAME -> 'PROC_NAME(OBJECT_NAME)').
+ATTRIBUTE_MAIN_FIELDS = [
+    'JOB_NAME', 'SHELL_SCRIPT', 'PARENT_CALLER', 'SQL_OBJECT_TYPE', 'PACKAGE_NAME',
+    'PROC_NAME(OBJECT_NAME)', 'FULL_OBJECT', 'TARGET_TABLE', 'TARGET_COLUMN',
+    'SOURCE_TABLE', 'SOURCE_COLUMN', 'TRANSFORMATION',
+]
+
+
+def write_attribute_main(combined: list[dict], merged_lookup: dict, output_path: Path):
+    """Write attribute_main.xlsx — a 12-column job-attribute subset of the normalized
+    column-level lineage (one row per unique JOB_NAME/TARGET/SOURCE/TRANSFORMATION
+    combination, deduplicated across the ROOT_JOB/RPT_TABLE dimension since that
+    dimension isn't part of this output's grain).
+    """
+    seen: set[tuple] = set()
+    attr_rows: list[dict] = []
+    for norm_row in _iter_normalized_rows(combined, merged_lookup):
+        attr_row = {
+            'JOB_NAME':                norm_row.get('DEPENDENT_JOB', ''),
+            'SHELL_SCRIPT':            norm_row.get('SHELL_SCRIPT', ''),
+            'PARENT_CALLER':           norm_row.get('PARENT_CALLER', ''),
+            'SQL_OBJECT_TYPE':         norm_row.get('SQL_OBJECT_TYPE', ''),
+            'PACKAGE_NAME':            norm_row.get('PACKAGE_NAME', ''),
+            'PROC_NAME(OBJECT_NAME)':  norm_row.get('PROC_NAME', ''),
+            'FULL_OBJECT':             norm_row.get('FULL_OBJECT', ''),
+            'TARGET_TABLE':            norm_row.get('TARGET_TABLE', ''),
+            'TARGET_COLUMN':           norm_row.get('TARGET_COLUMN', ''),
+            'SOURCE_TABLE':            norm_row.get('SOURCE_TABLE', ''),
+            'SOURCE_COLUMN':           norm_row.get('SOURCE_COLUMN', ''),
+            'TRANSFORMATION':          norm_row.get('TRANSFORMATION', ''),
+        }
+        key = tuple(attr_row[f] for f in ATTRIBUTE_MAIN_FIELDS)
+        if key in seen:
+            continue
+        seen.add(key)
+        attr_rows.append(attr_row)
+
+    if not HAS_OPENPYXL:
+        print("openpyxl not available; skipping attribute_main.xlsx")
+        return 0
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Attribute Main"
+
+    from openpyxl.styles import Font, PatternFill, Alignment
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="2F5496", end_color="2F5496", fill_type="solid")
+    for col_idx, field in enumerate(ATTRIBUTE_MAIN_FIELDS, 1):
+        cell = ws.cell(row=1, column=col_idx, value=field)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+
+    for r_idx, attr_row in enumerate(attr_rows, 2):
+        for c_idx, field in enumerate(ATTRIBUTE_MAIN_FIELDS, 1):
+            ws.cell(row=r_idx, column=c_idx, value=attr_row[field])
+
+    wb.save(output_path)
+    return len(attr_rows)
 
 
 def write_combined_csv(combined: list[dict], output_path: Path):
@@ -2241,6 +2515,7 @@ def write_combined_excel(combined: list[dict], output_path: Path):
         'RECURSIVE_ONLY': PatternFill(start_color="E2EFDA", fill_type="solid"),          # Pale green
         'ORCHESTRATOR_ONLY': PatternFill(start_color="D9D9D9", fill_type="solid"),       # Grey
         'DIFW_FRAMEWORK': PatternFill(start_color="E2EFDA", fill_type="solid"),           # Pale green
+        'UTILITY_NO_LINEAGE': PatternFill(start_color="E2EFDA", fill_type="solid"),        # Pale green (same as DIFW_FRAMEWORK)
         'DELETE_PREPROCESS': PatternFill(start_color="F4B942", fill_type="solid"),        # Amber
         'TIDAL_DISABLED': PatternFill(start_color="D9B3FF", fill_type="solid"),           # Light purple
     }
@@ -2293,8 +2568,9 @@ def write_combined_excel(combined: list[dict], output_path: Path):
 
 def write_gaps(combined: list[dict], output_path: Path):
     """Write rows that still need lineage resolution (gaps)."""
-    # DIFW_FRAMEWORK, DELETE_PREPROCESS, and TIDAL_DISABLED rows are intentionally
-    # excluded — they are known situations with clear explanations, not open gaps.
+    # DIFW_FRAMEWORK, DELETE_PREPROCESS, UTILITY_NO_LINEAGE, and TIDAL_DISABLED rows
+    # are intentionally excluded — they are known situations with clear
+    # explanations, not open gaps.
     gaps = [r for r in combined if r.get('LINEAGE_STATUS') in
             ('NEEDS_INVESTIGATION', 'DIFW_MISSING_LINEAGE', 'SQL_OBJECT_IDENTIFIED')]
 
@@ -2341,6 +2617,8 @@ def write_summary(combined: list[dict], output_path: Path):
             s['static_sql'] += 1
         elif status == 'DIFW_FRAMEWORK':
             s['difw_framework'] += 1
+        elif status == 'UTILITY_NO_LINEAGE':
+            s['difw_framework'] += 1  # counted alongside DIFW_FRAMEWORK: known, not a gap
         elif status == 'ORCHESTRATOR_ONLY':
             pass  # meta-row; child procs already counted as COMPLETE
         else:
@@ -2408,7 +2686,7 @@ def print_summary(combined: list[dict]):
         # DIFW_QUERY rows have full column lineage — count as done
         done = statuses.get('COMPLETE', 0) + statuses.get('DIFW_QUERY', 0)
         ident = statuses.get('SQL_OBJECT_IDENTIFIED', 0) + statuses.get('MV_REFRESH_ONLY', 0) + statuses.get('STATIC_SQL_PARSED', 0) + statuses.get('DELETE_PREPROCESS', 0)
-        difw_fw = statuses.get('DIFW_FRAMEWORK', 0)
+        difw_fw = statuses.get('DIFW_FRAMEWORK', 0) + statuses.get('UTILITY_NO_LINEAGE', 0)
         disabled = statuses.get('TIDAL_DISABLED', 0)
         gaps = statuses.get('NEEDS_INVESTIGATION', 0) + statuses.get('DIFW_MISSING_LINEAGE', 0)
         # Exclude ORCHESTRATOR_ONLY from % denominator — their child procs are
@@ -2645,6 +2923,8 @@ def main():
                     status = 'NEEDS_INVESTIGATION'
                 elif obj_type == 'MATERIALIZED_VIEW':
                     status = 'MV_REFRESH_ONLY'
+                elif obj_type == 'INSERT_SELECT':
+                    status = 'STATIC_SQL_PARSED'
                 else:
                     status = 'SQL_OBJECT_IDENTIFIED'
                 sub_raw = ref.get('sub_object', '')
@@ -2669,18 +2949,21 @@ def main():
                     'SQL_OBJECT_SCHEMA': ref.get('schema', ''),
                     'PACKAGE_NAME': pkg_name_val,
                     'PROC_NAME': proc_name_val,
-                    'FULL_OBJECT': resolved_name if obj_type == 'MATERIALIZED_VIEW' else '',
+                    'FULL_OBJECT': resolved_name if obj_type in ('MATERIALIZED_VIEW', 'INSERT_SELECT') else '',
                     'PATTERN_TYPE': ref.get('pattern_type', ''),
                     'SHELL_TABLE_REFS': ref.get('table_references', ''),
-                    'SRC_TABLE': '',
+                    # INSERT_SELECT: resolved_name IS the real target table, and
+                    # table_references holds the actual SOURCE table(s) — do not swap them.
+                    'SRC_TABLE': ref.get('table_references', '') if obj_type == 'INSERT_SELECT' else '',
                     # Only pre-populate TGT_TABLE from shell table_references for MV/UNKNOWN
                     # types — where the ref IS the actual target. For PROCEDURE/PACKAGE types,
                     # leave empty so gudu enrichment fills in the correct targets. This prevents
                     # shell display variables (e.g. TABLE_NAME=FCT_..._R used only in echo)
                     # from locking in an incorrect TGT_TABLE and blocking gudu correction.
-                    'TGT_TABLE': ref.get('table_references', '') if obj_type in ('MATERIALIZED_VIEW', 'UNKNOWN', 'ERROR') else '',
-                    'SOURCE_COL': '',
-                    'TARGET_COL': '',
+                    'TGT_TABLE': (resolved_name if obj_type == 'INSERT_SELECT'
+                                  else ref.get('table_references', '') if obj_type in ('MATERIALIZED_VIEW', 'UNKNOWN', 'ERROR') else ''),
+                    'SOURCE_COL': _parse_shell_column_lineage(ref.get('column_lineage', ''))[1] if obj_type == 'INSERT_SELECT' else '',
+                    'TARGET_COL': _parse_shell_column_lineage(ref.get('column_lineage', ''))[0] if obj_type == 'INSERT_SELECT' else '',
                     'TIDAL_PARAMS': tidal_params,
                     'IS_PARAMETERIZED': is_param,
                     'LINEAGE_STATUS': status,
@@ -2795,10 +3078,22 @@ def main():
     if difw_tagged:
         print(f"  -> Tagged {difw_tagged} DIFW_FRAMEWORK rows")
 
+    # Tag standalone stats/index-maintenance utility procs (no real data lineage)
+    utility_tagged = tag_utility_no_lineage_procs(combined)
+    if utility_tagged:
+        print(f"  -> Tagged {utility_tagged} UTILITY_NO_LINEAGE rows (stats/index maintenance)")
+
     # Tag delete-preprocess procs (PRC_DEL_EXT_DATA / PRC_UPD_DEL_DATA)
     del_tagged = enrich_delete_preprocess_procs(combined)
     if del_tagged:
         print(f"  -> Tagged {del_tagged} DELETE_PREPROCESS rows (delete-before-insert helpers)")
+
+    # Reclassify Hybrid-MAIN rows whose "own DML" is really a pass-through from
+    # a child proc's REF CURSOR (no lineage to find, since the child proc already
+    # has it)
+    passthrough_tagged = tag_unresolved_hybrid_main_as_passthrough(combined)
+    if passthrough_tagged:
+        print(f"  -> Reclassified {passthrough_tagged} Hybrid-MAIN pass-through row(s) as ORCHESTRATOR_ONLY")
 
     # ── Inject virtual VIEW expansion rows for non-Tidal views ──────────
     # Views (e.g. FCT_CLAIM_PAYMENT_DETAIL_R) are not orchestrated by Tidal,
@@ -2831,10 +3126,10 @@ def main():
         row.setdefault('DIRECTION', 'BACKWARD')
 
     # Write outputs
-    csv_path = output_dir / "combined_lineage_latest.csv"
-    xlsx_path = output_dir / "combined_lineage_latest.xlsx"
-    gaps_path = output_dir / "lineage_gaps_latest.csv"
-    summary_path = output_dir / "lineage_summary_latest.csv"
+    csv_path = output_dir / "combined_lineage_latest_expanded.csv"
+    xlsx_path = output_dir / "combined_lineage_latest_expanded.xlsx"
+    gaps_path = output_dir / "lineage_gaps_latest_expanded.csv"
+    summary_path = output_dir / "lineage_summary_latest_expanded.csv"
 
     write_combined_csv(combined, csv_path)
     print(f"\n  CSV:     {csv_path}")
@@ -2854,6 +3149,10 @@ def main():
         norm_path = output_dir / "column_level_normalized.csv"
         norm_count = write_column_normalized(combined, merged_lookup, norm_path)
         print(f"  Normalized: {norm_path} ({norm_count} column-mapping rows)")
+
+        attr_path = output_dir / "attribute_main.xlsx"
+        attr_count = write_attribute_main(combined, merged_lookup, attr_path)
+        print(f"  Attribute Main: {attr_path} ({attr_count} unique job-attribute rows)")
 
     print_summary(combined)
 

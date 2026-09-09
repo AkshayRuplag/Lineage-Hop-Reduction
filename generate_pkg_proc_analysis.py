@@ -7,7 +7,10 @@ import re
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-METADATA_DIR = os.path.join(os.path.dirname(__file__), "All_Metadata")
+METADATA_DIRS = [
+    os.path.join(os.path.dirname(__file__), "All_Metadata"),
+    os.path.join(os.path.dirname(__file__), "Lineage_Expansion_Metadata"),
+]
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "output", "PKG_PROC_Analysis_All_Metadata.xlsx")
 
 # Extensions treated as SQL source files
@@ -251,7 +254,14 @@ def find_external_calls(filepath: str, self_name: str) -> list:
 def main():
     # Collect all standalone PRC_* files
     standalone_prcs = set()
-    all_files = os.listdir(METADATA_DIR)
+    # Map filename -> source directory so files from either metadata dir resolve correctly
+    file_dir_map = {}
+    all_files = []
+    for metadata_dir in METADATA_DIRS:
+        for f in os.listdir(metadata_dir):
+            if f not in file_dir_map:
+                file_dir_map[f] = metadata_dir
+                all_files.append(f)
     for f in all_files:
         if (f.upper().startswith("PRC_") or f.upper().startswith("PROC_")) and is_sql_file(f):
             standalone_prcs.add(os.path.splitext(f)[0].upper())
@@ -265,7 +275,7 @@ def main():
     serial = 0
     for pkg_file in pkg_files:
         pkg_name = os.path.splitext(pkg_file)[0].upper()
-        filepath = os.path.join(METADATA_DIR, pkg_file)
+        filepath = os.path.join(file_dir_map[pkg_file], pkg_file)
         procs = extract_procedures(filepath)
 
         lineage_count = 0
@@ -311,7 +321,7 @@ def main():
     orchestrator_data = []
     for pkg_file in pkg_files:
         pkg_name = os.path.splitext(pkg_file)[0].upper()
-        filepath = os.path.join(METADATA_DIR, pkg_file)
+        filepath = os.path.join(file_dir_map[pkg_file], pkg_file)
         procs = extract_procedures(filepath)
         active_procs = [p for p in procs if not p["commented"]]
         proc_names = [p["name"] for p in active_procs]
@@ -372,7 +382,7 @@ def main():
 
     for fname in prc_files + pkg_files:
         obj_name = os.path.splitext(fname)[0].upper()
-        fpath = os.path.join(METADATA_DIR, fname)
+        fpath = os.path.join(file_dir_map[fname], fname)
         calls = find_external_calls(fpath, obj_name)
         source_type = "Standalone PRC" if fname in prc_files else "Package (PKG)"
         for c in calls:

@@ -1753,7 +1753,7 @@ def run_gudu(sql_file: str, db_type: str = 'oracle', dlineage_dir: str = None,
              output_format: str = 'json', extra_args: list = None):
     """Run gudu dlineage.py on a cleaned SQL file."""
     if dlineage_dir is None:
-        dlineage_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        dlineage_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                     'python_data_lineage')
 
     # Always use absolute paths so subprocess cwd change doesn't break relative lookups
