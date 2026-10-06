@@ -452,9 +452,15 @@ svg { flex: 1; width: 100%; min-height: 0; }
 #fwd-empty-banner { display: none; position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: #3d2e00cc; color: #ffd43b; border: 1px solid #ffd43b55; border-radius: 8px; padding: 10px 18px; font-size: 12px; max-width: 520px; text-align: center; z-index: 6; }
 #fwd-empty-banner.show { display: block; }
 
-#legend { position: absolute; bottom: 12px; left: 12px; background: #15152eee; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px 16px; font-size: 11px; z-index: 5; max-width: 240px; }
+#legend { position: absolute; bottom: 12px; left: 12px; background: #15152eee; border: 1px solid #2a2a4a; border-radius: 8px; padding: 8px 16px; font-size: 11px; z-index: 5; max-width: 240px; }
 #legend .leg-item { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
 #legend .leg-dot { width: 10px; height: 10px; border-radius: 2px; }
+#legend-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; padding: 4px 0; }
+#legend-header:hover { opacity: 0.85; }
+#legend-toggle-arrow { transition: transform 0.15s ease; font-size: 10px; color: #888; }
+#legend.collapsed #legend-toggle-arrow { transform: rotate(-90deg); }
+#legend.collapsed #legend-body { display: none; }
+#legend.collapsed { max-width: none; padding: 6px 12px; }
 
 .tooltip { position: absolute; background: #1e1e3e; border: 1px solid #3a3a5a; padding: 8px 12px; border-radius: 6px; font-size: 11px; pointer-events: none; display: none; z-index: 100; max-width: 400px; word-break: break-all; }
 
@@ -1411,12 +1417,19 @@ function fmtRuntime(sec) {
 
 // Legend
 var legend = document.getElementById("legend");
-var legHtml = "<strong>Legend</strong><br>";
+var legHtml = '<div id="legend-header" onclick="toggleLegend()"><strong>Legend</strong><span id="legend-toggle-arrow">\u25bc</span></div>';
+legHtml += '<div id="legend-body">';
 Object.entries(CATEGORY_LABELS).forEach(function(pair){
   legHtml += '<div class="leg-item"><span class="leg-dot" style="background:'+COLORS[pair[0]]+'"></span>'+pair[1]+'</div>';
 });
 legHtml += '<br><div style="font-size:10px;color:#888">Depth 0 (RPT root) is leftmost, further upstream jobs increase rightward<br><span style="color:#22d3ee">&#9873; cyan dashed ring</span> = ROOT job — where Backward View (upstream, right) and Forward View (downstream, left) both start<br>Badge (top-right) = true execution sequence (#1 runs first)<br>Green italic = SQL object called<br><span style="color:#f97316">&#8646; orange</span> = same-depth dependency<br><span style="color:#fbbf24">&#9733; gold</span> = critical path<br><span style="color:#a78bfa">&#8658; purple</span> = root loader for another RPT<br>&#8630; Forward View toggle adds downstream consumers to the LEFT of Depth 0<br>Scroll/zoom to navigate</div>';
+legHtml += '</div>';
 legend.innerHTML = legHtml;
+
+function toggleLegend() {
+  var collapsed = legend.classList.toggle("collapsed");
+  document.getElementById("legend-toggle-arrow").textContent = collapsed ? "\u25b6" : "\u25bc";
+}
 
 function buildTableGraph() {
   var tblMap = {};

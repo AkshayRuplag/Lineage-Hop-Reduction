@@ -9,21 +9,30 @@ Usage:
   python run_pipeline.py --from-stage 6    # resume from Stage 6
   python run_pipeline.py --stages 6 7 8    # run specific stages only
 
+Prerequisite (manual, outside this runner):
+  0  DIFW_tidal_lineage_query.sql — run against the DIFW framework's job-log/
+     audit tables in Oracle; export the result set as input/DIFW_Query_Results.xlsx.
+     Re-run whenever DIFW-pattern packages (PKG_GRP_LOAD_DIFW*) change.
+
 Stages:
   1  shell_parser              — parse TIDAL .sh scripts → shell_parsed_objects.csv
-  2  clean_and_run_gudu        — clean PL/SQL + run Gudu → All_Metadata_cleaned/  (needs Gudu JAR)
-  3  extract_gudu_lineage      — convert Gudu JSON → gudu_lineage_output.csv
-  4  llm_lineage_extractor     — LLM column-level lineage → llm_lineage_output.csv  (needs API key)
+  2  clean_and_run_gudu        — clean PL/SQL (All_Metadata/ + Lineage_Expansion_Metadata/)
+                                 + run Gudu → *_cleaned/ dirs  (needs Gudu JAR)
+  3  extract_gudu_lineage      — convert Gudu JSON (both cleaned dirs) → gudu_lineage_output.csv
+  4  llm_lineage_extractor     — LLM column-level lineage (both source dirs) → llm_lineage_output.csv  (needs API key)
   5  generate_pkg_proc_analysis— build PKG→proc call structure → PKG_PROC_Analysis_All_Metadata.xlsx
-  6  tidal_shell_combiner      — join TIDAL + shell + Gudu + LLM → combined_lineage_latest.csv/xlsx
+  6  tidal_shell_combiner      — join DIFW + TIDAL + shell + Gudu + LLM → combined_lineage_latest_expanded.csv/xlsx
   7  generate_tidal_graph      — interactive D3 HTML graph → tidal_dependency_graph.html
-  8  run_all_rpt_tables        — hop reduction analysis for all 14 RPT tables
+  8  run_all_rpt_tables        — hop reduction analysis for all 33 RPT tables
   9  generate_master_recs      — consolidate → MASTER_Hop_Reduction_Recommendations.xlsx
   10 generate_verified_savings — savings simulation → verified_savings_simulation_aggregate.xlsx
 
 NOTE: Stages 2 and 4 require external tools (Gudu JAR, LLM API key).
       If you already have gudu_lineage_output.csv and llm_lineage_output.csv,
       copy them to output/ and run from Stage 6 onwards.
+      See docs/RSLI_DataLineage_and_HopReduction_Solution_Flow.docx, Section 4
+      ("Pipeline Rerun Strategy") for guidance on which stages to re-run after
+      TIDAL, package/SP, or RPT-scope changes.
 """
 
 import argparse
@@ -76,39 +85,59 @@ def stage1_shell_parser():
 
 
 def stage2_clean_and_gudu():
-    """Clean PL/SQL and run Gudu SQLFlow Lite → All_Metadata_cleaned/ + JSON files."""
-    cleaned_dir = cfg.OUTPUT_DIR / "All_Metadata_cleaned"
-    _ensure_dir(cleaned_dir)
+    """Clean PL/SQL and run Gudu SQLFlow Lite for BOTH metadata sources
+    (claims domain + Sept-2026 expansion domain) → *_cleaned/ dirs + JSON files."""
+    _ensure_dir(cfg.ALL_METADATA_CLEANED_DIR)
     _run(
         "clean_and_run_gudu.py",
         "-d",           cfg.ALL_METADATA_DIR,
-        "-o",           cleaned_dir,
+        "-o",           cfg.ALL_METADATA_CLEANED_DIR,
         "--run-gudu",
         "--gudu-dir",   cfg.GUDU_JAR_DIR,
         "--format",     "json",
-        desc="STAGE 2 — Gudu: clean PL/SQL + extract column lineage (requires Gudu JAR)",
+        desc="STAGE 2a — Gudu: clean claims-domain PL/SQL + extract column lineage (requires Gudu JAR)",
+    )
+    _ensure_dir(cfg.LINEAGE_EXPANSION_CLEANED_DIR)
+    _run(
+        "clean_and_run_gudu.py",
+        "-d",           cfg.LINEAGE_EXPANSION_METADATA_DIR,
+        "-o",           cfg.LINEAGE_EXPANSION_CLEANED_DIR,
+        "--run-gudu",
+        "--gudu-dir",   cfg.GUDU_JAR_DIR,
+        "--format",     "json",
+        desc="STAGE 2b — Gudu: clean expansion-domain PL/SQL + extract column lineage (requires Gudu JAR)",
     )
 
 
 def stage3_extract_gudu():
-    """Convert Gudu JSON outputs → gudu_lineage_output.csv."""
-    cleaned_dir = cfg.OUTPUT_DIR / "All_Metadata_cleaned"
+    """Convert Gudu JSON outputs from BOTH cleaned dirs → gudu_lineage_output.csv."""
     _run(
         "extract_gudu_lineage.py",
-        "--input",  cleaned_dir,
-        "--output", cfg.GUDU_LINEAGE_CSV,
-        "--format", "csv",
+        "--input",         cfg.ALL_METADATA_CLEANED_DIR,
+        "--nonpkg-input",  cfg.LINEAGE_EXPANSION_CLEANED_DIR,
+        "--output",        cfg.GUDU_LINEAGE_CSV,
+        "--format",        "csv",
         desc="STAGE 3 — Extract Gudu Lineage: convert Gudu JSON to CSV",
     )
 
 
 def stage4_llm_lineage():
-    """Run LLM-based column-level lineage extraction → llm_lineage_output.csv."""
+    """Run LLM-based column-level lineage extraction for BOTH source dirs →
+    llm_lineage_output.csv (second call appends to the first's output)."""
     _run(
         "llm_lineage_extractor.py",
-        "--source-dir", cfg.ALL_METADATA_DIR,
-        "--output",     cfg.LLM_LINEAGE_CSV,
-        desc="STAGE 4 — LLM Extractor: extract column lineage via LLM (requires API key)",
+        "--cleaned-dir", cfg.ALL_METADATA_CLEANED_DIR,
+        "--source-dir",  cfg.ALL_METADATA_DIR,
+        "--output",      cfg.LLM_LINEAGE_CSV,
+        desc="STAGE 4a — LLM Extractor: claims-domain column lineage (requires API key)",
+    )
+    _run(
+        "llm_lineage_extractor.py",
+        "--cleaned-dir", cfg.LINEAGE_EXPANSION_CLEANED_DIR,
+        "--source-dir",  cfg.LINEAGE_EXPANSION_METADATA_DIR,
+        "--output",      cfg.LLM_LINEAGE_CSV,
+        "--append",
+        desc="STAGE 4b — LLM Extractor: expansion-domain column lineage (requires API key)",
     )
 
 
@@ -125,7 +154,7 @@ def stage5_pkg_proc_analysis():
 
 
 def stage6_combine():
-    """Join TIDAL + shell parser + Gudu + LLM → combined_lineage_latest.csv/xlsx."""
+    """Join DIFW query + TIDAL + shell parser + Gudu + LLM → combined_lineage_latest_expanded.csv/xlsx."""
     # Use pre-built PKG_PROC_Analysis from input/ if the generated one isn't present yet
     pkg_proc = cfg.PKG_PROC_ANALYSIS
     if not pkg_proc.exists():
@@ -135,16 +164,17 @@ def stage6_combine():
 
     _run(
         "tidal_shell_combiner.py",
-        "--rpt-schema",       cfg.DIFW_QUERY_RESULTS,
-        "--tidal",            cfg.TIDAL_PRIMARY,
-        "--tidal-supplement", cfg.TIDAL_SUPPLEMENT,
-        "--shell-parsed",     cfg.SHELL_PARSED_CSV,
-        "--gudu-lineage",     cfg.GUDU_LINEAGE_CSV,
-        "--llm-lineage",      cfg.LLM_LINEAGE_CSV,
-        "--pkg-proc-analysis",pkg_proc,
-        "--runtime",          cfg.TIDAL_RUNTIME,
-        "--output-dir",       cfg.OUTPUT_DIR,
-        desc="STAGE 6 — Combiner: join TIDAL + Shell + Gudu + LLM lineage",
+        "--rpt-schema",         cfg.DIFW_QUERY_RESULTS,
+        "--tidal",              cfg.TIDAL_PRIMARY,
+        "--tidal-supplement",   cfg.TIDAL_SUPPLEMENT,
+        "--tidal-supplement2",  cfg.TIDAL_SUPPLEMENT2,
+        "--shell-parsed",       cfg.SHELL_PARSED_CSV,
+        "--gudu-lineage",       cfg.GUDU_LINEAGE_CSV,
+        "--llm-lineage",        cfg.LLM_LINEAGE_CSV,
+        "--pkg-proc-analysis",  pkg_proc,
+        "--runtime",            cfg.TIDAL_RUNTIME,
+        "--output-dir",         cfg.OUTPUT_DIR,
+        desc="STAGE 6 — Combiner: join DIFW + TIDAL + Shell + Gudu + LLM lineage",
     )
 
 
@@ -157,10 +187,10 @@ def stage7_tidal_graph():
 
 
 def stage8_hop_reduction():
-    """Run hop-reduction analysis for all 14 RPT tables."""
+    """Run hop-reduction analysis for all 33 RPT tables."""
     _run(
         "run_all_rpt_tables.py",
-        desc="STAGE 8 — Hop Reduction: analyze all 14 RPT tables",
+        desc="STAGE 8 — Hop Reduction: analyze all 33 RPT tables",
     )
 
 

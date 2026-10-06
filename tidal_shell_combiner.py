@@ -56,7 +56,7 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "output"
 
-# 14 target RPT tables and their root jobs
+# 33 target RPT tables and their root jobs
 RPT_ROOT_JOBS = {
     "RPT_CLAIM_DTL_R":              "EDP_GRP_EDW_LOAD_RPT_CLAIM_DTL_R_UPD_IND_COLS",  #"EDP_GRP_EDW_LOAD_RPT_CLAIM_DTL_R-19",
     "RPT_CLAIM_NOTE_R":             "EDP_GRP_EDW_LOAD_RPT_CLAIM_NOTE_R-18",

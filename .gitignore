@@ -9,6 +9,10 @@ input/*
 # output/*
 # !output/.gitkeep
 
+# ── Oversized generated files that exceed GitHub's 100MB limit ───────────────
+output/column_level_normalized.csv
+
+
 # ── Oracle PL/SQL source files (client IP) ────────────────────────────────────
 All_Metadata/*
 !All_Metadata/.gitkeep

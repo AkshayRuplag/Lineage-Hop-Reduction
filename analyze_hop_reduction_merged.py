@@ -24,7 +24,7 @@ Pipeline:
 
 Inputs:
   output/tidal_dependency_graph.json
-  output/combined_lineage_latest.xlsx
+  output/combined_lineage_latest_expanded.xlsx
   output/script_summaries_all.json
   output/hop_reduction_from_summaries_all.json
 
@@ -47,7 +47,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = SCRIPT_DIR / "output"
 HOP_REC_DIR = OUTPUT_DIR / "hop_reduction_recommendations"
 GRAPH_JSON = OUTPUT_DIR / "tidal_dependency_graph.json"
-LINEAGE_XLSX = OUTPUT_DIR / "combined_lineage_latest.xlsx"
+LINEAGE_XLSX = OUTPUT_DIR / "combined_lineage_latest_expanded.xlsx"
 SUMMARIES_JSON = OUTPUT_DIR / "script_summaries_all.json"
 HOP_SUMMARIES_JSON = OUTPUT_DIR / "hop_reduction_from_summaries_all.json"
 
