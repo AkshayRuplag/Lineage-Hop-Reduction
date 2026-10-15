@@ -1,0 +1,488 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "V_RESERVE_TYPE_IND_R",
+                        "coordinates": [
+                          {
+                            "x": 7,
+                            "y": 44,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 7,
+                            "y": 64,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "5"
+                      },
+                      {
+                        "name": "D_RESERVE_VALUATION_DATE_R",
+                        "coordinates": [
+                          {
+                            "x": 7,
+                            "y": 73,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 7,
+                            "y": 99,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "6"
+                      },
+                      {
+                        "name": "LD_MIS_DATE_R",
+                        "coordinates": [
+                          {
+                            "x": 7,
+                            "y": 102,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 7,
+                            "y": 115,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "7"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 7,
+                        "y": 13,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 7,
+                        "y": 37,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "FCT_LG_RESERVE_DETAILS_R",
+                    "id": "4",
+                    "name": "FCT_LG_RESERVE_DETAILS_R",
+                    "type": "table"
+                  },
+                  {
+                    "columns": [
+                      {
+                        "name": "V_JOB_NAME_R",
+                        "coordinates": [
+                          {
+                            "x": 4,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 4,
+                            "y": 25,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1012"
+                      },
+                      {
+                        "name": "V_PKG_PRC_NAME_R",
+                        "coordinates": [
+                          {
+                            "x": 5,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 5,
+                            "y": 29,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1013"
+                      },
+                      {
+                        "name": "N_SK_R",
+                        "coordinates": [
+                          {
+                            "x": 6,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 6,
+                            "y": 19,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1014"
+                      },
+                      {
+                        "name": "V_NUMBER_R",
+                        "coordinates": [
+                          {
+                            "x": 7,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 7,
+                            "y": 23,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1015"
+                      },
+                      {
+                        "name": "V_TRC_MSG_R",
+                        "coordinates": [
+                          {
+                            "x": 8,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 8,
+                            "y": 24,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1016"
+                      },
+                      {
+                        "name": "N_BATCH_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 9,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 9,
+                            "y": 25,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1017"
+                      },
+                      {
+                        "name": "V_CREATED_BY_R",
+                        "coordinates": [
+                          {
+                            "x": 10,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 10,
+                            "y": 27,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1018"
+                      },
+                      {
+                        "name": "V_LAST_MODIFIED_BY_R",
+                        "coordinates": [
+                          {
+                            "x": 11,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 11,
+                            "y": 33,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1019"
+                      },
+                      {
+                        "name": "LC_TRCMSG",
+                        "coordinates": [
+                          {
+                            "x": 18,
+                            "y": 16,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 18,
+                            "y": 25,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1021"
+                      },
+                      {
+                        "name": "LC_SQLCODE",
+                        "coordinates": [
+                          {
+                            "x": 19,
+                            "y": 16,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 19,
+                            "y": 26,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1022"
+                      },
+                      {
+                        "name": "LC_SQLERRM",
+                        "coordinates": [
+                          {
+                            "x": 21,
+                            "y": 16,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 21,
+                            "y": 26,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1023"
+                      },
+                      {
+                        "name": "LN_N_BATCH_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 22,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 22,
+                            "y": 28,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1024"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 13,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 47,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+                    "id": "1011",
+                    "name": "PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [
+    {
+      "id": "1",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1016",
+        "column": "V_TRC_MSG_R",
+        "parentId": "1011",
+        "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+        "coordinates": [
+          {
+            "x": 8,
+            "y": 13,
+            "hashCode": "0"
+          },
+          {
+            "x": 8,
+            "y": 24,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1021",
+          "column": "LC_TRCMSG",
+          "parentId": "1011",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 18,
+              "y": 16,
+              "hashCode": "0"
+            },
+            {
+              "x": 18,
+              "y": 25,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "1022",
+          "column": "LC_SQLCODE",
+          "parentId": "1011",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 19,
+              "y": 16,
+              "hashCode": "0"
+            },
+            {
+              "x": 19,
+              "y": 26,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "1023",
+          "column": "LC_SQLERRM",
+          "parentId": "1011",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 21,
+              "y": 16,
+              "hashCode": "0"
+            },
+            {
+              "x": 21,
+              "y": 26,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "2",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1017",
+        "column": "N_BATCH_ID_R",
+        "parentId": "1011",
+        "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+        "coordinates": [
+          {
+            "x": 9,
+            "y": 13,
+            "hashCode": "0"
+          },
+          {
+            "x": 9,
+            "y": 25,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1024",
+          "column": "LN_N_BATCH_ID_R",
+          "parentId": "1011",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 22,
+              "y": 13,
+              "hashCode": "0"
+            },
+            {
+              "x": 22,
+              "y": 28,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    }
+  ],
+  "processes": [
+    {
+      "id": "1020",
+      "name": "Query Insert-1",
+      "procedureName": "batchQueries",
+      "queryHashId": "30dd54b0977090ad3ec290a0161f9c8e",
+      "type": "sstinsert",
+      "coordinate": "[3,1,0],[25,11,0]"
+    }
+  ],
+  "errors": [
+    {
+      "errorMessage": "syntax error, state:651(10102) near: TABLE(3,17)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 3,
+          "y": 17,
+          "hashCode": "0"
+        },
+        {
+          "x": 3,
+          "y": 22,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 3,
+          "y": 17
+        },
+        {
+          "x": 3,
+          "y": 22
+        }
+      ]
+    },
+    {
+      "errorMessage": "no_root_node(-1000) near: no root node(0,0)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 0,
+          "y": 0,
+          "hashCode": "0"
+        },
+        {
+          "x": 0,
+          "y": 12,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": []
+    }
+  ]
+}

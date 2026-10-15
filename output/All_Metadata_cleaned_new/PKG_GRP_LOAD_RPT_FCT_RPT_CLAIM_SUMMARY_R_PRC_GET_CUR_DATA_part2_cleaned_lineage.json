@@ -1,0 +1,4 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"Error when tokenlize(10200) near: ,(3,1)","errorType":"SyntaxError","coordinates":[{"x":3,"y":1,"hashCode":"0"},{"x":3,"y":2,"hashCode":"0"}],"originCoordinates":[{"x":3,"y":1},{"x":3,"y":2}]}]}
+Error log:
+
+Error when tokenlize(10200) near: ,(3,1)

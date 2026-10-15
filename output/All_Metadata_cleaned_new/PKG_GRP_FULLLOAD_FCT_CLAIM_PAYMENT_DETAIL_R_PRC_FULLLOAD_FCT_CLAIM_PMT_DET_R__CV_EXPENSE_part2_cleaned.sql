@@ -1,0 +1,497 @@
+-- Source-concept branch: CV_EXPENSE (part 2/2)
+
+INSERT  INTO ATOMIC.FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R
+	(V_CLAIM_NUMBER_R
+	,V_COVERAGE_CODE_R
+	,V_COV_GROUP_ID_R
+	,V_CHECK_NUMBER_R
+	,V_PAY_METHOD_R
+	,V_BENEFIT_CODE_R
+	,V_BENEFIT_DESCRIPTION_R
+	,V_BENEFIT_GROUP_R
+	,N_GROSS_WAGE_BASE_R
+	,N_TAXABLE_PERCENT_R
+	,V_PAYMENT_STATUS_R
+	,N_PAID_AMOUNT_R
+	,V_PAYMENT_TYPE_R
+	,D_CHECK_DATE_R
+	,V_CHECK_TYPE_R
+	,D_PAID_DATE_R
+	,N_GROSS_AMOUNT_R
+	,D_SERVICE_PERIOD_FROM_R
+	,D_SERVICE_PERIOD_TO_R
+	,V_RECORD_TYPE_R
+	,N_WORKSHEET_OBJECT_NUM_R
+	,N_SOURCE_SYSTEM_KEY_R
+	,N_SOURCE_VERSION_SEQ_NUMBER_R
+	,N_SEQ_R
+	,N_GROUP_SEQ_R
+	,N_PARENT_OBJECTNUM_R
+	,T_CREATION_DATE_R
+	,T_EVENT_TIMESTAMP_R
+	,T_LAST_MODIFIED_DATE_R
+	,V_CREATED_BY_R
+	,V_LAST_MODIFIED_BY_R
+	,FIC_MIS_DATE_R                     
+	,N_BATCH_ID_R
+	,N_LOAD_RUN_ID_R
+	,N_SEQUENCE_NUMBER_R
+	,V_BENEFIT_CATEGORY_R
+	,N_CLAIM_SK_R                           
+	,N_CLAIM_COVERAGE_SK_R                  
+	,N_CLAIM_COVERAGE_GROUP_SK_R            
+	,v_payee_first_name_r
+	,v_payee_middle_name_r
+    ,v_payee_last_name_r
+    ,V_PAYEE_TYPE_R
+	,V_SOURCE_SYSTEM_NAME_R
+    ,V_AMOUNT_TYPE_SUB_NAME_R
+    ,V_AMOUNT_TYPE_CATEGORY_R
+    ,V_AMOUNT_TYPE_CATEGORY_DESC_R
+    ,V_AMOUNT_TYPE_SUB_CATEGORY_R
+    ,V_AMT_TYPE_SUB_CATEGORY_DESC_R
+    ,V_AMOUNT_TYPE_CODE_R
+    ,V_AMOUNT_TYPE_NAME_R
+    ,V_AMOUNT_TYPE_SUB_CODE_R
+	)
+    SELECT
+		 V_CLAIM_NUMBER_R
+		,V_COVERAGE_CODE_R
+		,V_COV_GROUP_ID_R
+		,V_CHECK_NUMBER_R
+		,V_PAY_METHOD_R
+		,V_BENEFIT_CODE_R
+		,V_BENEFIT_DESCRIPTION_R
+		,V_BENEFIT_GROUP_R
+		,N_GROSS_WAGE_BASE_R
+		,N_TAXABLE_PERCENT_R
+		,V_PAYMENT_STATUS_R
+		,N_PAID_AMOUNT_R
+		,V_PAYMENT_TYPE_R
+		,D_CHECK_DATE_R
+		,V_CHECK_TYPE_R
+		,D_PAID_DATE_R
+		,N_GROSS_AMOUNT_R
+		,D_SERVICE_PERIOD_FROM_R
+		,D_SERVICE_PERIOD_TO_R
+		,V_RECORD_TYPE_R
+		,N_WORKSHEET_OBJECT_NUM_R
+		,N_SOURCE_SYSTEM_KEY_R
+		,N_SOURCE_VERSION_SEQ_NUMBER_R
+		,N_SEQ_R
+		,N_GROUP_SEQ_R
+		,N_PARENT_OBJECTNUM_R
+		,T_CREATION_DATE_R
+		,T_EVENT_TIMESTAMP_R
+		,T_LAST_MODIFIED_DATE_R
+		,V_CREATED_BY_R
+		,V_LAST_MODIFIED_BY_R
+		,FIC_MIS_DATE_R                     
+		,N_BATCH_ID_R                     	
+		,N_LOAD_RUN_ID_R
+		,ROWNUM  N_SEQUENCE_NUMBER_R
+		,V_BENEFIT_CATEGORY_R
+		,N_CLAIM_SK_R                           
+		,N_CLAIM_COVERAGE_SK_R                  
+		,N_CLAIM_COVERAGE_GROUP_SK_R            
+		,v_payee_first_name_r
+		,v_payee_middle_name_r
+		,v_payee_last_name_r
+		,V_PAYEE_TYPE_R
+		,V_SOURCE_SYSTEM_NAME_R
+		,V_AMOUNT_TYPE_SUB_NAME_R
+		,V_AMOUNT_TYPE_CATEGORY_R
+		,V_AMOUNT_TYPE_CATEGORY_DESC_R
+		,V_AMOUNT_TYPE_SUB_CATEGORY_R
+		,V_AMT_TYPE_SUB_CATEGORY_DESC_R
+		,V_AMOUNT_TYPE_CODE_R
+		,V_AMOUNT_TYPE_NAME_R
+		,V_AMOUNT_TYPE_SUB_CODE_R
+	FROM 
+		(
+		SELECT
+			 V_CLAIM_NUMBER_R
+			,V_COVERAGE_CODE_R
+			,V_COV_GROUP_ID_R
+			,V_CHECK_NUMBER_R
+			,V_PAY_METHOD_R
+			,V_BENEFIT_CODE_R
+			,V_BENEFIT_DESCRIPTION_R
+			,V_BENEFIT_GROUP_R
+			,N_GROSS_WAGE_BASE_R
+			,N_TAXABLE_PERCENT_R
+			,V_PAYMENT_STATUS_R
+			,N_PAID_AMOUNT_R
+			,V_PAYMENT_TYPE_R
+			,D_CHECK_DATE_R
+			,V_CHECK_TYPE_R
+			,D_PAID_DATE_R
+			,N_GROSS_AMOUNT_R
+			,D_SERVICE_PERIOD_FROM_R
+			,D_SERVICE_PERIOD_TO_R
+			,V_RECORD_TYPE_R
+			,N_WORKSHEET_OBJECT_NUM_R
+			,N_SOURCE_SYSTEM_KEY_R
+			,N_SOURCE_VERSION_SEQ_NUMBER_R
+			,N_SEQ_R
+			,N_GROUP_SEQ_R
+			,N_PARENT_OBJECTNUM_R
+			,T_CREATION_DATE_R
+			,T_EVENT_TIMESTAMP_R
+			,T_LAST_MODIFIED_DATE_R
+			,V_CREATED_BY_R
+			,V_LAST_MODIFIED_BY_R
+			,FIC_MIS_DATE_R                
+			,N_BATCH_ID_R                  
+			,N_LOAD_RUN_ID_R
+			,V_BENEFIT_CATEGORY_R
+			,N_CLAIM_SK_R                  
+			,N_CLAIM_COVERAGE_SK_R         
+			,N_CLAIM_COVERAGE_GROUP_SK_R   
+			,v_payee_first_name_r
+			,v_payee_middle_name_r
+			,v_payee_last_name_r
+			,V_PAYEE_TYPE_R
+			,V_SOURCE_SYSTEM_NAME_R
+			,V_AMOUNT_TYPE_SUB_NAME_R
+			,V_AMOUNT_TYPE_CATEGORY_R
+			,V_AMOUNT_TYPE_CATEGORY_DESC_R
+			,V_AMOUNT_TYPE_SUB_CATEGORY_R
+			,V_AMT_TYPE_SUB_CATEGORY_DESC_R
+			,V_AMOUNT_TYPE_CODE_R
+			,V_AMOUNT_TYPE_NAME_R
+			,V_AMOUNT_TYPE_SUB_CODE_R
+		FROM 
+			(
+			SELECT
+				 V_CLAIM_NUMBER_R
+				,V_COVERAGE_CODE_R
+				,V_COV_GROUP_ID_R
+				,V_CHECK_NUMBER_R
+				,V_PAY_METHOD_R
+				,V_BENEFIT_CODE_R
+				,V_BENEFIT_DESCRIPTION_R
+				,V_BENEFIT_GROUP_R
+				,N_GROSS_WAGE_BASE_R
+				,N_TAXABLE_PERCENT_R
+				,V_PAYMENT_STATUS_R
+				,N_PAID_AMOUNT_R
+				,V_PAYMENT_TYPE_R
+				,D_CHECK_DATE_R
+				,V_CHECK_TYPE_R
+				,D_PAID_DATE_R
+				,N_GROSS_AMOUNT_R
+				,D_SERVICE_PERIOD_FROM_R
+				,D_SERVICE_PERIOD_TO_R
+				,V_RECORD_TYPE_R
+				,N_WORKSHEET_OBJECT_NUM_R
+				,N_SOURCE_SYSTEM_KEY_R
+				,N_SOURCE_VERSION_SEQ_NUMBER_R
+				,N_SEQ_R
+				,N_GROUP_SEQ_R
+				,N_PARENT_OBJECTNUM_R
+				,T_CREATION_DATE_R
+				,T_EVENT_TIMESTAMP_R
+				,T_LAST_MODIFIED_DATE_R
+				,V_CREATED_BY_R
+				,V_LAST_MODIFIED_BY_R
+				,FIC_MIS_DATE_R                
+				,N_BATCH_ID_R                  
+				,N_LOAD_RUN_ID_R
+				,V_BENEFIT_CATEGORY_R
+				,N_CLAIM_SK_R                  
+				,N_CLAIM_COVERAGE_SK_R         
+				,N_CLAIM_COVERAGE_GROUP_SK_R   
+				,v_payee_first_name_r
+				,v_payee_middle_name_r
+				,v_payee_last_name_r
+				,V_PAYEE_TYPE_R
+				,V_SOURCE_SYSTEM_NAME_R
+				,V_AMOUNT_TYPE_SUB_NAME_R
+				,V_AMOUNT_TYPE_CATEGORY_R
+				,V_AMOUNT_TYPE_CATEGORY_DESC_R
+				,V_AMOUNT_TYPE_SUB_CATEGORY_R
+				,V_AMT_TYPE_SUB_CATEGORY_DESC_R
+				,V_AMOUNT_TYPE_CODE_R
+				,V_AMOUNT_TYPE_NAME_R
+				,V_AMOUNT_TYPE_SUB_CODE_R
+				,RANK() OVER (PARTITION BY N_SOURCE_VERSION_SEQ_NUMBER_R,N_CLAIM_SK_R,N_CLAIM_COVERAGE_SK_R,N_SEQ_R,N_CLAIM_COVERAGE_GROUP_SK_R,NVL(V_CHECK_NUMBER_R,-999999),NVL(V_PAYMENT_STATUS_R,-999999) 
+							  ORDER BY N_BATCH_ID_R desc, FIC_MIS_DATE_R desc, V_PAYEE_TYPE_R desc, v_payee_first_name_r desc ) RNK
+			FROM 
+				(
+					(SELECT
+						 V_CLAIM_NUMBER_R
+						,V_COVERAGE_CODE_R
+						,V_COV_GROUP_ID_R
+						,V_CHECK_NUMBER_R
+						,V_PAY_METHOD_R
+						,V_BENEFIT_CODE_R
+						,V_BENEFIT_DESCRIPTION_R
+						,V_BENEFIT_GROUP_R
+						,N_GROSS_WAGE_BASE_R
+						,N_TAXABLE_PERCENT_R
+						,V_PAYMENT_STATUS_R
+						,N_PAID_AMOUNT_R
+						,V_PAYMENT_TYPE_R
+						,D_CHECK_DATE_R
+						,V_CHECK_TYPE_R
+						,D_PAID_DATE_R
+						,N_GROSS_AMOUNT_R
+						,D_SERVICE_PERIOD_FROM_R
+						,D_SERVICE_PERIOD_TO_R
+						,V_RECORD_TYPE_R
+						,N_WORKSHEET_OBJECT_NUM_R
+						,N_SOURCE_SYSTEM_KEY_R
+						,N_SOURCE_VERSION_SEQ_NUMBER_R
+						,N_SEQ_R
+						,N_GROUP_SEQ_R
+						,N_PARENT_OBJECTNUM_R
+						,systimestamp                        T_CREATION_DATE_R
+						,systimestamp                        T_EVENT_TIMESTAMP_R
+						,systimestamp                        T_LAST_MODIFIED_DATE_R
+						,'ODI'                                  V_CREATED_BY_R
+						,'ODI'                                  V_LAST_MODIFIED_BY_R
+						,FIC_MIS_DATE_R                     
+						,N_BATCH_ID_R                     	N_BATCH_ID_R
+						,1                     N_LOAD_RUN_ID_R
+						,V_BENEFIT_CATEGORY_R
+						,N_CLAIM_SK_R                           
+						,N_CLAIM_COVERAGE_SK_R                  
+						,N_CLAIM_COVERAGE_GROUP_SK_R            
+						,v_payee_first_name_r
+						,v_payee_middle_name_r
+						,v_payee_last_name_r
+						,V_PAYEE_TYPE_R
+						,V_SOURCE_SYSTEM_NAME_R
+                        ,V_AMOUNT_TYPE_SUB_NAME_R
+                        ,V_AMOUNT_TYPE_CATEGORY_R
+                        ,V_AMOUNT_TYPE_CATEGORY_DESC_R
+                        ,V_AMOUNT_TYPE_SUB_CATEGORY_R
+                        ,V_AMT_TYPE_SUB_CATEGORY_DESC_R
+                        ,V_AMOUNT_TYPE_CODE_R
+                        ,V_AMOUNT_TYPE_NAME_R
+                        ,V_AMOUNT_TYPE_SUB_CODE_R
+					FROM
+						(SELECT 
+							DIM_GRP_CLAIM_DIR_R.V_CLAIM_NUMBER_R                                           V_CLAIM_NUMBER_R
+							,NVL(DIM_GRP_CLAIM_COVERAGE_GROUP_R.V_CLAIM_COVERAGE_CODE_R,DIM_GRP_CLAIM_COVERAGE_R.V_CLAIM_COVERAGE_CODE_R)          V_COVERAGE_CODE_R
+							,DIM_GRP_CLAIM_COVERAGE_GROUP_R.N_COV_GRP_ID_R                               V_COV_GROUP_ID_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_CHEQUE_NUMBER_R                                 V_CHECK_NUMBER_R
+							,NULL                                                                          V_PAY_METHOD_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_SUB_CODE_R                          V_BENEFIT_CODE_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_NAME_R                              V_BENEFIT_DESCRIPTION_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CODE_R	                           V_BENEFIT_GROUP_R
+							,NULL                                                                          N_GROSS_WAGE_BASE_R
+							,NULL                                                                          N_TAXABLE_PERCENT_R
+							,DECODE(FCT_CLAIM_EXPENSE_PAYMENT_R.V_TRANS_STATUS_R,'REVERSAL','VOID','PAID') V_PAYMENT_STATUS_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_TRANS_AMOUNT_R                                  N_PAID_AMOUNT_R
+							,'PAY'                                                                         V_PAYMENT_TYPE_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.D_TRANS_DATE_R                                    D_CHECK_DATE_R
+							,'OE'                                                                          V_CHECK_TYPE_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.D_TRANS_DATE_R                                    D_PAID_DATE_R
+							,NULL                                                                          N_GROSS_AMOUNT_R
+							,NULL                                                                          D_SERVICE_PERIOD_FROM_R
+							,NULL                                                                          D_SERVICE_PERIOD_TO_R
+							,'Expense'                                                                     V_RECORD_TYPE_R
+							,NULL                                                                          N_WORKSHEET_OBJECT_NUM_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIMEXP_SOURCE_SYSTEM_KEY_R	                   N_SOURCE_SYSTEM_KEY_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_SOURCE_VERSION_SEQ_NUMBER_R	                   N_SOURCE_VERSION_SEQ_NUMBER_R
+							,NULL                                                                          N_SEQ_R
+							,NULL                                                                          N_GROUP_SEQ_R
+							,NULL                                                                          N_PARENT_OBJECTNUM_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CATEGORY_DESC_R                     V_BENEFIT_CATEGORY_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_SK_R                           
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_COVERAGE_SK_R                  
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_COVERAGE_GROUP_SK_R            
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_BATCH_ID_R                           
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.FIC_MIS_DATE_R                           
+							,dim_grp_party_r.V_INDIVIDUAL_FIRST_NAME_R v_payee_first_name_r
+							,dim_grp_party_r.V_INDIVIDUAL_middle_NAME_R v_payee_middle_name_r
+							,dim_grp_party_r.V_INDIVIDUAL_LAST_NAME_R v_payee_last_name_r
+							,(CASE WHEN PD3.V_PARTY_TYPE_R='VENDOR' THEN 'PRV'
+							ELSE NULL END)			V_PAYEE_TYPE_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_SOURCE_SYSTEM_NAME_R V_SOURCE_SYSTEM_NAME_R
+                            ,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_SUB_NAME_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CATEGORY_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CATEGORY_DESC_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_SUB_CATEGORY_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMT_TYPE_SUB_CATEGORY_DESC_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CODE_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_NAME_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_SUB_CODE_R
+						FROM (SELECT * FROM ATOMIC.FCT_CLAIM_EXPENSE_PAYMENT_R WHERE V_SOURCE_SYSTEM_NAME_R = 'CV') FCT_CLAIM_EXPENSE_PAYMENT_R
+							,ATOMIC.DIM_GRP_CLAIM_DIR_R
+							,ATOMIC.DIM_GRP_CLAIM_COVERAGE_R
+							,ATOMIC.DIM_GRP_CLAIM_COVERAGE_GROUP_R
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='PAYEE' AND V_SOURCE_SYSTEM_NAME_R='CV' )PD1
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='INSURED' AND V_SOURCE_SYSTEM_NAME_R='CV')PD2
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='VENDOR' AND V_SOURCE_SYSTEM_NAME_R='CV')PD3
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='PERSON' AND V_SOURCE_SYSTEM_NAME_R='CV')PD4
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='CUSTOMER' AND V_SOURCE_SYSTEM_NAME_R='CV')PD5
+							,(SELECT * FROM dim_grp_party_r WHERE V_ACTIVE_STATUS_R = 'Y')dim_grp_party_r
+							,(
+								select distinct n_claim_sk_r,N_SOURCE_VERSION_SEQ_NUMBER_R,v_cheque_number_r,V_TRANS_STATUS_R,d_trans_date_r 
+								from (
+									SELECT  n_claim_sk_r,
+											NVL(N_SOURCE_VERSION_SEQ_NUMBER_R, - 1) as N_SOURCE_VERSION_SEQ_NUMBER_R,
+											NVL(v_cheque_number_r, - 1) as v_cheque_number_r,
+											v_current_status_r,
+											t_event_timestamp_r,
+											d_trans_date_r,
+											v_trans_status_r,
+											N_BATCH_ID_R,
+											row_number() over (partition by n_claim_sk_r,NVL(N_SOURCE_VERSION_SEQ_NUMBER_R, - 1),NVL(v_cheque_number_r, - 1) order by t_event_timestamp_r desc, N_BATCH_ID_R desc) rnk
+									FROM ATOMIC.FCT_CLAIM_EXPENSE_PAYMENT_R
+									WHERE v_source_system_name_r = 'CV' AND UPPER(V_TRANS_STATUS_R) IN ('RELEASED','CLEARED') AND v_cheque_number_r IS NOT NULL
+									) x where rnk = 1
+							 ) EP
+						WHERE
+						FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_SK_R = DIM_GRP_CLAIM_DIR_R.N_CLAIM_SK_R
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_COVERAGE_SK_R = DIM_GRP_CLAIM_COVERAGE_R.N_CLAIM_COVERAGE_SK_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_COVERAGE_GROUP_SK_R = DIM_GRP_CLAIM_COVERAGE_GROUP_R.N_CLAIM_COVERAGE_GROUP_SK_R(+)
+						AND DIM_GRP_CLAIM_DIR_R.V_ACTIVE_STATUS_R = 'Y'
+						AND nvl(DIM_GRP_CLAIM_COVERAGE_GROUP_R.V_ACTIVE_STATUS_R,'Y') = 'Y'
+						AND nvl(DIM_GRP_CLAIM_COVERAGE_R.V_ACTIVE_STATUS_R, 'Y') = 'Y'
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD1.N_SOURCE_SYSTEM_KEY_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD2.N_SOURCE_SYSTEM_KEY_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD3.N_SOURCE_SYSTEM_KEY_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD4.N_SOURCE_SYSTEM_KEY_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD5.N_SOURCE_SYSTEM_KEY_R(+)
+						and nvl(PD1.N_PARTY_SK_R, nvl(PD2.N_PARTY_SK_R, nvl(PD3.N_PARTY_SK_R,  nvl(PD4.N_PARTY_SK_R, nvl(PD5.N_PARTY_SK_R, -1)))))  = dim_grp_party_r.n_party_sk_r(+)
+						and FCT_CLAIM_EXPENSE_PAYMENT_R.V_SOURCE_SYSTEM_NAME_R = 'CV'
+						AND EP.N_CLAIM_SK_R						= FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_SK_R
+						AND EP.N_SOURCE_VERSION_SEQ_NUMBER_R	= FCT_CLAIM_EXPENSE_PAYMENT_R.N_SOURCE_VERSION_SEQ_NUMBER_R
+						AND EP.v_cheque_number_r				= FCT_CLAIM_EXPENSE_PAYMENT_R.v_cheque_number_r
+						AND EP.V_TRANS_STATUS_R					= FCT_CLAIM_EXPENSE_PAYMENT_R.V_TRANS_STATUS_R)
+					)
+				UNION
+					(SELECT
+						 V_CLAIM_NUMBER_R
+						,V_COVERAGE_CODE_R
+						,V_COV_GROUP_ID_R
+						,V_CHECK_NUMBER_R
+						,V_PAY_METHOD_R
+						,V_BENEFIT_CODE_R
+						,V_BENEFIT_DESCRIPTION_R
+						,V_BENEFIT_GROUP_R
+						,N_GROSS_WAGE_BASE_R
+						,N_TAXABLE_PERCENT_R
+						,V_PAYMENT_STATUS_R
+						,N_PAID_AMOUNT_R
+						,V_PAYMENT_TYPE_R
+						,D_CHECK_DATE_R
+						,V_CHECK_TYPE_R
+						,D_PAID_DATE_R
+						,N_GROSS_AMOUNT_R
+						,D_SERVICE_PERIOD_FROM_R
+						,D_SERVICE_PERIOD_TO_R
+						,V_RECORD_TYPE_R
+						,N_WORKSHEET_OBJECT_NUM_R
+						,N_SOURCE_SYSTEM_KEY_R
+						,N_SOURCE_VERSION_SEQ_NUMBER_R
+						,N_SEQ_R
+						,N_GROUP_SEQ_R
+						,N_PARENT_OBJECTNUM_R
+						,systimestamp                        T_CREATION_DATE_R
+						,systimestamp                        T_EVENT_TIMESTAMP_R
+						,systimestamp                        T_LAST_MODIFIED_DATE_R
+						,'ODI'                                  V_CREATED_BY_R
+						,'ODI'                                  V_LAST_MODIFIED_BY_R
+						,FIC_MIS_DATE_R                     
+						,N_BATCH_ID_R                     	N_BATCH_ID_R
+						,1                     N_LOAD_RUN_ID_R
+						,V_BENEFIT_CATEGORY_R
+						,N_CLAIM_SK_R                           
+						,N_CLAIM_COVERAGE_SK_R                  
+						,N_CLAIM_COVERAGE_GROUP_SK_R            
+						,v_payee_first_name_r
+						,v_payee_middle_name_r
+						,v_payee_last_name_r
+						,V_PAYEE_TYPE_R
+						,V_SOURCE_SYSTEM_NAME_R
+                        ,V_AMOUNT_TYPE_SUB_NAME_R
+                        ,V_AMOUNT_TYPE_CATEGORY_R
+                        ,V_AMOUNT_TYPE_CATEGORY_DESC_R
+                        ,V_AMOUNT_TYPE_SUB_CATEGORY_R
+                        ,V_AMT_TYPE_SUB_CATEGORY_DESC_R
+                        ,V_AMOUNT_TYPE_CODE_R
+                        ,V_AMOUNT_TYPE_NAME_R
+                        ,V_AMOUNT_TYPE_SUB_CODE_R
+					FROM
+						(SELECT 
+							DIM_GRP_CLAIM_DIR_R.V_CLAIM_NUMBER_R                                           V_CLAIM_NUMBER_R
+							,NVL(DIM_GRP_CLAIM_COVERAGE_GROUP_R.V_CLAIM_COVERAGE_CODE_R,DIM_GRP_CLAIM_COVERAGE_R.V_CLAIM_COVERAGE_CODE_R)          V_COVERAGE_CODE_R
+							,DIM_GRP_CLAIM_COVERAGE_GROUP_R.N_COV_GRP_ID_R                               V_COV_GROUP_ID_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_CHEQUE_NUMBER_R                                 V_CHECK_NUMBER_R
+							,NULL                                                                          V_PAY_METHOD_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_SUB_CODE_R                          V_BENEFIT_CODE_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_NAME_R                              V_BENEFIT_DESCRIPTION_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CODE_R	                           V_BENEFIT_GROUP_R
+							,NULL                                                                          N_GROSS_WAGE_BASE_R
+							,NULL                                                                          N_TAXABLE_PERCENT_R
+							,DECODE(FCT_CLAIM_EXPENSE_PAYMENT_R.V_TRANS_STATUS_R,'REVERSAL','VOID','PAID') V_PAYMENT_STATUS_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_TRANS_AMOUNT_R                                  N_PAID_AMOUNT_R
+							,'PAY'                                                                         V_PAYMENT_TYPE_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.D_TRANS_DATE_R                                    D_CHECK_DATE_R
+							,'OE'                                                                          V_CHECK_TYPE_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.D_TRANS_DATE_R                                    D_PAID_DATE_R
+							,NULL                                                                          N_GROSS_AMOUNT_R
+							,NULL                                                                          D_SERVICE_PERIOD_FROM_R
+							,NULL                                                                          D_SERVICE_PERIOD_TO_R
+							,'Expense'                                                                     V_RECORD_TYPE_R
+							,NULL                                                                          N_WORKSHEET_OBJECT_NUM_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIMEXP_SOURCE_SYSTEM_KEY_R	                   N_SOURCE_SYSTEM_KEY_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_SOURCE_VERSION_SEQ_NUMBER_R	                   N_SOURCE_VERSION_SEQ_NUMBER_R
+							,NULL                                                                          N_SEQ_R
+							,NULL                                                                          N_GROUP_SEQ_R
+							,NULL                                                                          N_PARENT_OBJECTNUM_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CATEGORY_DESC_R                     V_BENEFIT_CATEGORY_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_SK_R                           
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_COVERAGE_SK_R                  
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_COVERAGE_GROUP_SK_R            
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.N_BATCH_ID_R                           
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.FIC_MIS_DATE_R                           
+							,dim_grp_party_r.V_INDIVIDUAL_FIRST_NAME_R v_payee_first_name_r
+							,dim_grp_party_r.V_INDIVIDUAL_middle_NAME_R v_payee_middle_name_r
+							,dim_grp_party_r.V_INDIVIDUAL_LAST_NAME_R v_payee_last_name_r
+							,(CASE WHEN PD3.V_PARTY_TYPE_R='VENDOR' THEN 'PRV'
+							ELSE NULL END)			V_PAYEE_TYPE_R
+							,FCT_CLAIM_EXPENSE_PAYMENT_R.V_SOURCE_SYSTEM_NAME_R V_SOURCE_SYSTEM_NAME_R
+                            ,FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_SUB_NAME_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CATEGORY_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CATEGORY_DESC_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_SUB_CATEGORY_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMT_TYPE_SUB_CATEGORY_DESC_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_CODE_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_NAME_R,
+                            FCT_CLAIM_EXPENSE_PAYMENT_R.V_AMOUNT_TYPE_SUB_CODE_R
+						FROM (SELECT * FROM ATOMIC.FCT_CLAIM_EXPENSE_PAYMENT_R WHERE V_SOURCE_SYSTEM_NAME_R = 'CV') FCT_CLAIM_EXPENSE_PAYMENT_R
+							,ATOMIC.DIM_GRP_CLAIM_DIR_R
+							,ATOMIC.DIM_GRP_CLAIM_COVERAGE_R
+							,ATOMIC.DIM_GRP_CLAIM_COVERAGE_GROUP_R
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='PAYEE' AND V_SOURCE_SYSTEM_NAME_R='CV' )PD1
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='INSURED' AND V_SOURCE_SYSTEM_NAME_R='CV')PD2
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='VENDOR' AND V_SOURCE_SYSTEM_NAME_R='CV')PD3
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='PERSON' AND V_SOURCE_SYSTEM_NAME_R='CV')PD4
+							,(SELECT * FROM dim_grp_party_dir_r WHERE V_ACTIVE_STATUS_R = 'Y' AND V_PARTY_TYPE_R='CUSTOMER' AND V_SOURCE_SYSTEM_NAME_R='CV')PD5
+							,(SELECT * FROM dim_grp_party_r WHERE V_ACTIVE_STATUS_R = 'Y')dim_grp_party_r
+						WHERE
+						FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_SK_R = DIM_GRP_CLAIM_DIR_R.N_CLAIM_SK_R
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_COVERAGE_SK_R = DIM_GRP_CLAIM_COVERAGE_R.N_CLAIM_COVERAGE_SK_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.N_CLAIM_COVERAGE_GROUP_SK_R = DIM_GRP_CLAIM_COVERAGE_GROUP_R.N_CLAIM_COVERAGE_GROUP_SK_R(+)
+						AND DIM_GRP_CLAIM_DIR_R.V_ACTIVE_STATUS_R = 'Y'
+						AND nvl(DIM_GRP_CLAIM_COVERAGE_GROUP_R.V_ACTIVE_STATUS_R,'Y') = 'Y'
+						AND nvl(DIM_GRP_CLAIM_COVERAGE_R.V_ACTIVE_STATUS_R, 'Y') = 'Y'
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD1.N_SOURCE_SYSTEM_KEY_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD2.N_SOURCE_SYSTEM_KEY_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD3.N_SOURCE_SYSTEM_KEY_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD4.N_SOURCE_SYSTEM_KEY_R(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_LINK_BOBJECTNUM_R=PD5.N_SOURCE_SYSTEM_KEY_R(+)
+						and nvl(PD1.N_PARTY_SK_R, nvl(PD2.N_PARTY_SK_R, nvl(PD3.N_PARTY_SK_R,  nvl(PD4.N_PARTY_SK_R, nvl(PD5.N_PARTY_SK_R, -1)))))  = dim_grp_party_r.n_party_sk_r(+)
+						AND FCT_CLAIM_EXPENSE_PAYMENT_R.V_SOURCE_SYSTEM_NAME_R = 'CV'
+						AND UPPER(trim(FCT_CLAIM_EXPENSE_PAYMENT_R.V_TRANS_STATUS_R)) IN ('VOID')  
+						)
+					)
+				) FullData
+			) X WHERE RNK = 1
+        ) LatestData;

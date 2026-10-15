@@ -4,7 +4,7 @@ LLM-based SQL lineage extractor — fallback for files Gudu couldn't process.
 Sends Oracle PL/SQL (INSERT / MERGE / UPDATE) to Azure OpenAI and extracts
 column-level lineage. Output CSV matches extract_gudu_lineage.py exactly:
   SQL Object Name, Target Table, Target Column,
-  Source Table, Source Column, Transformation
+  Source Table, Source Column, Transformation, Actual Transformation
 
 Usage
 -----
@@ -32,8 +32,9 @@ from pathlib import Path
 _THIS_DIR   = os.path.dirname(os.path.abspath(__file__))
 _ENV_FILE   = os.path.join(_THIS_DIR, '.env')
 _ALL_META   = os.path.join(_THIS_DIR, 'All_Metadata')
-_CLEANED    = os.path.join(_THIS_DIR, 'output', 'All_Metadata_cleaned')
+_CLEANED    = os.path.join(_THIS_DIR, 'output', 'All_Metadata_cleaned_new')
 _DEFAULT_OUT = os.path.join(_THIS_DIR, 'output', 'llm_lineage_output.csv')
+_DEFAULT_GUDU_CSV = os.path.join(_THIS_DIR, 'output', 'gudu_lineage_output.csv')
 
 # Max characters to send per LLM call.
 # gpt-5-mini supports a 128K-token context window for INPUT, but output is
@@ -52,6 +53,7 @@ FIELDNAMES = [
     'Object Type', 'Package', 'Procedure', 'SQL Object Name',
     'Target Table', 'Target Column',
     'Source Table', 'Source Column', 'Transformation',
+    'Actual Transformation',
 ]
 
 # ── Azure OpenAI setup ───────────────────────────────────────────────────────
@@ -260,55 +262,95 @@ def _chunk_sql(sql: str, max_chars: int = MAX_CHUNK_CHARS) -> list[str]:
 
 _SYSTEM = """\
 You are an expert Oracle SQL data lineage analyst.
-Given Oracle PL/SQL code, extract column-level data flow from every DML statement
-(INSERT INTO...SELECT, MERGE INTO, UPDATE...SET) AND from every
-CREATE TABLE ... AS SELECT (CTAS) statement — including those inside
-EXECUTE IMMEDIATE '...' string literals.
 
-For cursor-based UPDATE patterns (common in Oracle PL/SQL), the cleaner may
-replace the original cursor loop with a comment like:
+Given Oracle PL/SQL code, extract column-level data flow from every DML statement
+(INSERT INTO...SELECT, MERGE INTO, UPDATE...SET) and every CREATE TABLE ... AS
+SELECT (CTAS) statement, including statements inside EXECUTE IMMEDIATE strings.
+
+For cursor-based UPDATE patterns, the cleaner may replace the original cursor
+loop with comments such as:
   -- Lineage: Cursor CUR_NAME -> UPDATE TARGET_TABLE
   -- Source query:
-  SELECT col1 AS TARGET_COL1, col2 AS TARGET_COL2, ... FROM SOURCE_TABLE ...
-In these cases: TARGET_TABLE is the UPDATE target, each SELECT alias (e.g.
-TARGET_COL1) is the target column, and the expression before AS is the source.
-Emit one lineage row per (TARGET_TABLE, alias) pair.
+  SELECT col1 AS TARGET_COL1, NVL(col2, 0) AS TARGET_COL2
+  FROM SOURCE_TABLE
 
-Return ONLY valid JSON — no markdown, no explanation, just the JSON object.
-The JSON must have exactly one top-level key "lineage" whose value is an array.
-Each array element is a FLAT object with EXACTLY these 5 string keys:
+In these cases, TARGET_TABLE is the UPDATE target, each SELECT alias is the
+target column, and the expression before AS is the source expression.
 
-  "target_table"   : table/MV being written to (UPPER CASE)
-  "target_column"  : column being populated (UPPER CASE)
-  "source_table"   : table/view read from (UPPER CASE, or "" for constants)
-  "source_column"  : source column (UPPER CASE, or "" for constants/expressions)
-  "transformation" : one of: "Direct" | "CASE" | "NVL" | "DECODE" | "TO_DATE"
-                     or any function name, or "Constant / Expression"
+Return ONLY valid JSON. Do not return markdown, explanations, or code fences.
+The JSON must have exactly one top-level key named "lineage" whose value is an
+array. Each array element must be a FLAT object with EXACTLY these 6 string keys:
+
+  "target_table"          : table or materialized view being written to,
+                            in UPPER CASE
+  "target_column"         : target column being populated, in UPPER CASE
+  "source_table"          : actual table/view read from, in UPPER CASE,
+                            or "" for constants and expressions with no source
+  "source_column"         : actual source column, in UPPER CASE,
+                            or "" for constants and expressions with no source
+  "transformation"        : normalized transformation category, such as
+                            "Direct", "CASE", "NVL", "DECODE", "TO_DATE",
+                            "Arithmetic", a function name, or
+                            "Constant / Expression"
+  "actual_transformation" : exact SQL expression used to populate the target
+                            column. Preserve functions, CASE logic, operators,
+                            aliases, literals, predicates, and nesting. Remove
+                            only the final target alias or the left side of an
+                            UPDATE assignment.
 
 Example output:
 {"lineage": [
-  {"target_table": "ORDERS", "target_column": "STATUS", "source_table": "STAGING", "source_column": "STATUS_CD", "transformation": "Direct"},
-  {"target_table": "ORDERS", "target_column": "CREATED_AT", "source_table": "", "source_column": "", "transformation": "Constant / Expression"}
+  {"target_table": "ORDERS", "target_column": "STATUS", "source_table": "STAGING", "source_column": "STATUS_CD", "transformation": "Direct", "actual_transformation": "S.STATUS_CD"},
+  {"target_table": "ORDERS", "target_column": "TOTAL_AMOUNT", "source_table": "STAGING", "source_column": "BASE_AMOUNT", "transformation": "NVL", "actual_transformation": "NVL(S.BASE_AMOUNT, 0) + NVL(S.TAX_AMOUNT, 0)"},
+  {"target_table": "ORDERS", "target_column": "TOTAL_AMOUNT", "source_table": "STAGING", "source_column": "TAX_AMOUNT", "transformation": "NVL", "actual_transformation": "NVL(S.BASE_AMOUNT, 0) + NVL(S.TAX_AMOUNT, 0)"},
+  {"target_table": "ORDERS", "target_column": "CREATED_AT", "source_table": "", "source_column": "", "transformation": "Constant / Expression", "actual_transformation": "SYSDATE"}
 ]}
 
 Rules:
-- One row per (target_table, target_column, source_table, source_column) combination.
-- CRITICAL — Resolve ALL aliases to actual table/view names:
-  * Table aliases in FROM/JOIN: e.g. "FROM DIM_GRP_CLAIM_DIR_R A" → source_table="DIM_GRP_CLAIM_DIR_R", never "A".
-  * Inline view aliases: e.g. "(SELECT ... FROM RPT_FCT_RPT_CLAIM_SUMMARY_R ...) TAB1" → resolve TAB1 to the real base table(s) inside the subquery; never emit "TAB1" or "TAB2" as a table name.
-  * CTE aliases: e.g. "WITH CLAIM_DATA AS (SELECT ... FROM DIM_GRP_CLAIM_DIR_R)" → when CLAIM_DATA is used, trace back to DIM_GRP_CLAIM_DIR_R.
-  * Never emit a single letter (A, B, C …), a short abbreviation (RS, BE, LF, MCV …), or a TABn alias as source_table or target_table — always resolve to the real Oracle table or view name.
-- For MERGE: WHEN NOT MATCHED = INSERT rows, WHEN MATCHED = UPDATE rows.
-- For SELECT *: emit one row per source table with target_column="*" and source_column="*".
-- Constants/literals/SYSDATE/ROWNUM: source_table="", source_column="", transformation="Constant / Expression".
-- Direct column copy (no function): transformation="Direct".
-- CASE WHEN expression: transformation="CASE".
-- Function call (NVL, DECODE, etc.): transformation = the function name.
-- EXECUTE IMMEDIATE: extract the SQL inside the string literal and treat it as
-  normal SQL. For EXECUTE IMMEDIATE 'CREATE TABLE T AS SELECT ...' — T is the
-  target table; emit one row per selected column with the source table/column.
-- Do NOT include internal pseudo-names (RS-1, CTE aliases as final tables, etc.).
-- If no DML or CTAS found, return {"lineage": []}.
+- Emit one row per unique target_table, target_column, source_table,
+  source_column, and actual_transformation combination.
+- Resolve every FROM/JOIN alias to the real Oracle table or view name.
+- Resolve inline-view and CTE aliases to their underlying base tables/views.
+- Never emit single-letter aliases, short aliases, TABn aliases, CTE aliases,
+  or internal result-set names as source_table or target_table.
+- Preserve aliases inside actual_transformation because that field must reflect
+  the SQL expression as written, while source_table must contain the resolved
+  physical table/view name.
+- For INSERT INTO ... SELECT, match target columns and SELECT expressions by
+  ordinal position. The SELECT expression before its alias is the
+  actual_transformation.
+- For UPDATE SET TARGET_COL = expression, TARGET_COL is the target column and
+  the complete right-hand expression is actual_transformation.
+- For MERGE, extract both WHEN MATCHED UPDATE and WHEN NOT MATCHED INSERT.
+  For UPDATE mappings use the right-hand assignment expression. For INSERT
+  mappings match target columns to VALUES expressions by ordinal position.
+- For CTAS, the created table is the target. The SELECT expression before its
+  alias is actual_transformation. If no alias exists, use the selected source
+  column name as the target column.
+- If an expression references multiple source columns, emit one row for each
+  source column and repeat the complete actual_transformation for every row.
+- Direct source-column copy: transformation="Direct" and preserve the exact
+  column expression, such as A.STATUS_CD, in actual_transformation.
+- CASE expression: transformation="CASE" and preserve the complete CASE logic.
+- Function expression: transformation is the outermost or primary function
+  name and actual_transformation is the complete expression, including nested
+  functions.
+- Arithmetic without a dominant function: transformation="Arithmetic" and
+  preserve the complete arithmetic expression.
+- Constants, literals, SYSDATE, SYSTIMESTAMP, USER, sequences, and ROWNUM use
+  source_table="", source_column="", transformation="Constant / Expression",
+  and preserve the exact expression in actual_transformation.
+- For SELECT *, emit one row per source table with target_column="*",
+  source_column="*", transformation="Direct", and actual_transformation as
+  ALIAS.* when an alias is present, otherwise "*".
+- EXECUTE IMMEDIATE: extract and analyze SQL inside the string literal. For
+  concatenated dynamic SQL, reconstruct what can be resolved without inventing
+  values.
+- Do not include JOIN, WHERE, GROUP BY, ORDER BY, or filter-only columns unless
+  they are part of the expression that populates the target column.
+- Do not simplify, paraphrase, or invent actual_transformation. Preserve the
+  supplied SQL expression as closely as possible.
+- If no DML or CTAS is found, return {"lineage": []}.
 """
 
 _USER_TMPL = """\
@@ -401,85 +443,123 @@ def call_llm(client, deployment: str, obj_name: str, sql_chunk: str,
 
 
 def _extract_flat_rows(raw: dict) -> list[dict]:
-    """
-    The model sometimes returns an alternative hierarchical schema:
-      {"lineage": [{"target": {"name": ...}, "sources": [...], "mappings": [...]}]}
-    Convert it to a list of flat row dicts with the canonical keys.
-    """
+    """Convert an alternative hierarchical response into canonical flat rows."""
     flat = []
     tgt_info = raw.get('target', {})
     if not isinstance(tgt_info, dict):
         return flat
-    tgt_tbl = str(tgt_info.get('name', '')).strip().upper()
+
+    tgt_tbl = str(tgt_info.get('name', '') or '').strip().upper()
     if not tgt_tbl:
         return flat
 
     sources = raw.get('sources', [])
     mappings = raw.get('mappings', [])
+    if not isinstance(sources, list):
+        sources = []
+    if not isinstance(mappings, list):
+        mappings = []
 
     if not mappings and sources:
-        # No column-level mappings — emit a table-level row per source
         for src in sources:
-            src_name = str(src.get('name', '')).strip().upper()
+            if not isinstance(src, dict):
+                continue
+            src_name = str(src.get('name', '') or '').strip().upper()
+            src_alias = str(src.get('alias', '') or '').strip()
             if src_name:
                 flat.append({
-                    'target_table': tgt_tbl, 'target_column': '*',
-                    'source_table': src_name, 'source_column': '*',
+                    'target_table': tgt_tbl,
+                    'target_column': '*',
+                    'source_table': src_name,
+                    'source_column': '*',
                     'transformation': 'Direct',
+                    'actual_transformation': f'{src_alias}.*' if src_alias else '*',
                 })
         return flat
 
-    # Try to pair mappings with source tables
-    for m in mappings:
-        if not isinstance(m, dict):
+    for mapping in mappings:
+        if not isinstance(mapping, dict):
             continue
-        src_col  = str(m.get('source', m.get('source_column', ''))).strip().upper()
-        tgt_col  = str(m.get('target', m.get('target_column', ''))).strip().upper()
-        transf   = str(m.get('transformation', 'Direct')).strip()
 
-        if not tgt_col or 'CONDITION' in tgt_col.upper():
-            continue  # skip JOIN conditions
+        source_value = mapping.get('source', mapping.get('source_column', ''))
+        target_value = mapping.get('target', mapping.get('target_column', ''))
+        src_col = str(source_value or '').strip().upper()
+        tgt_col = str(target_value or '').strip().upper()
+        transf = str(mapping.get('transformation', 'Direct') or 'Direct').strip()
+        actual = str(
+            mapping.get(
+                'actual_transformation',
+                mapping.get(
+                    'expression',
+                    mapping.get('source_expression', mapping.get('logic', source_value)),
+                ),
+            ) or ''
+        ).strip()
 
-        # Find which source table has this column
+        if not tgt_col or 'CONDITION' in tgt_col:
+            continue
+
         src_tbl = ''
+        bare_src_col = re.sub(
+            r'^[A-Z][A-Z0-9_$#]*\.(.*)$',
+            r'\1',
+            src_col,
+            flags=re.IGNORECASE,
+        )
+
         for src in sources:
-            cols = [str(c).upper() for c in src.get('columns', [])]
-            alias = str(src.get('alias', '')).upper()
-            bare_src_col = re.sub(r'^[A-Z]\.(.*)', r'\1', src_col)  # strip alias prefix
-            if bare_src_col in cols or src_col in cols or '*' in cols:
-                src_tbl = str(src.get('name', '')).strip().upper()
-                src_col = bare_src_col if bare_src_col else src_col
+            if not isinstance(src, dict):
+                continue
+            src_name = str(src.get('name', '') or '').strip().upper()
+            src_alias = str(src.get('alias', '') or '').strip().upper()
+            columns = [str(c or '').strip().upper() for c in src.get('columns', [])]
+            if (
+                (src_alias and src_col.startswith(f'{src_alias}.'))
+                or bare_src_col in columns
+                or src_col in columns
+                or '*' in columns
+            ):
+                src_tbl = src_name
+                src_col = bare_src_col or src_col
                 break
 
         flat.append({
-            'target_table': tgt_tbl, 'target_column': tgt_col,
-            'source_table': src_tbl, 'source_column': src_col,
-            'transformation': transf if transf else 'Direct',
+            'target_table': tgt_tbl,
+            'target_column': tgt_col,
+            'source_table': src_tbl,
+            'source_column': src_col,
+            'transformation': transf or 'Direct',
+            'actual_transformation': actual or str(source_value or '').strip() or src_col,
         })
 
     return flat
 
-
 def normalise_row(raw: dict, obj_name: str) -> dict | None:
-    """Convert raw LLM row to final CSV row. Returns None if clearly invalid."""
-    # Detect alternative hierarchical schema and convert
-    if 'target' in raw and 'lineage' not in raw:
+    """Convert a raw LLM lineage row to the final CSV structure."""
+    if not isinstance(raw, dict):
+        return None
+
+    if 'target' in raw and 'target_table' not in raw:
         flat_rows = _extract_flat_rows(raw)
-        if flat_rows:
-            # Return only first; caller handles the list
-            raw = flat_rows[0]
+        if not flat_rows:
+            return None
+        raw = flat_rows[0]
 
-    tgt_tbl = str(raw.get('target_table', '')).strip().upper()
-    tgt_col = str(raw.get('target_column', '')).strip().upper()
-    src_tbl = str(raw.get('source_table', '')).strip().upper()
-    src_col = str(raw.get('source_column', '')).strip().upper()
-    transf  = str(raw.get('transformation', 'Direct')).strip()
+    tgt_tbl = str(raw.get('target_table', '') or '').strip().upper()
+    tgt_col = str(raw.get('target_column', '') or '').strip().upper()
+    src_tbl = str(raw.get('source_table', '') or '').strip().upper()
+    src_col = str(raw.get('source_column', '') or '').strip().upper()
+    transf = str(raw.get('transformation', 'Direct') or 'Direct').strip()
+    actual = str(
+        raw.get(
+            'actual_transformation',
+            raw.get('expression', raw.get('source_expression', raw.get('logic', ''))),
+        ) or ''
+    ).strip()
 
-    # Skip rows with no target
     if not tgt_tbl or not tgt_col:
         return None
 
-    # Skip internal SQLFlow pseudo-names that sometimes leak through
     _INTERNAL = re.compile(
         r'^(RS-\d+|RESULT_OF_|INSERT-SELECT-\d+|SELECT-INTO-\d+|MERGE-INSERT-\d+|'
         r'MERGE-UPDATE-\d+|UPDATE-SET-\d+|CTE-\d+|SQL_CONSTANTS|RelationRows)$',
@@ -488,24 +568,214 @@ def normalise_row(raw: dict, obj_name: str) -> dict | None:
     if _INTERNAL.match(tgt_tbl) or _INTERNAL.match(tgt_col):
         return None
 
-    # Skip backup snapshot tables — _BKP tables are intermediate copies used for
-    # rollback safety; they carry no business lineage for the RPT layer.
     if tgt_tbl.endswith('_BKP'):
         return None
 
-    obj_type, pkg, proc = _classify(obj_name)
+    # Backward-compatible fallback if a model omits the requested field.
+    if not actual:
+        actual = src_col if src_col else (transf if transf != 'Constant / Expression' else '')
 
+    obj_type, pkg, proc = _classify(obj_name)
     return {
-        'Object Type':     obj_type,
-        'Package':         pkg,
-        'Procedure':       proc,
+        'Object Type': obj_type,
+        'Package': pkg,
+        'Procedure': proc,
         'SQL Object Name': obj_name,
-        'Target Table':    tgt_tbl,
-        'Target Column':   tgt_col,
-        'Source Table':    src_tbl,
-        'Source Column':   src_col,
-        'Transformation':  transf if transf else 'Direct',
+        'Target Table': tgt_tbl,
+        'Target Column': tgt_col,
+        'Source Table': src_tbl,
+        'Source Column': src_col,
+        'Transformation': transf or 'Direct',
+        'Actual Transformation': actual,
     }
+
+# ── Mode B: transformation-only enrichment for Gudu-resolved objects ───────
+# Gudu already resolved target/source columns correctly for these objects —
+# we only need the exact SQL expression per target column, not re-discovery.
+# One batched call per object/chunk, never per row.
+
+_SYSTEM_ENRICH = """\
+You are an expert Oracle SQL lineage analyst.
+
+A separate static-analysis tool already determined which target columns are
+populated by DML in the supplied SQL. Your only job is to find, for each
+listed target column, the exact SQL expression that computes it.
+
+Return ONLY valid JSON, no markdown. The JSON must have one top-level key
+"lineage" whose value is an array of flat objects with exactly these keys:
+
+  "target_table"          : target table/materialized view, UPPER CASE
+  "target_column"         : target column, UPPER CASE
+  "actual_transformation" : exact SQL expression used to populate the column,
+                            preserving functions, CASE logic, operators,
+                            aliases, and nesting as written
+
+Rules:
+- Only emit rows for target columns from the supplied list that you can
+  actually find evidence for in the SQL.
+- Do not invent, re-derive, or second-guess source tables/columns — that is
+  not part of this task.
+- Do not simplify, paraphrase, or invent actual_transformation.
+- If none of the listed target columns can be found, return {"lineage": []}.
+"""
+
+_USER_ENRICH_TMPL = """\
+A static-analysis tool already determined that this SQL populates the
+following target columns:
+
+{target_cols}
+
+For each one, return the exact SQL expression that computes it.
+
+SQL Object: {obj_name}
+
+```sql
+{sql}
+```
+"""
+
+
+def call_llm_enrich(client, deployment: str, obj_name: str, sql_chunk: str,
+                    target_columns: list[tuple[str, str]],
+                    retries: int = 3, delay: float = 5.0) -> list[dict]:
+    """Call the LLM for transformation-only enrichment of already-resolved target columns."""
+    sql_clean = _strip_comments(sql_chunk)
+    cols_text = '\n'.join(f'- {t}.{c}' for t, c in target_columns)
+    user_msg  = _USER_ENRICH_TMPL.format(obj_name=obj_name, sql=sql_clean, target_cols=cols_text)
+
+    for attempt in range(1, retries + 1):
+        try:
+            response = client.chat.completions.create(
+                model=deployment,
+                messages=[
+                    {"role": "system", "content": _SYSTEM_ENRICH},
+                    {"role": "user",   "content": user_msg},
+                ],
+                max_completion_tokens=16000,
+            )
+            choice = response.choices[0]
+            raw    = choice.message.content
+            if not raw or not raw.strip():
+                raise ValueError('Empty response from model')
+            data = _extract_json(raw)
+            rows = data.get("lineage", [])
+            return rows if isinstance(rows, list) else []
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            if attempt < retries:
+                print(f"      [WARN] Attempt {attempt} failed: {e}. Retrying in {delay}s…")
+                time.sleep(delay)
+            else:
+                print(f"      [ERROR] All {retries} attempts failed: {e}")
+                return []
+
+
+def process_sql_text_enrich(client, deployment: str, obj_name: str, sql: str,
+                            target_columns: list[tuple[str, str]]) -> list[dict]:
+    """Chunk sql, call the enrichment LLM per chunk, return one row per resolved
+    target column (first non-empty match wins across chunks)."""
+    chunks = _chunk_sql(sql)
+    resolved: dict[tuple[str, str], str] = {}
+
+    for i, chunk in enumerate(chunks, 1):
+        if len(chunks) > 1:
+            print(f"    chunk {i}/{len(chunks)} ({len(chunk):,} chars)")
+        raw_rows = call_llm_enrich(client, deployment, obj_name, chunk, target_columns)
+        for raw in raw_rows:
+            tgt_tbl = str(raw.get('target_table', '') or '').strip().upper()
+            tgt_col = str(raw.get('target_column', '') or '').strip().upper()
+            actual  = str(raw.get('actual_transformation', '') or '').strip()
+            if not tgt_tbl or not tgt_col or not actual:
+                continue
+            resolved.setdefault((tgt_tbl, tgt_col), actual)
+
+    obj_type, pkg, proc = _classify(obj_name)
+    rows = []
+    for (tgt_tbl, tgt_col), actual in resolved.items():
+        rows.append({
+            'Object Type': obj_type, 'Package': pkg, 'Procedure': proc,
+            'SQL Object Name': obj_name,
+            'Target Table': tgt_tbl, 'Target Column': tgt_col,
+            'Source Table': '', 'Source Column': '',
+            'Transformation': '', 'Actual Transformation': actual,
+        })
+    return rows
+
+
+_PART_SUFFIX_RE = re.compile(r'_part\d+$', re.IGNORECASE)
+
+
+def load_gudu_target_columns(gudu_csv_path: str) -> dict[str, list[tuple[str, str]]]:
+    """Map base obj_name (part-suffix stripped) -> sorted distinct
+    (Target Table, Target Column) pairs already resolved by Gudu."""
+    cols: dict[str, set[tuple[str, str]]] = {}
+    if not os.path.exists(gudu_csv_path):
+        return {}
+    with open(gudu_csv_path, newline='', encoding='utf-8-sig') as f:
+        for row in csv.DictReader(f):
+            obj = str(row.get('SQL Object Name', '') or '').strip()
+            if not obj:
+                continue
+            base = _PART_SUFFIX_RE.sub('', obj).upper()
+            tgt_tbl = str(row.get('Target Table', '') or '').strip()
+            tgt_col = str(row.get('Target Column', '') or '').strip()
+            if not tgt_tbl or not tgt_col:
+                continue
+            cols.setdefault(base, set()).add((tgt_tbl, tgt_col))
+    return {k: sorted(v) for k, v in cols.items()}
+
+
+def detect_all_cleaned_objects(cleaned_dir: str = _CLEANED) -> dict[str, tuple[str, str]]:
+    """Return {obj_name: (combined_sql_text, label)} for every cleaned object
+    (grouped part-files combined), regardless of whether Gudu succeeded on it.
+    Used to find the complement of detect_failing_cleaned_files() for Mode B."""
+    cleaned_dir = os.path.abspath(cleaned_dir)
+    all_cleaned = sorted(
+        f for f in os.listdir(cleaned_dir) if f.endswith('_cleaned.sql')
+    )
+
+    part_re = re.compile(r'^(.+?)_part(\d+)_cleaned$')
+    groups: dict[str, list[tuple[int, str]]] = {}
+    singles: list[str] = []
+
+    for f in all_cleaned:
+        base = os.path.splitext(f)[0]
+        m = part_re.match(base)
+        if m:
+            groups.setdefault(m.group(1), []).append((int(m.group(2)), os.path.join(cleaned_dir, f)))
+        else:
+            singles.append(os.path.join(cleaned_dir, f))
+
+    result: dict[str, tuple[str, str]] = {}
+
+    for grp_name, parts in groups.items():
+        parts.sort(key=lambda x: x[0])
+        combined_parts = []
+        for _, ppath in parts:
+            try:
+                combined_parts.append(open(ppath, encoding='utf-8', errors='ignore').read())
+            except OSError:
+                pass
+        combined_sql = '\n\n'.join(combined_parts)
+        if not combined_sql.strip() or not _HAS_DML.search(combined_sql):
+            continue
+        obj_name = _object_name_from_file(grp_name + '_cleaned')
+        label = f'{grp_name} ({len(parts)} parts combined, {len(combined_sql):,} chars)'
+        result[obj_name] = (combined_sql, label)
+
+    for sql_path in singles:
+        try:
+            content = open(sql_path, encoding='utf-8', errors='ignore').read()
+        except OSError:
+            continue
+        if not _HAS_DML.search(content):
+            continue
+        obj_name = _object_name_from_file(os.path.basename(sql_path))
+        label = f'{os.path.basename(sql_path)} ({len(content):,} chars)'
+        result[obj_name] = (content, label)
+
+    return result
 
 
 # ── Core file processing ─────────────────────────────────────────────────────
@@ -525,8 +795,11 @@ def process_sql_text(client, deployment: str, obj_name: str,
             row = normalise_row(raw, obj_name)
             if row is None:
                 continue
-            key = (row['Target Table'], row['Target Column'],
-                   row['Source Table'],  row['Source Column'])
+            key = (
+                row['Target Table'], row['Target Column'],
+                row['Source Table'], row['Source Column'],
+                row['Transformation'], row['Actual Transformation'],
+            )
             if key not in seen:
                 seen.add(key)
                 all_rows.append(row)
@@ -644,6 +917,18 @@ def detect_failing_cleaned_files(cleaned_dir: str = _CLEANED) -> list[tuple[str,
         # Checking the stitched JSON alone is insufficient — a stitched file
         # can exist with only trivial relationships (e.g. debug-trace table
         # writes from one part) while other parts were never parsed by Gudu.
+        # all_parts_covered = all(
+        #     _json_has_rels(
+        #         os.path.join(
+        #             cleaned_dir,
+        #             os.path.splitext(os.path.basename(ppath))[0] + '_lineage.json',
+        #         )
+        #     )
+        #     for _, ppath in parts
+        # )
+        # if all_parts_covered:
+        #     continue  # every part already has Gudu lineage
+
         all_parts_covered = all(
             _json_has_rels(
                 os.path.join(
@@ -653,8 +938,16 @@ def detect_failing_cleaned_files(cleaned_dir: str = _CLEANED) -> list[tuple[str,
             )
             for _, ppath in parts
         )
-        if all_parts_covered:
-            continue  # every part already has Gudu lineage
+
+        # Force large cleaned files through LLM even if Gudu produced
+        # some lineage, because the Gudu lineage may be incomplete.
+        has_large_part = any(
+            os.path.getsize(ppath) > GUDU_LIMIT
+            for _, ppath in parts
+        )
+
+        if all_parts_covered and not has_large_part:
+            continue
 
         # Sort parts in order and concatenate
         parts.sort(key=lambda x: x[0])
@@ -987,6 +1280,31 @@ def run_completeness_report(csv_path: str) -> None:
     print('=' * 65)
 
 
+
+
+def duplicate_exg_target_rows(rows: list[dict]) -> list[dict]:
+    """
+    For every lineage row whose Target Table ends with '_EXG',
+    create an exact copy of the row and remove the '_EXG' suffix
+    from Target Table.
+
+    Example:
+        RPT_POLICY_DTL_R_EXG -> RPT_POLICY_DTL_R
+
+    The original _EXG row is preserved.
+    """
+    result = list(rows)
+
+    for row in rows:
+        target_table = str(row.get('Target Table', '') or '').strip()
+
+        if target_table.upper().endswith('_EXG'):
+            copied_row = row.copy()
+            copied_row['Target Table'] = target_table[:-4]
+            result.append(copied_row)
+
+    return result
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1040,6 +1358,18 @@ def main():
         help='Append rows to existing output CSV instead of overwriting it',
     )
     parser.add_argument(
+        '--enrich-gudu', action='store_true',
+        help=(
+            'Mode B: skip discovery entirely and only extract actual_transformation '
+            'for objects Gudu already resolved structurally (the complement of auto mode). '
+            'Requires --gudu-csv to already exist (run Stage 3 first).'
+        ),
+    )
+    parser.add_argument(
+        '--gudu-csv', metavar='CSV', default=_DEFAULT_GUDU_CSV,
+        help=f'Gudu structural lineage CSV used by --enrich-gudu (default: {_DEFAULT_GUDU_CSV})',
+    )
+    parser.add_argument(
         '--dry-run', action='store_true',
         help='List files that would be processed but do not call LLM',
     )
@@ -1091,6 +1421,79 @@ def main():
             rows = process_sql_text(client, deployment, obj_name, sql_text)
             print(f"[{i}/{len(tasks)}]   -> {len(rows)} rows extracted")
             all_rows.extend(rows)
+    elif args.enrich_gudu:
+        # ── Mode B: enrich objects Gudu already resolved structurally ──────
+        print(f"Loading Gudu-resolved target columns from:\n  {args.gudu_csv}\n")
+        gudu_cols = load_gudu_target_columns(args.gudu_csv)
+        if not gudu_cols:
+            print("[WARN] No Gudu target columns found — did Stage 3 run first?")
+
+        print(f"Scanning all cleaned objects in:\n  {args.cleaned_dir}\n")
+        all_objects = detect_all_cleaned_objects(args.cleaned_dir)
+
+        # Mode B targets = objects Gudu resolved (have target columns) AND are
+        # not already covered by the discovery (failing) list.
+        failing_names = {obj.upper() for obj, _, _ in detect_failing_cleaned_files(args.cleaned_dir)}
+        enrich_tasks = []
+        for obj_name, (sql_text, label) in all_objects.items():
+            if obj_name.upper() in failing_names:
+                continue  # covered by discovery mode instead
+            target_cols = gudu_cols.get(obj_name.upper())
+            if not target_cols:
+                continue  # Gudu has nothing resolved for this object either
+            enrich_tasks.append((obj_name, sql_text, label, target_cols))
+
+        if args.only:
+            filters = [s.strip().upper() for s in args.only.split(',') if s.strip()]
+            enrich_tasks = [
+                t for t in enrich_tasks if any(f in t[0].upper() for f in filters)
+            ]
+
+        print(f"Found {len(enrich_tasks)} Gudu-resolved object(s) to enrich with actual transformation.\n")
+        print("-" * 70)
+
+        if args.dry_run:
+            for obj_name, sql_text, label, target_cols in enrich_tasks:
+                print(f"  [{len(sql_text):>7,} chars, {len(target_cols)} target cols]  {label}")
+            print(f"\n[DRY-RUN] Would enrich {len(enrich_tasks)} object(s).")
+            return
+
+        import threading
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        _print_lock = threading.Lock()
+        _all_rows_lock = threading.Lock()
+        total = len(enrich_tasks)
+        workers = min(args.workers, total) if total else 1
+
+        def _enrich_one(task):
+            i, obj_name, sql_text, label, target_cols = task
+            with _print_lock:
+                print(f"[{i}/{total}] {label}")
+            try:
+                rows = process_sql_text_enrich(client, deployment, obj_name, sql_text, target_cols)
+            except Exception as exc:
+                with _print_lock:
+                    print(f"[{i}/{total}] [ERROR] {exc}")
+                rows = []
+            with _print_lock:
+                print(f"[{i}/{total}]   -> {len(rows)} transformation(s) resolved")
+            return rows
+
+        indexed_tasks = [
+            (i, obj, sql, lbl, cols)
+            for i, (obj, sql, lbl, cols) in enumerate(enrich_tasks, 1)
+        ]
+
+        try:
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                futures = {executor.submit(_enrich_one, t): t[0] for t in indexed_tasks}
+                for future in as_completed(futures):
+                    rows = future.result()
+                    with _all_rows_lock:
+                        all_rows.extend(rows)
+        except KeyboardInterrupt:
+            print(f"\n[INTERRUPTED] Saving {len(all_rows)} rows collected so far…")
     else:
         # ── Auto mode: scan cleaned dir for failing files ─────────────────
         print(f"Scanning for failing cleaned files in:\n  {args.cleaned_dir}\n")
@@ -1100,7 +1503,10 @@ def main():
         # Hybrid MAINs have their own DML (INSERT/MERGE/UPDATE) but are skipped
         # by clean_and_run_gudu.py because Gudu can't resolve complex JOINs in
         # large INSERT bodies.  We detect them here and append to the task list.
-        already_done = _load_already_processed_obj_names(args.output)
+        # Only honour "already processed" when --append is set: a non-append run
+        # overwrites args.output at the end, so skipping an object here while not
+        # appending would silently delete it from the final file.
+        already_done = _load_already_processed_obj_names(args.output) if args.append else set()
         hybrid_tasks = detect_all_hybrid_main_procs(args.source_dir, already_done)
         if hybrid_tasks:
             # Exclude any Hybrid MAINs already present in failing (avoid dups)
@@ -1163,13 +1569,26 @@ def main():
         except KeyboardInterrupt:
             print(f"\n[INTERRUPTED] Saving {len(all_rows)} rows collected so far…")
 
+
     if not args.dry_run:
+
+        # Create copies of _EXG target rows pointing to the corresponding
+        # non-EXG target table.
+        #
+        # Example:
+        # RPT_POLICY_DTL_R_EXG -> RPT_POLICY_DTL_R
+        all_rows = duplicate_exg_target_rows(all_rows)
+
         # Deduplicate across files (same target/source can appear in multiple parts)
         seen = set()
         deduped = []
+
         for row in all_rows:
-            key = (row['SQL Object Name'], row['Target Table'], row['Target Column'],
-                   row['Source Table'],    row['Source Column'])
+            key = (
+                row['SQL Object Name'], row['Target Table'], row['Target Column'],
+                row['Source Table'], row['Source Column'],
+                row['Transformation'], row['Actual Transformation'],
+            )
             if key not in seen:
                 seen.add(key)
                 deduped.append(row)
@@ -1178,10 +1597,11 @@ def main():
             r['Object Type'], r['Package'], r['Procedure'],
             r['Target Table'], r['Target Column'],
             r['Source Table'], r['Source Column'],
+            r['Transformation'], r['Actual Transformation'],
         ))
 
         write_csv(deduped, args.output, append=args.append)
-
+    
         # Stats
         tgts = set(r['Target Table'] for r in deduped)
         srcs = set(r['Source Table'] for r in deduped if r['Source Table'])

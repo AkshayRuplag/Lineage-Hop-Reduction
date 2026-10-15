@@ -1,0 +1,310 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "V_COVERAGE_CODE_R",
+                        "coordinates": [
+                          {
+                            "x": 4,
+                            "y": 19,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 4,
+                            "y": 36,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "5"
+                      },
+                      {
+                        "name": "N_POLICY_SK_R",
+                        "coordinates": [
+                          {
+                            "x": 5,
+                            "y": 23,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 5,
+                            "y": 39,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "6"
+                      },
+                      {
+                        "name": "N_POLICY_BILLGROUP_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 5,
+                            "y": 63,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 5,
+                            "y": 89,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "7"
+                      },
+                      {
+                        "name": "N_PREMIUM_MODE_FACTOR_R",
+                        "coordinates": [
+                          {
+                            "x": 5,
+                            "y": 123,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 5,
+                            "y": 149,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "8"
+                      },
+                      {
+                        "name": "D_DUE_DATE_R",
+                        "coordinates": [
+                          {
+                            "x": 7,
+                            "y": 64,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 7,
+                            "y": 79,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "9"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 14,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 50,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "TEMP_ANN_PREM_TABLE_FINAL_AGG_PRE",
+                    "id": "4",
+                    "name": "TEMP_ANN_PREM_TABLE_FINAL_AGG_PRE",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [
+    {
+      "id": "1",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "21",
+        "column": "V_TRC_MSG_R",
+        "parentId": "16",
+        "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+        "coordinates": [
+          {
+            "x": 13,
+            "y": 49,
+            "hashCode": "0"
+          },
+          {
+            "x": 13,
+            "y": 60,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "26",
+          "column": "gc_step",
+          "parentId": "16",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 22,
+              "y": 15,
+              "hashCode": "0"
+            },
+            {
+              "x": 22,
+              "y": 22,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "25",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "2",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "22",
+        "column": "N_BATCH_ID_R",
+        "parentId": "16",
+        "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+        "coordinates": [
+          {
+            "x": 14,
+            "y": 49,
+            "hashCode": "0"
+          },
+          {
+            "x": 14,
+            "y": 61,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "27",
+          "column": "ln_N_BATCH_ID_R",
+          "parentId": "16",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 23,
+              "y": 15,
+              "hashCode": "0"
+            },
+            {
+              "x": 23,
+              "y": 30,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "25",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "3",
+      "type": "fdr",
+      "effectType": "select",
+      "target": {
+        "id": "10",
+        "column": "RelationRows",
+        "parentId": "11",
+        "parentName": "RS-1",
+        "coordinates": [
+          {
+            "x": 4,
+            "y": 86,
+            "hashCode": "0"
+          },
+          {
+            "x": 4,
+            "y": 87,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "6",
+          "column": "N_POLICY_SK_R",
+          "parentId": "4",
+          "parentName": "TEMP_ANN_PREM_TABLE_FINAL_AGG_PRE",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 5,
+              "y": 23,
+              "hashCode": "0"
+            },
+            {
+              "x": 5,
+              "y": 39,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "7",
+          "column": "N_POLICY_BILLGROUP_ID_R",
+          "parentId": "4",
+          "parentName": "TEMP_ANN_PREM_TABLE_FINAL_AGG_PRE",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 5,
+              "y": 63,
+              "hashCode": "0"
+            },
+            {
+              "x": 5,
+              "y": 89,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "8",
+          "column": "N_PREMIUM_MODE_FACTOR_R",
+          "parentId": "4",
+          "parentName": "TEMP_ANN_PREM_TABLE_FINAL_AGG_PRE",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 5,
+              "y": 123,
+              "hashCode": "0"
+            },
+            {
+              "x": 5,
+              "y": 149,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "id": "25",
+      "name": "Query Insert-1",
+      "procedureName": "batchQueries",
+      "queryHashId": "89ce46b832a28f246fe3e9762d4b0121",
+      "type": "sstinsert",
+      "coordinate": "[9,1,0],[26,13,0]"
+    }
+  ],
+  "errors": []
+}

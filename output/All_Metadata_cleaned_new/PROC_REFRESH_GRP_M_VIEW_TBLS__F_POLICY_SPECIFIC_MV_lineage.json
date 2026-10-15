@@ -1,0 +1,679 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "N_BATCH_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 8,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 8,
+                            "y": 17,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "5"
+                      },
+                      {
+                        "name": "N_MIS_DATE_SKEY_R",
+                        "coordinates": [
+                          {
+                            "x": 9,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 9,
+                            "y": 22,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "6"
+                      },
+                      {
+                        "name": "N_LOAD_RUN_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 10,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 10,
+                            "y": 20,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "7"
+                      },
+                      {
+                        "name": "V_STATUS_R",
+                        "coordinates": [
+                          {
+                            "x": 11,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 11,
+                            "y": 15,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "8"
+                      },
+                      {
+                        "name": "T_EXECUTION_TIMESTAMP_R",
+                        "coordinates": [
+                          {
+                            "x": 12,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 12,
+                            "y": 28,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "9"
+                      },
+                      {
+                        "name": "V_USER_R",
+                        "coordinates": [
+                          {
+                            "x": 13,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 13,
+                            "y": 13,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "10"
+                      },
+                      {
+                        "name": "V_PLSQL_BLOCK_NAME_R",
+                        "coordinates": [
+                          {
+                            "x": 14,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 14,
+                            "y": 25,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "11"
+                      },
+                      {
+                        "name": "N_SERIAL_NUM_R",
+                        "coordinates": [
+                          {
+                            "x": 15,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 15,
+                            "y": 19,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "12"
+                      },
+                      {
+                        "name": "LN_BATCH_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 19,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 19,
+                            "y": 18,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "14"
+                      },
+                      {
+                        "name": "P_MV_TBL_NAME",
+                        "coordinates": [
+                          {
+                            "x": 25,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 25,
+                            "y": 18,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "21"
+                      },
+                      {
+                        "name": "N_MAX_SERIAL_NUM_R",
+                        "coordinates": [
+                          {
+                            "x": 26,
+                            "y": 5,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 26,
+                            "y": 23,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "22"
+                      },
+                      {
+                        "name": "T_EXECUTION_END_TIMESTAMP_R",
+                        "coordinates": [
+                          {
+                            "x": 5,
+                            "y": 7,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 5,
+                            "y": 34,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1036"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 6,
+                        "y": 9,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 6,
+                        "y": 35,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "FCT_PROC_EXEC_STATUS_LOG_R",
+                    "id": "4",
+                    "name": "FCT_PROC_EXEC_STATUS_LOG_R",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [
+    {
+      "id": "1",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "5",
+        "column": "N_BATCH_ID_R",
+        "parentId": "4",
+        "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+        "coordinates": [
+          {
+            "x": 8,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 8,
+            "y": 17,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "14",
+          "column": "LN_BATCH_ID_R",
+          "parentId": "4",
+          "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+          "coordinates": [
+            {
+              "x": 19,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 19,
+              "y": 18,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "2",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "6",
+        "column": "N_MIS_DATE_SKEY_R",
+        "parentId": "4",
+        "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+        "coordinates": [
+          {
+            "x": 9,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 9,
+            "y": 22,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "17",
+          "column": "TO_CHAR",
+          "parentId": "16",
+          "parentName": "TO_CHAR",
+          "coordinates": [
+            {
+              "x": 20,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 20,
+              "y": 12,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "3",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "9",
+        "column": "T_EXECUTION_TIMESTAMP_R",
+        "parentId": "4",
+        "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+        "coordinates": [
+          {
+            "x": 12,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 12,
+            "y": 28,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "20",
+          "column": "SYSTIMESTAMP",
+          "parentId": "19",
+          "parentName": "SYSTIMESTAMP",
+          "coordinates": [
+            {
+              "x": 23,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 23,
+              "y": 17,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "4",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "11",
+        "column": "V_PLSQL_BLOCK_NAME_R",
+        "parentId": "4",
+        "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+        "coordinates": [
+          {
+            "x": 14,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 14,
+            "y": 25,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "21",
+          "column": "P_MV_TBL_NAME",
+          "parentId": "4",
+          "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+          "coordinates": [
+            {
+              "x": 25,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 25,
+              "y": 18,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "5",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "12",
+        "column": "N_SERIAL_NUM_R",
+        "parentId": "4",
+        "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+        "coordinates": [
+          {
+            "x": 15,
+            "y": 5,
+            "hashCode": "0"
+          },
+          {
+            "x": 15,
+            "y": 19,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "22",
+          "column": "N_MAX_SERIAL_NUM_R",
+          "parentId": "4",
+          "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+          "coordinates": [
+            {
+              "x": 26,
+              "y": 5,
+              "hashCode": "0"
+            },
+            {
+              "x": 26,
+              "y": 23,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "6",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "1031",
+        "column": "V_STATUS_R",
+        "parentId": "1026",
+        "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+        "coordinates": [
+          {
+            "x": 4,
+            "y": 11,
+            "hashCode": "0"
+          },
+          {
+            "x": 4,
+            "y": 21,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1030",
+          "column": "V_STATUS_R",
+          "parentId": "1029",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 4,
+              "y": 11,
+              "hashCode": "0"
+            },
+            {
+              "x": 4,
+              "y": 21,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "7",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "1032",
+        "column": "T_EXECUTION_END_TIMESTAMP_R",
+        "parentId": "1029",
+        "parentName": "UPDATE-SET-1",
+        "coordinates": [
+          {
+            "x": 5,
+            "y": 7,
+            "hashCode": "0"
+          },
+          {
+            "x": 5,
+            "y": 34,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1035",
+          "column": "systimestamp",
+          "parentId": "1034",
+          "parentName": "systimestamp",
+          "coordinates": [
+            {
+              "x": 5,
+              "y": 37,
+              "hashCode": "0"
+            },
+            {
+              "x": 5,
+              "y": 49,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "type": "fdd",
+      "effectType": "update",
+      "target": {
+        "id": "1036",
+        "column": "T_EXECUTION_END_TIMESTAMP_R",
+        "parentId": "1026",
+        "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+        "coordinates": [
+          {
+            "x": 5,
+            "y": 7,
+            "hashCode": "0"
+          },
+          {
+            "x": 5,
+            "y": 34,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1032",
+          "column": "T_EXECUTION_END_TIMESTAMP_R",
+          "parentId": "1029",
+          "parentName": "UPDATE-SET-1",
+          "coordinates": [
+            {
+              "x": 5,
+              "y": 7,
+              "hashCode": "0"
+            },
+            {
+              "x": 5,
+              "y": 34,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "5",
+      "processType": "sstupdate"
+    },
+    {
+      "id": "9",
+      "type": "fdr",
+      "effectType": "update",
+      "target": {
+        "id": "1028",
+        "column": "RelationRows",
+        "parentId": "1029",
+        "parentName": "UPDATE-SET-1",
+        "coordinates": [
+          {
+            "x": 3,
+            "y": 1,
+            "hashCode": "0"
+          },
+          {
+            "x": 6,
+            "y": 58,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1037",
+          "column": "N_SERIAL_NUM_R",
+          "parentId": "1026",
+          "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 6,
+              "y": 13,
+              "hashCode": "0"
+            },
+            {
+              "x": 6,
+              "y": 27,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "1038",
+          "column": "N_MAX_SERIAL_NUM_R",
+          "parentId": "1026",
+          "parentName": "FCT_PROC_EXEC_STATUS_LOG_R",
+          "clauseType": "where",
+          "coordinates": [
+            {
+              "x": 6,
+              "y": 39,
+              "hashCode": "0"
+            },
+            {
+              "x": 6,
+              "y": 57,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "id": "13",
+      "name": "Query Insert-1",
+      "procedureName": "batchQueries",
+      "queryHashId": "b098592f16a267a98eafa39bfaddec73",
+      "type": "sstinsert",
+      "coordinate": "[5,1,0],[27,7,0]"
+    },
+    {
+      "id": "1027",
+      "name": "Query Update-1",
+      "procedureName": "batchQueries",
+      "queryHashId": "4982685a4e4f73de719f5e3ece54d835",
+      "type": "sstupdate",
+      "coordinate": "[3,1,0],[6,58,0]"
+    }
+  ],
+  "errors": []
+}

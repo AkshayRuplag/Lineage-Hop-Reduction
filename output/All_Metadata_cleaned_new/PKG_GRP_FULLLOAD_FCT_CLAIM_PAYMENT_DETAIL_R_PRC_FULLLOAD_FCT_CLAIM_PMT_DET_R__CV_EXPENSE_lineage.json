@@ -1,0 +1,64 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "*",
+                        "coordinates": [
+                          {
+                            "x": 1,
+                            "y": 1,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 1,
+                            "y": 2,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "5"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 1,
+                        "y": 13,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 1,
+                        "y": 47,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R",
+                    "id": "4",
+                    "name": "FCT_CLAIM_PAYMENT_DETAIL_EXPENSE_R",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [],
+  "processes": [],
+  "errors": []
+}

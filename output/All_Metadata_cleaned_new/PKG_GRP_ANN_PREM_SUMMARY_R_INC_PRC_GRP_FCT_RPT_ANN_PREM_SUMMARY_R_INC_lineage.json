@@ -1,0 +1,527 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "d_cycle_date_r",
+                        "coordinates": [
+                          {
+                            "x": 3,
+                            "y": 46,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 3,
+                            "y": 60,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "5"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 13,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 39,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "Fct_RPT_ANN_PREM_SUMMARY_R",
+                    "id": "4",
+                    "name": "Fct_RPT_ANN_PREM_SUMMARY_R",
+                    "type": "table"
+                  },
+                  {
+                    "columns": [
+                      {
+                        "name": "d_cycle_date_r",
+                        "coordinates": [
+                          {
+                            "x": 3,
+                            "y": 75,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 3,
+                            "y": 89,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "10"
+                      },
+                      {
+                        "source": "system",
+                        "name": "RelationRows",
+                        "coordinates": [
+                          {
+                            "x": 3,
+                            "y": 96,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 3,
+                            "y": 126,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "8"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 96,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 126,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "Fct_RPT_ANN_PREM_SUMMARY_R_inc",
+                    "id": "9",
+                    "name": "Fct_RPT_ANN_PREM_SUMMARY_R_inc",
+                    "type": "table"
+                  },
+                  {
+                    "columns": [
+                      {
+                        "name": "V_JOB_NAME_R",
+                        "coordinates": [
+                          {
+                            "x": 3,
+                            "y": 48,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 3,
+                            "y": 60,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1021"
+                      },
+                      {
+                        "name": "V_PKG_PRC_NAME_R",
+                        "coordinates": [
+                          {
+                            "x": 4,
+                            "y": 49,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 4,
+                            "y": 65,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1022"
+                      },
+                      {
+                        "name": "N_SK_R",
+                        "coordinates": [
+                          {
+                            "x": 5,
+                            "y": 49,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 5,
+                            "y": 55,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1023"
+                      },
+                      {
+                        "name": "V_NUMBER_R",
+                        "coordinates": [
+                          {
+                            "x": 6,
+                            "y": 49,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 6,
+                            "y": 59,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1024"
+                      },
+                      {
+                        "name": "V_TRC_MSG_R",
+                        "coordinates": [
+                          {
+                            "x": 7,
+                            "y": 49,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 7,
+                            "y": 60,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1025"
+                      },
+                      {
+                        "name": "N_BATCH_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 8,
+                            "y": 49,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 8,
+                            "y": 61,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1026"
+                      },
+                      {
+                        "name": "v_created_by_r",
+                        "coordinates": [
+                          {
+                            "x": 9,
+                            "y": 49,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 9,
+                            "y": 63,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1027"
+                      },
+                      {
+                        "name": "V_LAST_MODIFIED_BY_R",
+                        "coordinates": [
+                          {
+                            "x": 10,
+                            "y": 49,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 10,
+                            "y": 69,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1028"
+                      },
+                      {
+                        "name": "gc_step",
+                        "coordinates": [
+                          {
+                            "x": 16,
+                            "y": 15,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 16,
+                            "y": 22,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1030"
+                      },
+                      {
+                        "name": "ln_N_BATCH_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 17,
+                            "y": 15,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 17,
+                            "y": 30,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1031"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 13,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 47,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+                    "id": "1020",
+                    "name": "PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [
+    {
+      "id": "1",
+      "type": "fdd",
+      "effectType": "select",
+      "target": {
+        "id": "13",
+        "column": "max(d_cycle_date_r)",
+        "parentId": "12",
+        "parentName": "RS-1",
+        "coordinates": [
+          {
+            "x": 3,
+            "y": 71,
+            "hashCode": "0"
+          },
+          {
+            "x": 3,
+            "y": 90,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "16",
+          "column": "max",
+          "parentId": "15",
+          "parentName": "max",
+          "coordinates": [
+            {
+              "x": 3,
+              "y": 71,
+              "hashCode": "0"
+            },
+            {
+              "x": 3,
+              "y": 74,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "type": "fdd",
+      "effectType": "function",
+      "target": {
+        "id": "16",
+        "column": "max",
+        "parentId": "15",
+        "parentName": "max",
+        "coordinates": [
+          {
+            "x": 3,
+            "y": 71,
+            "hashCode": "0"
+          },
+          {
+            "x": 3,
+            "y": 74,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "10",
+          "column": "d_cycle_date_r",
+          "parentId": "9",
+          "parentName": "Fct_RPT_ANN_PREM_SUMMARY_R_inc",
+          "coordinates": [
+            {
+              "x": 3,
+              "y": 75,
+              "hashCode": "0"
+            },
+            {
+              "x": 3,
+              "y": 89,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "type": "fdr",
+      "function": "max",
+      "effectType": "function",
+      "target": {
+        "id": "16",
+        "column": "max",
+        "parentId": "15",
+        "parentName": "max",
+        "coordinates": [
+          {
+            "x": 3,
+            "y": 71,
+            "hashCode": "0"
+          },
+          {
+            "x": 3,
+            "y": 74,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "8",
+          "column": "RelationRows",
+          "parentId": "9",
+          "parentName": "Fct_RPT_ANN_PREM_SUMMARY_R_inc",
+          "coordinates": [
+            {
+              "x": 3,
+              "y": 96,
+              "hashCode": "0"
+            },
+            {
+              "x": 3,
+              "y": 126,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1025",
+        "column": "V_TRC_MSG_R",
+        "parentId": "1020",
+        "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+        "coordinates": [
+          {
+            "x": 7,
+            "y": 49,
+            "hashCode": "0"
+          },
+          {
+            "x": 7,
+            "y": 60,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1030",
+          "column": "gc_step",
+          "parentId": "1020",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 16,
+              "y": 15,
+              "hashCode": "0"
+            },
+            {
+              "x": 16,
+              "y": 22,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "5",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1026",
+        "column": "N_BATCH_ID_R",
+        "parentId": "1020",
+        "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+        "coordinates": [
+          {
+            "x": 8,
+            "y": 49,
+            "hashCode": "0"
+          },
+          {
+            "x": 8,
+            "y": 61,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1031",
+          "column": "ln_N_BATCH_ID_R",
+          "parentId": "1020",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 17,
+              "y": 15,
+              "hashCode": "0"
+            },
+            {
+              "x": 17,
+              "y": 30,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    }
+  ],
+  "processes": [
+    {
+      "id": "1029",
+      "name": "Query Insert-1",
+      "procedureName": "batchQueries",
+      "queryHashId": "ede1847fd8b8e408e38510ab694bda2f",
+      "type": "sstinsert",
+      "coordinate": "[3,1,0],[20,13,0]"
+    }
+  ],
+  "errors": []
+}

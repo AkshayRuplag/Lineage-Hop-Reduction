@@ -11,7 +11,7 @@ import sys
 import os
 import re
 from collections import defaultdict
-
+from pathlib import Path
 
 def build_id_map(dbobjs):
     """Build a map from object ID -> {type, name, parent_name, parent_id}."""
@@ -516,238 +516,631 @@ def collect_rows_from_dir(input_dir, pipeline='pkg'):
     pipeline='pkg'    -> split name into Package + Procedure via extract_pkg_proc()
     pipeline='nonpkg' -> Package='', Procedure=full object name, type auto-detected
     """
-    all_json = sorted(f for f in os.listdir(input_dir) if _is_lineage_json(f))
+    all_json = sorted(
+        filename
+        for filename in os.listdir(input_dir)
+        if _is_lineage_json(filename)
+    )
+
     if not all_json:
         print(f"  [SKIP] No lineage JSON files found in {input_dir}")
         return []
 
-    # Build the set of stitched base names.
-    # Stitched files end with _lineage.json but NOT _cleaned_lineage.json.
-    # When a stitched file exists for a base (e.g. PKG_X_PROC_Y_lineage.json),
-    # skip the individual part files (PKG_X_PROC_Y_partN_cleaned_lineage.json)
-    # to avoid duplicate/partial rows in the output.
-    _stitched_re = re.compile(r'^(.+?)_lineage\.json$', re.IGNORECASE)
-    _part_file_re = re.compile(r'^(.+?)_part\d+_cleaned_lineage\.json$', re.IGNORECASE)
+    # Stitched lineage file pattern.
+    stitched_re = re.compile(
+        r"^(.+?)_lineage\.json$",
+        re.IGNORECASE
+    )
+
+    # Individual package-part lineage file pattern.
+    part_file_re = re.compile(
+        r"^(.+?)_part\d+_cleaned_lineage\.json$",
+        re.IGNORECASE
+    )
+
     stitched_bases = set()
-    for f in all_json:
-        if not f.lower().endswith('_cleaned_lineage.json'):
-            m = _stitched_re.match(f)
-            if m:
-                stitched_bases.add(m.group(1).upper())
+
+    for filename in all_json:
+        if not filename.lower().endswith("_cleaned_lineage.json"):
+            match = stitched_re.match(filename)
+
+            if match:
+                stitched_bases.add(match.group(1).upper())
 
     json_files = []
-    for f in all_json:
-        m = _part_file_re.match(f)
-        if m and m.group(1).upper() in stitched_bases:
-            continue  # stitched version covers all parts — skip individual part file
-        json_files.append(f)
+
+    for filename in all_json:
+        match = part_file_re.match(filename)
+
+        if match and match.group(1).upper() in stitched_bases:
+            continue
+
+        json_files.append(filename)
 
     rows = []
+
     for filename in json_files:
         json_path = os.path.join(input_dir, filename)
+
         sql_object_name = extract_object_name(filename)
         obj_type = detect_object_type(sql_object_name)
-        # For union branch files (FCT_X_union_1), the SQL Object Name in the CSV
-        # should be the parent view name (FCT_X), not the branch-suffixed name.
-        display_name = re.sub(r'_union_\d+$', '', sql_object_name, flags=re.IGNORECASE)
 
-        # For view-like objects, override with content-based detection when the
-        # corresponding cleaned SQL file is present.  This catches cases where the
-        # filename convention is misleading, e.g. VW_* containing CREATE MATERIALIZED VIEW
-        # or FCT_* containing CREATE VIEW (plain view, not an MView).
-        # Procedure types (PKG Procedure / Standalone Procedure) are never overridden
-        # because their cleaned SQL starts with INSERT/procedure DDL, not a view DDL.
-        if obj_type not in ('PKG Procedure', 'Standalone Procedure') and filename.lower().endswith('_cleaned_lineage.json'):
-            sql_path = os.path.join(input_dir, filename[:-len('_lineage.json')] + '.sql')
-            content_type = _detect_view_type_from_sql_file(sql_path)
+        # Remove the union branch suffix from the displayed object name.
+        display_name = re.sub(
+            r"_union_\d+$",
+            "",
+            sql_object_name,
+            flags=re.IGNORECASE
+        )
+
+        # Determine the corresponding cleaned SQL file used by the existing
+        # view/materialized-view classification.
+        cleaned_sql_path = None
+
+        if filename.lower().endswith("_cleaned_lineage.json"):
+            cleaned_sql_filename = (
+                filename[:-len("_lineage.json")] + ".sql"
+            )
+
+            cleaned_sql_path = os.path.join(
+                input_dir,
+                cleaned_sql_filename
+            )
+
+        # Override view type based on SQL DDL when applicable.
+        if (
+            obj_type not in ("PKG Procedure", "Standalone Procedure")
+            and cleaned_sql_path
+        ):
+            content_type = _detect_view_type_from_sql_file(
+                cleaned_sql_path
+            )
+
             if content_type:
                 obj_type = content_type
 
-        if sql_object_name.upper().startswith('PKG_'):
-            # PKG objects (regardless of pipeline): split into Package + Procedure.
+        # Determine package and procedure names.
+        if sql_object_name.upper().startswith("PKG_"):
             pkg, proc = extract_pkg_proc(sql_object_name)
-        elif obj_type in ('Standalone Procedure',):
-            # Standalone procedures: Package is empty, Procedure holds the object name.
-            pkg = ''
-            proc = re.sub(r'_part\d+$', '', sql_object_name, flags=re.IGNORECASE)
+
+        elif obj_type == "Standalone Procedure":
+            pkg = ""
+
+            proc = re.sub(
+                r"_part\d+$",
+                "",
+                sql_object_name,
+                flags=re.IGNORECASE
+            )
+
         else:
-            # Materialized Views, Views, and other non-procedure objects:
-            # neither Package nor Procedure applies — SQL Object Name is sufficient.
-            pkg = ''
-            proc = ''
+            pkg = ""
+            proc = ""
 
         print(f"  [{pipeline.upper()}] {filename}")
+
         try:
-            file_rows = extract_lineage(json_path, display_name)
-            for r in file_rows:
-                r['Package']     = pkg
-                r['Procedure']   = proc
-                r['Object Type'] = obj_type
+            file_rows = extract_lineage(
+                json_path,
+                display_name
+            )
+
+            for row in file_rows:
+                row["Package"] = pkg
+                row["Procedure"] = proc
+                row["Object Type"] = obj_type
+
             rows.extend(file_rows)
+
             print(f"    {len(file_rows)} lineage rows")
-        except Exception as e:
-            print(f"    ERROR: {e}")
+
+        except Exception as exc:
+            print(f"    ERROR: {exc}")
+
     return rows
 
 
-def process_directory(input_dir, output_path, fmt='excel',
-                      nonpkg_input_dir=None, gudu_input_dir=None):
-    """Process Gudu SQLFlow JSON files from one, two, or three directories and write output.
 
-    input_dir       : PKG split-procs cleaned dir (Lite format, always used)
-    nonpkg_input_dir: Non-PKG cleaned dir (Lite format, PRC + MViews); optional
-    gudu_input_dir  : Gudu Enterprise JSON dir (mssql_*_gudu.json); optional
+
+def duplicate_exg_target_rows(rows: list[dict]) -> list[dict]:
     """
-    print(f"\n[PKG Pipeline] {input_dir}")
-    all_rows = collect_rows_from_dir(input_dir, pipeline='pkg')
+    For every lineage row whose Target Table ends with '_EXG',
+    create an exact copy of the row and remove the '_EXG' suffix
+    from Target Table.
 
-    if (nonpkg_input_dir
-            and os.path.abspath(nonpkg_input_dir) != os.path.abspath(input_dir)):
+    Example:
+        RPT_POLICY_DTL_R_EXG -> RPT_POLICY_DTL_R
+
+    The original _EXG row is preserved.
+    """
+    result = list(rows)
+
+    for row in rows:
+        target_table = str(row.get('Target Table', '') or '').strip()
+
+        if target_table.upper().endswith('_EXG'):
+            copied_row = row.copy()
+            copied_row['Target Table'] = target_table[:-4]
+            result.append(copied_row)
+
+    return result
+
+def process_directory(
+    input_dir,
+    output_path,
+    fmt="excel",
+    nonpkg_input_dir=None,
+    gudu_input_dir=None
+):
+    """
+    Process Gudu SQLFlow JSON files and write the structural lineage output.
+
+    Transformation detail (actual SQL expression text) is NOT produced here —
+    it comes from llm_lineage_extractor.py and is joined in downstream.
+    """
+
+    print(f"\n[PKG Pipeline] {input_dir}")
+
+    all_rows = collect_rows_from_dir(
+        input_dir=input_dir,
+        pipeline="pkg"
+    )
+
+    if (
+        nonpkg_input_dir
+        and os.path.abspath(nonpkg_input_dir)
+        != os.path.abspath(input_dir)
+    ):
         if os.path.isdir(nonpkg_input_dir):
             print(f"\n[Non-PKG Pipeline] {nonpkg_input_dir}")
-            all_rows.extend(collect_rows_from_dir(nonpkg_input_dir, pipeline='nonpkg'))
+
+            all_rows.extend(
+                collect_rows_from_dir(
+                    input_dir=nonpkg_input_dir,
+                    pipeline="nonpkg"
+                )
+            )
         else:
-            print(f"  [WARN] Non-PKG dir not found: {nonpkg_input_dir}")
+            print(
+                f"  [WARN] Non-PKG dir not found: "
+                f"{nonpkg_input_dir}"
+            )
 
     if gudu_input_dir and os.path.isdir(gudu_input_dir):
         print(f"\n[Gudu Enterprise Pipeline] {gudu_input_dir}")
-        all_rows.extend(collect_rows_from_dir(gudu_input_dir, pipeline='nonpkg'))
+
+        all_rows.extend(
+            collect_rows_from_dir(
+                input_dir=gudu_input_dir,
+                pipeline="nonpkg"
+            )
+        )
+
     elif gudu_input_dir:
-        print(f"  [WARN] Gudu Enterprise dir not found: {gudu_input_dir}")
+        print(
+            f"  [WARN] Gudu Enterprise dir not found: "
+            f"{gudu_input_dir}"
+        )
 
     if not all_rows:
         print("No lineage rows extracted.")
         return
 
-    # Sort
-    all_rows.sort(key=lambda r: (r.get('Object Type', ''), r.get('Package', ''),
-                                  r.get('Procedure', ''),
-                                  r['Target Table'], r['Target Column'],
-                                  r['Source Table'], r['Source Column']))
+    all_rows = duplicate_exg_target_rows(all_rows)
 
-    fieldnames = ['Object Type', 'Package', 'Procedure', 'SQL Object Name',
-                  'Target Table', 'Target Column',
-                  'Source Table', 'Source Column', 'Transformation']
+    # Sort rows.
+    all_rows.sort(
+        key=lambda row: (
+            row.get("Object Type", ""),
+            row.get("Package", ""),
+            row.get("Procedure", ""),
+            row.get("Target Table", ""),
+            row.get("Target Column", ""),
+            row.get("Source Table", ""),
+            row.get("Source Column", "")
+        )
+    )
 
-    if fmt == 'csv':
-        with open(output_path, 'w', newline='', encoding='utf-8-sig') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
+    fieldnames = [
+        "Object Type",
+        "Package",
+        "Procedure",
+        "SQL Object Name",
+        "Target Table",
+        "Target Column",
+        "Source Table",
+        "Source Column",
+        "Transformation"
+    ]
+
+    if fmt == "csv":
+        with open(
+            output_path,
+            "w",
+            newline="",
+            encoding="utf-8-sig"
+        ) as output_file:
+            writer = csv.DictWriter(
+                output_file,
+                fieldnames=fieldnames,
+                extrasaction="ignore"
+            )
+
             writer.writeheader()
             writer.writerows(all_rows)
-        print(f"\nCSV: {output_path} ({len(all_rows)} rows)")
+
+        print(
+            f"\nCSV: {output_path} "
+            f"({len(all_rows)} rows)"
+        )
+
     else:
         try:
             import openpyxl
             from openpyxl.styles import Font, PatternFill, Alignment
             from openpyxl.utils import get_column_letter
+
         except ImportError:
-            print("openpyxl not installed — falling back to CSV")
-            output_path = re.sub(r'\.xlsx$', '.csv', output_path)
-            process_directory(input_dir, output_path, fmt='csv')
+            print(
+                "openpyxl not installed; falling back to CSV"
+            )
+
+            output_path = re.sub(
+                r"\.xlsx$",
+                ".csv",
+                output_path
+            )
+
+            # Write the rows directly rather than recursively rerunning LLM
+            # transformation extraction.
+            with open(
+                output_path,
+                "w",
+                newline="",
+                encoding="utf-8-sig"
+            ) as output_file:
+                writer = csv.DictWriter(
+                    output_file,
+                    fieldnames=fieldnames,
+                    extrasaction="ignore"
+                )
+
+                writer.writeheader()
+                writer.writerows(all_rows)
+
+            print(
+                f"\nCSV: {output_path} "
+                f"({len(all_rows)} rows)"
+            )
+
             return
 
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = 'Column Lineage'
+        workbook = openpyxl.Workbook()
 
-        hdr_fill = PatternFill('solid', fgColor='1F4E79')
-        hdr_font = Font(name='Calibri', bold=True, color='FFFFFF', size=10)
-        for ci, col in enumerate(fieldnames, 1):
-            c = ws.cell(row=1, column=ci, value=col)
-            c.fill = hdr_fill
-            c.font = hdr_font
-            c.alignment = Alignment(horizontal='center')
+        lineage_sheet = workbook.active
+        lineage_sheet.title = "Column Lineage"
 
-        for ri, row in enumerate(all_rows, 2):
-            for ci, col in enumerate(fieldnames, 1):
-                ws.cell(row=ri, column=ci, value=row.get(col, ''))
+        header_fill = PatternFill(
+            "solid",
+            fgColor="1F4E79"
+        )
 
-        # Auto-width
-        for ci, col in enumerate(fieldnames, 1):
-            width = max(len(col) + 2,
-                        max((len(str(r.get(col, ''))) for r in all_rows[:300]), default=10))
-            ws.column_dimensions[get_column_letter(ci)].width = min(width + 2, 60)
-        ws.freeze_panes = 'A2'
+        header_font = Font(
+            name="Calibri",
+            bold=True,
+            color="FFFFFF",
+            size=10
+        )
 
-        # Summary sheet: unique target table → source table mappings
-        ws2 = wb.create_sheet('Summary by Target Table')
-        s_fill = PatternFill('solid', fgColor='2E75B6')
-        s_hdrs = ['Object Type', 'Package', 'Procedure', 'Target Table', 'Target Column',
-                  'Source Table', 'Source Column', 'Transformation']
-        for ci, h in enumerate(s_hdrs, 1):
-            c = ws2.cell(row=1, column=ci, value=h)
-            c.fill = s_fill
-            c.font = Font(name='Calibri', bold=True, color='FFFFFF', size=10)
+        for column_index, column_name in enumerate(
+            fieldnames,
+            start=1
+        ):
+            cell = lineage_sheet.cell(
+                row=1,
+                column=column_index,
+                value=column_name
+            )
 
-        seen_sum = set()
-        ri = 2
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(
+                horizontal="center"
+            )
+
+        for row_index, row in enumerate(all_rows, start=2):
+            for column_index, column_name in enumerate(
+                fieldnames,
+                start=1
+            ):
+                lineage_sheet.cell(
+                    row=row_index,
+                    column=column_index,
+                    value=row.get(column_name, "")
+                )
+
+        # Auto-width each column.
+        for column_index, column_name in enumerate(
+            fieldnames,
+            start=1
+        ):
+            width = max(
+                len(column_name) + 2,
+                max(
+                    (
+                        len(str(row.get(column_name, "")))
+                        for row in all_rows[:300]
+                    ),
+                    default=10
+                )
+            )
+
+            lineage_sheet.column_dimensions[
+                get_column_letter(column_index)
+            ].width = min(width + 2, 80)
+
+        lineage_sheet.freeze_panes = "A2"
+        lineage_sheet.auto_filter.ref = (
+            lineage_sheet.dimensions
+        )
+
+        # --------------------------------------------------------------------
+        # Summary sheet
+        # --------------------------------------------------------------------
+
+        summary_sheet = workbook.create_sheet(
+            "Summary by Target Table"
+        )
+
+        summary_fill = PatternFill(
+            "solid",
+            fgColor="2E75B6"
+        )
+
+        summary_headers = [
+            "Object Type",
+            "Package",
+            "Procedure",
+            "Target Table",
+            "Target Column",
+            "Source Table",
+            "Source Column",
+            "Transformation"
+        ]
+
+        for column_index, header in enumerate(
+            summary_headers,
+            start=1
+        ):
+            cell = summary_sheet.cell(
+                row=1,
+                column=column_index,
+                value=header
+            )
+
+            cell.fill = summary_fill
+            cell.font = Font(
+                name="Calibri",
+                bold=True,
+                color="FFFFFF",
+                size=10
+            )
+
+        summary_seen = set()
+        summary_row_index = 2
+
         for row in all_rows:
-            key = (row.get('Object Type',''), row.get('Package',''), row.get('Procedure',''),
-                   row['Target Table'], row['Target Column'],
-                   row['Source Table'], row['Source Column'],
-                   row['Transformation'])
-            if key not in seen_sum:
-                seen_sum.add(key)
-                for ci, col in enumerate(s_hdrs, 1):
-                    ws2.cell(row=ri, column=ci, value=row.get(col, ''))
-                ri += 1
-        ws2.freeze_panes = 'A2'
-        for ci in range(1, len(s_hdrs) + 1):
-            ws2.column_dimensions[get_column_letter(ci)].width = 40
+            summary_key = (
+                row.get("Object Type", ""),
+                row.get("Package", ""),
+                row.get("Procedure", ""),
+                row.get("Target Table", ""),
+                row.get("Target Column", ""),
+                row.get("Source Table", ""),
+                row.get("Source Column", ""),
+                row.get("Transformation", "")
+            )
 
-        wb.save(output_path)
+            if summary_key in summary_seen:
+                continue
+
+            summary_seen.add(summary_key)
+
+            for column_index, column_name in enumerate(
+                summary_headers,
+                start=1
+            ):
+                summary_sheet.cell(
+                    row=summary_row_index,
+                    column=column_index,
+                    value=row.get(column_name, "")
+                )
+
+            summary_row_index += 1
+
+        summary_sheet.freeze_panes = "A2"
+        summary_sheet.auto_filter.ref = (
+            summary_sheet.dimensions
+        )
+
+        for column_index, column_name in enumerate(
+            summary_headers,
+            start=1
+        ):
+            width = max(
+                len(column_name) + 2,
+                max(
+                    (
+                        len(str(row.get(column_name, "")))
+                        for row in all_rows[:300]
+                    ),
+                    default=10
+                )
+            )
+
+            summary_sheet.column_dimensions[
+                get_column_letter(column_index)
+            ].width = min(width + 2, 80)
+
+        workbook.save(output_path)
+
         print(f"\nExcel: {output_path}")
-        print(f"  'Column Lineage' sheet: {len(all_rows)} rows")
-        print(f"  'Summary by Target Table' sheet: {ri - 2} unique mappings")
+        print(
+            f"  'Column Lineage' sheet: "
+            f"{len(all_rows)} rows"
+        )
+        print(
+            f"  'Summary by Target Table' sheet: "
+            f"{summary_row_index - 2} unique mappings"
+        )
 
-    # Stats
-    pkgs  = set(r.get('Package', '') for r in all_rows)
-    tgts  = set(r['Target Table'] for r in all_rows)
-    srcs  = set(r['Source Table'] for r in all_rows if r['Source Table'])
-    print(f"\nPackages : {len(pkgs)}")
-    print(f"Target tables : {len(tgts)}")
-    print(f"Source tables : {len(srcs)}")
-    print(f"Direct mappings : {sum(1 for r in all_rows if r['Transformation'] == 'Direct')}")
-    print(f"With transforms : {sum(1 for r in all_rows if r['Transformation'] not in ('Direct', 'Constant / Expression'))}")
+    # ------------------------------------------------------------------------
+    # Statistics
+    # ------------------------------------------------------------------------
 
-    # Print summary
-    objects = set(r["SQL Object Name"] for r in all_rows)
-    target_tables = set(r["Target Table"] for r in all_rows)
-    source_tables = set(r["Source Table"] for r in all_rows if r["Source Table"])
-    print(f"SQL Objects: {len(objects)}")
+    packages = {
+        row.get("Package", "")
+        for row in all_rows
+        if row.get("Package", "")
+    }
+
+    target_tables = {
+        row.get("Target Table", "")
+        for row in all_rows
+        if row.get("Target Table", "")
+    }
+
+    source_tables = {
+        row.get("Source Table", "")
+        for row in all_rows
+        if row.get("Source Table", "")
+    }
+
+    direct_mappings = sum(
+        1
+        for row in all_rows
+        if row.get("Transformation") == "Direct"
+    )
+
+    transformed_mappings = sum(
+        1
+        for row in all_rows
+        if row.get("Transformation")
+        not in ("Direct", "Constant / Expression")
+    )
+
+    print(f"\nPackages: {len(packages)}")
     print(f"Target tables: {len(target_tables)}")
     print(f"Source tables: {len(source_tables)}")
-    print(f"Direct mappings: {sum(1 for r in all_rows if r['Transformation'] == 'Direct')}")
-    print(f"With transformations: {sum(1 for r in all_rows if r['Transformation'] not in ('Direct', 'Constant / Expression'))}")
+    print(f"Direct mappings: {direct_mappings}")
+    print(f"With transformations: {transformed_mappings}")
 
-    # Print first 20 rows as preview
-    print("\n-- Preview (first 20 rows) --")
-    print(f"{'SQL Object Name':<50} {'Target Table':<40} {'Target Column':<30} {'Source Table':<40} {'Source Column':<30} {'Transformation'}")
-    print("-" * 220)
-    for r in all_rows[:20]:
-        print(f"{r['SQL Object Name']:<50} {r['Target Table']:<40} {r['Target Column']:<30} {r['Source Table']:<40} {r['Source Column']:<30} {r['Transformation']}")
+    # ------------------------------------------------------------------------
+    # Preview
+    # ------------------------------------------------------------------------
 
+    print("\n-- Preview: first 20 rows --")
+
+    for row in all_rows[:20]:
+        print(
+            f"\nSQL Object Name       : "
+            f"{row.get('SQL Object Name', '')}"
+        )
+        print(
+            f"Target                 : "
+            f"{row.get('Target Table', '')}."
+            f"{row.get('Target Column', '')}"
+        )
+        print(
+            f"Source                 : "
+            f"{row.get('Source Table', '')}."
+            f"{row.get('Source Column', '')}"
+        )
+        print(
+            f"Transformation         : "
+            f"{row.get('Transformation', '')}"
+        )
+
+
+
+
+# ============================================================================
+# REPLACE YOUR EXISTING if __name__ == "__main__": BLOCK WITH THIS VERSION
+# ============================================================================
 
 if __name__ == "__main__":
     import argparse
-    _base = r"C:\Users\HM295EJ\OneDrive - EY\Desktop\RSLI-DataLineage\SQLObjectParser"
-    parser = argparse.ArgumentParser(description='Extract column lineage from Gudu SQLFlow JSON files')
-    _all_meta = os.path.join(_base, 'output', 'All_Metadata_cleaned')
-    parser.add_argument('--input', '-i',
-                        default=_all_meta,
-                        help='PKG split-procs cleaned dir (contains *_lineage.json)')
-    parser.add_argument('--nonpkg-input', '-n',
-                        default=None,
-                        help='Non-PKG cleaned dir (standalone PRC + MViews); omit if same as --input')
-    parser.add_argument('--gudu-input', '-g',
-                        default=None,
-                        help='Gudu Enterprise JSON dir (mssql_*_gudu.json files); disabled by default as All_Metadata_cleaned supersedes these')
-    parser.add_argument('--output', '-o',
-                        default=os.path.join(_base, 'output', 'gudu_lineage_output.csv'),
-                        help='Output file path (.xlsx or .csv)')
-    parser.add_argument('--format', '-f', default='csv', choices=['excel', 'csv'],
-                        help='Output format (default: csv)')
-    args = parser.parse_args()
-    process_directory(args.input, args.output, args.format,
-                      nonpkg_input_dir=args.nonpkg_input,
-                      gudu_input_dir=args.gudu_input)
+
+    base_directory = Path(__file__).resolve().parent
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Extract column lineage from Gudu SQLFlow JSON files "
+            "and determine actual SQL transformations using an LLM"
+        )
+    )
+
+    default_input_directory = os.path.join(
+        base_directory,
+        "output",
+        "All_Metadata_cleaned_new"
+    )
+
+    parser.add_argument(
+        "--input",
+        "-i",
+        default=default_input_directory,
+        help=(
+            "PKG split-procedures cleaned directory containing "
+            "*_lineage.json files"
+        )
+    )
+
+    parser.add_argument(
+        "--nonpkg-input",
+        "-n",
+        default=None,
+        help=(
+            "Non-PKG cleaned directory containing standalone procedures, "
+            "views, and materialized views"
+        )
+    )
+
+    parser.add_argument(
+        "--gudu-input",
+        "-g",
+        default=None,
+        help=(
+            "Gudu Enterprise JSON directory containing "
+            "mssql_*_gudu.json files"
+        )
+    )
+
+    parser.add_argument(
+        "--output",
+        "-o",
+        default=os.path.join(
+            base_directory,
+            "output",
+            "gudu_lineage_output.csv"
+        ),
+        help="Output path ending in .xlsx or .csv"
+    )
+
+    parser.add_argument(
+        "--format",
+        "-f",
+        default="csv",
+        choices=["excel", "csv"],
+        help="Output format. Default is csv."
+    )
+
+    arguments = parser.parse_args()
+
+    process_directory(
+        input_dir=arguments.input,
+        output_path=arguments.output,
+        fmt=arguments.format,
+        nonpkg_input_dir=arguments.nonpkg_input,
+        gudu_input_dir=arguments.gudu_input
+    )

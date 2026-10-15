@@ -36,6 +36,7 @@ NOTE: Stages 2 and 4 require external tools (Gudu JAR, LLM API key).
 """
 
 import argparse
+import csv
 import shutil
 import subprocess
 import sys
@@ -67,6 +68,22 @@ def _run(script: str, *args, desc: str = ""):
 
 def _ensure_dir(path: Path):
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _merge_csvs(input_paths, output_path):
+    """Concatenate CSVs that share the same header into one output CSV."""
+    fieldnames = None
+    rows = []
+    for path in input_paths:
+        with open(path, newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            if fieldnames is None:
+                fieldnames = reader.fieldnames
+            rows.extend(reader)
+    with open(output_path, 'w', newline='', encoding='utf-8-sig') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -110,26 +127,44 @@ def stage2_clean_and_gudu():
 
 
 def stage3_extract_gudu():
-    """Convert Gudu JSON outputs from BOTH cleaned dirs → gudu_lineage_output.csv."""
+    """Convert Gudu JSON outputs from BOTH cleaned dirs → gudu_lineage_output.csv.
+
+    Run once per domain (not a single combined call) because --sql-input takes
+    only one original-source directory, and extract_gudu_lineage.py is now a
+    pure structural parser (no LLM calls). The two per-domain CSVs are merged
+    afterwards; actual_transformation detail is added later in Stage 4."""
+    all_meta_csv  = cfg.OUTPUT_DIR / "gudu_lineage_output_all_metadata.csv"
+    expansion_csv = cfg.OUTPUT_DIR / "gudu_lineage_output_expansion.csv"
     _run(
         "extract_gudu_lineage.py",
-        "--input",         cfg.ALL_METADATA_CLEANED_DIR,
-        "--nonpkg-input",  cfg.LINEAGE_EXPANSION_CLEANED_DIR,
-        "--output",        cfg.GUDU_LINEAGE_CSV,
-        "--format",        "csv",
-        desc="STAGE 3 — Extract Gudu Lineage: convert Gudu JSON to CSV",
+        "--input",     cfg.ALL_METADATA_CLEANED_DIR,
+        "--output",    all_meta_csv,
+        "--format",    "csv",
+        desc="STAGE 3a — Extract Gudu Lineage: claims-domain (structural, no LLM)",
     )
+    _run(
+        "extract_gudu_lineage.py",
+        "--input",     cfg.LINEAGE_EXPANSION_CLEANED_DIR,
+        "--output",    expansion_csv,
+        "--format",    "csv",
+        desc="STAGE 3b — Extract Gudu Lineage: expansion-domain (structural, no LLM)",
+    )
+    _merge_csvs([all_meta_csv, expansion_csv], cfg.GUDU_LINEAGE_CSV)
+    print(f"\n  Merged -> {cfg.GUDU_LINEAGE_CSV}")
 
 
 def stage4_llm_lineage():
-    """Run LLM-based column-level lineage extraction for BOTH source dirs →
-    llm_lineage_output.csv (second call appends to the first's output)."""
+    """Run LLM-based column-level lineage for BOTH source dirs, two modes each:
+      Mode A (discovery) — objects Gudu failed on: full lineage + actual_transformation
+      Mode B (enrich)    — objects Gudu resolved: actual_transformation only
+    All four calls append into the same llm_lineage_output.csv. Stage 3 must
+    have already run since Mode B reads cfg.GUDU_LINEAGE_CSV."""
     _run(
         "llm_lineage_extractor.py",
         "--cleaned-dir", cfg.ALL_METADATA_CLEANED_DIR,
         "--source-dir",  cfg.ALL_METADATA_DIR,
         "--output",      cfg.LLM_LINEAGE_CSV,
-        desc="STAGE 4a — LLM Extractor: claims-domain column lineage (requires API key)",
+        desc="STAGE 4a — LLM Extractor (Mode A discovery): claims-domain (requires API key)",
     )
     _run(
         "llm_lineage_extractor.py",
@@ -137,7 +172,25 @@ def stage4_llm_lineage():
         "--source-dir",  cfg.LINEAGE_EXPANSION_METADATA_DIR,
         "--output",      cfg.LLM_LINEAGE_CSV,
         "--append",
-        desc="STAGE 4b — LLM Extractor: expansion-domain column lineage (requires API key)",
+        desc="STAGE 4b — LLM Extractor (Mode A discovery): expansion-domain (requires API key)",
+    )
+    _run(
+        "llm_lineage_extractor.py",
+        "--enrich-gudu",
+        "--cleaned-dir", cfg.ALL_METADATA_CLEANED_DIR,
+        "--gudu-csv",    cfg.GUDU_LINEAGE_CSV,
+        "--output",      cfg.LLM_LINEAGE_CSV,
+        "--append",
+        desc="STAGE 4c — LLM Extractor (Mode B enrich): claims-domain actual transformation (requires API key)",
+    )
+    _run(
+        "llm_lineage_extractor.py",
+        "--enrich-gudu",
+        "--cleaned-dir", cfg.LINEAGE_EXPANSION_CLEANED_DIR,
+        "--gudu-csv",    cfg.GUDU_LINEAGE_CSV,
+        "--output",      cfg.LLM_LINEAGE_CSV,
+        "--append",
+        desc="STAGE 4d — LLM Extractor (Mode B enrich): expansion-domain actual transformation (requires API key)",
     )
 
 

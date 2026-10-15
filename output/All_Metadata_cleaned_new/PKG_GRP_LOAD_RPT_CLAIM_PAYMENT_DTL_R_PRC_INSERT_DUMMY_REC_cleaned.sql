@@ -1,0 +1,42 @@
+-- Cleaned for lineage: PKG_GRP_LOAD_RPT_CLAIM_PAYMENT_DTL_R_PRC_INSERT_DUMMY_REC
+
+INSERT  INTO  RPT_CLAIM_PAYMENT_DTL_R
+		   (
+		    v_last_modified_by_r
+           ,t_creation_date_r
+           ,v_created_by_r
+           ,t_last_modified_date_r
+           ,n_yearmonth_r
+           ,v_rpt_active_status_r
+           ,n_batch_id_r
+		   ,N_PAYMENT_SK_R
+		   ,N_CLAIM_SK_R
+		   ,N_CLAIM_COVERAGE_SK_R
+		   ,N_CLAIM_COVERAGE_GROUP_SK_R
+		   ,N_PRODUCT_SK_R
+		   ,N_PAYEE_PARTY_SK_R
+		   ,N_INSRD_PARTY_SK_R
+		   ,N_CUST_PARTY_SK_R
+		   ,N_WORKSHEET_SK_R
+		   ,N_EMPLOYEE_SK_R
+		   ,N_POLICY_SK_R
+		   )
+    VALUES(gv_main_loadedby
+		  ,SYSTIMESTAMP
+		  ,gv_main_loadedby
+		  ,SYSTIMESTAMP
+		  ,gn_current_month
+		  ,'Y'
+		  ,gn_sysdt_batchid
+         ,-1			
+		  ,-1			
+		  ,-1			
+		  ,-1			
+		  ,-1			
+		  ,-1			
+		  ,-1			
+		  ,-1			
+		  ,-1			
+		  ,-1			
+		  ,-1			
+		  );

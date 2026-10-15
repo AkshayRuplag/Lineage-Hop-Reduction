@@ -683,6 +683,7 @@ def load_llm_lineage(path: Path) -> dict:
                 src_t = _strip_schema(str(rec.get('Source Table') or '').strip())
                 src_c = _strip_alias(str(rec.get('Source Column') or '').strip())
                 transf = str(rec.get('Transformation') or '').strip()
+                actual = str(rec.get('Actual Transformation') or '').strip()
                 for _v in (t.strip() for t in tgt_t.split(',') if t.strip()):
                     if _v and _v != 'None': a['tgt_tables'].add(_v)
                 for _v in (t.strip() for t in tgt_c.split(',') if t.strip()):
@@ -693,7 +694,7 @@ def load_llm_lineage(path: Path) -> dict:
                     if _v and _v not in ('None', 'N/A', '-'): a['src_cols'].add(_v)
                 # Preserve per-column mapping for aligned output
                 if tgt_c and tgt_c != 'None':
-                    a['col_map_raw'].append((tgt_t, tgt_c, src_t, src_c, transf))
+                    a['col_map_raw'].append((tgt_t, tgt_c, src_t, src_c, transf, actual))
         result = {}
         for key, a in agg.items():
             result[key] = {
@@ -850,9 +851,11 @@ def load_gudu_lineage(path: Path) -> dict:
                     a['src_tables'].add(src_t)
                 if src_c and src_c not in ('None', 'N/A', '-'):
                     a['src_cols'].add(src_c)
-                # Preserve per-column mapping for aligned output
+                # Preserve per-column mapping for aligned output. Gudu's CSV has no
+                # Actual Transformation column (that's backfilled later from the LLM
+                # lookup in main()) so the 6th tuple element is always ''.
                 if tgt_c and tgt_c != 'None':
-                    a['col_map_raw'].append((tgt_t, tgt_c, src_t, src_c, transf))
+                    a['col_map_raw'].append((tgt_t, tgt_c, src_t, src_c, transf, ''))
         result = {}
         for key, a in agg.items():
             result[key] = {
@@ -877,6 +880,7 @@ def load_gudu_lineage(path: Path) -> dict:
                 base_agg[base] = {
                     'src_tables': set(), 'tgt_tables': set(),
                     'src_cols': set(), 'tgt_cols': set(), 'row_count': 0,
+                    'col_map_raw': [],
                 }
             ba = base_agg[base]
             ba['row_count'] += entry['row_count']
@@ -888,6 +892,7 @@ def load_gudu_lineage(path: Path) -> dict:
                 if c: ba['src_cols'].add(c)
             for c in entry['tgt_cols'].split(', '):
                 if c: ba['tgt_cols'].add(c)
+            ba['col_map_raw'].extend(_flatten_col_mappings(entry.get('col_mappings', [])))
         for base, ba in base_agg.items():
             if base not in result:   # don't overwrite a direct entry
                 result[base] = {
@@ -896,6 +901,7 @@ def load_gudu_lineage(path: Path) -> dict:
                     'src_cols':   ', '.join(sorted(ba['src_cols'])),
                     'tgt_cols':   ', '.join(sorted(ba['tgt_cols'])),
                     'row_count':  ba['row_count'],
+                    'col_mappings': _build_col_mappings(ba['col_map_raw']),
                 }
 
         print(f"  -> Gudu CSV: {len(result)} unique SQL objects")
@@ -1481,21 +1487,29 @@ def _parse_difw_col_list(col_str: str) -> list[str]:
 
 
 def _build_col_mappings(col_map_raw: list) -> list:
-    """Build ordered, deduplicated column-mapping groups from raw (tgt_t, tgt_c, src_t, src_c, transf) tuples.
+    """Build ordered, deduplicated column-mapping groups from raw
+    (tgt_t, tgt_c, src_t, src_c, transf, actual) tuples.
 
     Returns a list of dicts in first-seen order:
-        [{'tgt_table': str, 'tgt_col': str,
+        [{'tgt_table': str, 'tgt_col': str, 'actual_transformation': str,
           'sources': [{'src_table': str, 'src_col': str, 'transformation': str}, ...]}, ...]
 
     A target column with no source rows (constant/expression) has sources=[].
+    actual_transformation is per target column (not per source) since the same
+    expression applies to every source column contributing to one target column.
     """
     from collections import OrderedDict
     groups: OrderedDict = OrderedDict()  # (tgt_table, tgt_col) -> group dict
-    for tgt_t, tgt_c, src_t, src_c, transf in col_map_raw:
+    for tgt_t, tgt_c, src_t, src_c, transf, actual in col_map_raw:
         gkey = (tgt_t, tgt_c)
         if gkey not in groups:
-            groups[gkey] = {'tgt_table': tgt_t, 'tgt_col': tgt_c, 'sources': [], '_src_seen': set()}
+            groups[gkey] = {
+                'tgt_table': tgt_t, 'tgt_col': tgt_c, 'sources': [],
+                'actual_transformation': '', '_src_seen': set(),
+            }
         grp = groups[gkey]
+        if actual and not grp['actual_transformation']:
+            grp['actual_transformation'] = actual
         src_key = (src_t, src_c)
         if src_c and src_key not in grp['_src_seen']:
             grp['sources'].append({'src_table': src_t, 'src_col': src_c, 'transformation': transf})
@@ -1506,6 +1520,51 @@ def _build_col_mappings(col_map_raw: list) -> list:
         grp.pop('_src_seen', None)
         result.append(grp)
     return result
+
+
+def _flatten_col_mappings(col_mappings: list) -> list:
+    """Inverse of _build_col_mappings — explode group dicts back into raw
+    (tgt_t, tgt_c, src_t, src_c, transf, actual) tuples so part-file groups can
+    be re-merged with _build_col_mappings() under a shared base object key."""
+    raw = []
+    for grp in col_mappings:
+        actual = grp.get('actual_transformation', '')
+        sources = grp.get('sources') or []
+        if sources:
+            for src in sources:
+                raw.append((grp['tgt_table'], grp['tgt_col'],
+                            src.get('src_table', ''), src.get('src_col', ''),
+                            src.get('transformation', ''), actual))
+        else:
+            raw.append((grp['tgt_table'], grp['tgt_col'], '', '', '', actual))
+    return raw
+
+
+def _backfill_actual_transformation(gudu_entry: dict, llm_entry: dict) -> dict:
+    """Copy actual_transformation from llm_entry's col_mappings into gudu_entry's
+    matching (tgt_table, tgt_col) groups wherever Gudu's own value is empty.
+
+    Gudu's CSV never carries Actual Transformation (it's a pure structural
+    parser); the LLM CSV supplies it for every object via Mode A (discovery,
+    for objects Gudu couldn't resolve) or Mode B (enrichment, for objects Gudu
+    resolved structurally). This merges the two without disturbing Gudu's own
+    target/source resolution.
+    """
+    gudu_maps = gudu_entry.get('col_mappings')
+    llm_maps = llm_entry.get('col_mappings')
+    if not gudu_maps or not llm_maps:
+        return gudu_entry
+    llm_by_target = {
+        (g['tgt_table'].upper(), g['tgt_col'].upper()): g.get('actual_transformation', '')
+        for g in llm_maps
+    }
+    for grp in gudu_maps:
+        if grp.get('actual_transformation'):
+            continue
+        actual = llm_by_target.get((grp['tgt_table'].upper(), grp['tgt_col'].upper()))
+        if actual:
+            grp['actual_transformation'] = actual
+    return gudu_entry
 
 
 def _col_mappings_to_aligned_strings(col_mappings: list) -> tuple[str, str]:
@@ -2327,6 +2386,7 @@ def apply_runtime_duration(combined: list[dict], runtime_lookup: dict) -> int:
 _NORM_BASE = [f for f in COMBINED_FIELDS if f not in ('SOURCE_COL', 'TARGET_COL', 'SRC_TABLE', 'TGT_TABLE')]
 NORMALIZED_FIELDS = _NORM_BASE + [
     'TARGET_TABLE', 'TARGET_COLUMN', 'SOURCE_TABLE', 'SOURCE_COLUMN', 'TRANSFORMATION',
+    'ACTUAL_TRANSFORMATION',
 ]
 
 
@@ -2359,6 +2419,7 @@ def _iter_normalized_rows(combined: list[dict], merged_lookup: dict):
                     'SOURCE_TABLE':  src_table,
                     'SOURCE_COLUMN': src_col,
                     'TRANSFORMATION': 'Direct',
+                    'ACTUAL_TRANSFORMATION': '',
                 }
             continue
 
@@ -2371,6 +2432,7 @@ def _iter_normalized_rows(combined: list[dict], merged_lookup: dict):
             continue
         for grp in col_mappings:
             sources = grp.get('sources', [])
+            actual = grp.get('actual_transformation', '')
             if not sources:
                 # Constant / Expression — no source column
                 yield {**row,
@@ -2379,6 +2441,7 @@ def _iter_normalized_rows(combined: list[dict], merged_lookup: dict):
                     'SOURCE_TABLE':  '',
                     'SOURCE_COLUMN': '',
                     'TRANSFORMATION': 'Constant / Expression',
+                    'ACTUAL_TRANSFORMATION': actual,
                 }
             else:
                 for src in sources:
@@ -2388,6 +2451,7 @@ def _iter_normalized_rows(combined: list[dict], merged_lookup: dict):
                         'SOURCE_TABLE':  src.get('src_table', ''),
                         'SOURCE_COLUMN': src.get('src_col', ''),
                         'TRANSFORMATION': src.get('transformation', ''),
+                        'ACTUAL_TRANSFORMATION': actual,
                     }
 
 
@@ -2415,7 +2479,7 @@ def write_column_normalized(combined: list[dict], merged_lookup: dict, output_pa
 ATTRIBUTE_MAIN_FIELDS = [
     'JOB_NAME', 'SHELL_SCRIPT', 'PARENT_CALLER', 'SQL_OBJECT_TYPE', 'PACKAGE_NAME',
     'PROC_NAME(OBJECT_NAME)', 'FULL_OBJECT', 'TARGET_TABLE', 'TARGET_COLUMN',
-    'SOURCE_TABLE', 'SOURCE_COLUMN', 'TRANSFORMATION',
+    'SOURCE_TABLE', 'SOURCE_COLUMN', 'TRANSFORMATION', 'ACTUAL_TRANSFORMATION',
 ]
 
 
@@ -2441,6 +2505,7 @@ def write_attribute_main(combined: list[dict], merged_lookup: dict, output_path:
             'SOURCE_TABLE':            norm_row.get('SOURCE_TABLE', ''),
             'SOURCE_COLUMN':           norm_row.get('SOURCE_COLUMN', ''),
             'TRANSFORMATION':          norm_row.get('TRANSFORMATION', ''),
+            'ACTUAL_TRANSFORMATION':   norm_row.get('ACTUAL_TRANSFORMATION', ''),
         }
         key = tuple(attr_row[f] for f in ATTRIBUTE_MAIN_FIELDS)
         if key in seen:
@@ -2803,15 +2868,23 @@ def main():
     else:
         print(f"  -> PKG Analysis: file not found, skipping expansion")
 
-    # Merge: Gudu takes priority, LLM fills gaps
+    # Merge: Gudu takes priority for target/source resolution, LLM fills gaps
+    # AND supplies Actual Transformation (Gudu's CSV never has that column).
     merged_lookup = dict(llm_lookup)  # start with LLM as base
     gudu_override_count = 0
+    actual_backfilled = 0
     for key, val in gudu_lookup.items():
         if key in merged_lookup:
             gudu_override_count += 1
+            before = sum(1 for g in (val.get('col_mappings') or []) if g.get('actual_transformation'))
+            val = _backfill_actual_transformation(val, merged_lookup[key])
+            after = sum(1 for g in (val.get('col_mappings') or []) if g.get('actual_transformation'))
+            actual_backfilled += (after - before)
         merged_lookup[key] = val  # Gudu overwrites LLM
     if gudu_lookup:
-        print(f"  -> Merged lookup: {len(merged_lookup)} objects ({len(gudu_lookup)} from Gudu, {gudu_override_count} overridden from LLM)")
+        print(f"  -> Merged lookup: {len(merged_lookup)} objects ({len(gudu_lookup)} from Gudu, "
+              f"{gudu_override_count} overridden from LLM, "
+              f"{actual_backfilled} target column(s) backfilled with Actual Transformation)")
 
     print("\nCombining data...")
     combined, orphaned_jobs = combine_lineage(rpt_data, tidal, shell_parsed)

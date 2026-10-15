@@ -1,0 +1,420 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "V_JOB_NAME_R",
+                        "coordinates": [
+                          {
+                            "x": 4,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 4,
+                            "y": 25,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1005"
+                      },
+                      {
+                        "name": "V_PKG_PRC_NAME_R",
+                        "coordinates": [
+                          {
+                            "x": 5,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 5,
+                            "y": 29,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1006"
+                      },
+                      {
+                        "name": "N_SK_R",
+                        "coordinates": [
+                          {
+                            "x": 6,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 6,
+                            "y": 19,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1007"
+                      },
+                      {
+                        "name": "V_NUMBER_R",
+                        "coordinates": [
+                          {
+                            "x": 7,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 7,
+                            "y": 23,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1008"
+                      },
+                      {
+                        "name": "V_TRC_MSG_R",
+                        "coordinates": [
+                          {
+                            "x": 8,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 8,
+                            "y": 24,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1009"
+                      },
+                      {
+                        "name": "N_BATCH_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 9,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 9,
+                            "y": 25,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1010"
+                      },
+                      {
+                        "name": "V_CREATED_BY_R",
+                        "coordinates": [
+                          {
+                            "x": 10,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 10,
+                            "y": 27,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1011"
+                      },
+                      {
+                        "name": "V_LAST_MODIFIED_BY_R",
+                        "coordinates": [
+                          {
+                            "x": 11,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 11,
+                            "y": 33,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1012"
+                      },
+                      {
+                        "name": "LC_TRCMSG",
+                        "coordinates": [
+                          {
+                            "x": 18,
+                            "y": 16,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 18,
+                            "y": 25,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1014"
+                      },
+                      {
+                        "name": "LC_SQLCODE",
+                        "coordinates": [
+                          {
+                            "x": 19,
+                            "y": 16,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 19,
+                            "y": 26,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1015"
+                      },
+                      {
+                        "name": "LC_SQLERRM",
+                        "coordinates": [
+                          {
+                            "x": 21,
+                            "y": 16,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 21,
+                            "y": 26,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1016"
+                      },
+                      {
+                        "name": "LN_N_BATCH_ID_R",
+                        "coordinates": [
+                          {
+                            "x": 22,
+                            "y": 13,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 22,
+                            "y": 28,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "1017"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 13,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 47,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+                    "id": "1004",
+                    "name": "PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [
+    {
+      "id": "1",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1009",
+        "column": "V_TRC_MSG_R",
+        "parentId": "1004",
+        "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+        "coordinates": [
+          {
+            "x": 8,
+            "y": 13,
+            "hashCode": "0"
+          },
+          {
+            "x": 8,
+            "y": 24,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1014",
+          "column": "LC_TRCMSG",
+          "parentId": "1004",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 18,
+              "y": 16,
+              "hashCode": "0"
+            },
+            {
+              "x": 18,
+              "y": 25,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "1015",
+          "column": "LC_SQLCODE",
+          "parentId": "1004",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 19,
+              "y": 16,
+              "hashCode": "0"
+            },
+            {
+              "x": 19,
+              "y": 26,
+              "hashCode": "0"
+            }
+          ]
+        },
+        {
+          "id": "1016",
+          "column": "LC_SQLERRM",
+          "parentId": "1004",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 21,
+              "y": 16,
+              "hashCode": "0"
+            },
+            {
+              "x": 21,
+              "y": 26,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    },
+    {
+      "id": "2",
+      "type": "fdd",
+      "effectType": "insert",
+      "target": {
+        "id": "1010",
+        "column": "N_BATCH_ID_R",
+        "parentId": "1004",
+        "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+        "coordinates": [
+          {
+            "x": 9,
+            "y": 13,
+            "hashCode": "0"
+          },
+          {
+            "x": 9,
+            "y": 25,
+            "hashCode": "0"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "id": "1017",
+          "column": "LN_N_BATCH_ID_R",
+          "parentId": "1004",
+          "parentName": "ATOMIC.PRCS_GRP_TBL_LOAD_DEBUG_TRC",
+          "coordinates": [
+            {
+              "x": 22,
+              "y": 13,
+              "hashCode": "0"
+            },
+            {
+              "x": 22,
+              "y": 28,
+              "hashCode": "0"
+            }
+          ]
+        }
+      ],
+      "processId": "13",
+      "processType": "sstinsert"
+    }
+  ],
+  "processes": [
+    {
+      "id": "1013",
+      "name": "Query Insert-1",
+      "procedureName": "batchQueries",
+      "queryHashId": "9383d22515b7a59239c784ac23f673ab",
+      "type": "sstinsert",
+      "coordinate": "[3,1,0],[25,11,0]"
+    }
+  ],
+  "errors": [
+    {
+      "errorMessage": "syntax error, state:651(10102) near: TABLE(3,17)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 3,
+          "y": 17,
+          "hashCode": "0"
+        },
+        {
+          "x": 3,
+          "y": 22,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": [
+        {
+          "x": 3,
+          "y": 17
+        },
+        {
+          "x": 3,
+          "y": 22
+        }
+      ]
+    },
+    {
+      "errorMessage": "no_root_node(-1000) near: no root node(0,0)",
+      "errorType": "SyntaxError",
+      "coordinates": [
+        {
+          "x": 0,
+          "y": 0,
+          "hashCode": "0"
+        },
+        {
+          "x": 0,
+          "y": 12,
+          "hashCode": "0"
+        }
+      ],
+      "originCoordinates": []
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"Error when tokenlize(10200) near: FOR(3,1)","errorType":"SyntaxError","coordinates":[{"x":3,"y":1,"hashCode":"0"},{"x":3,"y":4,"hashCode":"0"}],"originCoordinates":[{"x":3,"y":1},{"x":3,"y":4}]},{"errorMessage":"syntax error, state:20(10102) near: EXECUTE(93,1)","errorType":"SyntaxError","coordinates":[{"x":93,"y":1,"hashCode":"0"},{"x":93,"y":8,"hashCode":"0"}],"originCoordinates":[{"x":93,"y":1},{"x":93,"y":8}]},{"errorMessage":"syntax error, state:20(10102) near: EXECUTE(93,1)","errorType":"SyntaxError","coordinates":[{"x":93,"y":1,"hashCode":"0"},{"x":93,"y":8,"hashCode":"0"}],"originCoordinates":[{"x":93,"y":1},{"x":93,"y":8}]}]}
+Error log:
+
+Error when tokenlize(10200) near: FOR(3,1)
+syntax error, state:20(10102) near: EXECUTE(93,1)
+syntax error, state:20(10102) near: EXECUTE(93,1)

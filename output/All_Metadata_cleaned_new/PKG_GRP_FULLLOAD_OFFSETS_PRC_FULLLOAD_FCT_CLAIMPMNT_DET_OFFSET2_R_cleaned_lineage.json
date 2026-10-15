@@ -1,0 +1,5 @@
+{"dbobjs":{"createdBy":"sqlflow v1.0.0"},"relationships":[],"processes":[],"errors":[{"errorMessage":"syntax error, state:652(10102) near: PKG_GRP_FULLLOAD_OFFSETS(73,3)","errorType":"SyntaxError","coordinates":[{"x":73,"y":3,"hashCode":"0"},{"x":73,"y":27,"hashCode":"0"}],"originCoordinates":[{"x":73,"y":3},{"x":73,"y":27}]},{"errorMessage":"no_root_node(-1000) near: no root node(0,0)","errorType":"SyntaxError","coordinates":[{"x":0,"y":0,"hashCode":"0"},{"x":0,"y":12,"hashCode":"0"}],"originCoordinates":[]}]}
+Error log:
+
+syntax error, state:652(10102) near: PKG_GRP_FULLLOAD_OFFSETS(73,3)
+no_root_node(-1000) near: no root node(0,0)

@@ -1,0 +1,64 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "V_LINE_OF_BUSINESS_R",
+                        "coordinates": [
+                          {
+                            "x": 3,
+                            "y": 67,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 3,
+                            "y": 87,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "5"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 32,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 60,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "STG_GRP_REINSURER_PREM_PCT_R",
+                    "id": "4",
+                    "name": "STG_GRP_REINSURER_PREM_PCT_R",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [],
+  "processes": [],
+  "errors": []
+}

@@ -1,0 +1,64 @@
+{
+  "dbobjs": {
+    "createdBy": "sqlflow v1.0.0 (stitched)",
+    "servers": [
+      {
+        "name": "DEFAULT_SERVER",
+        "dbVendor": "dbvoracle",
+        "supportsCatalogs": true,
+        "supportsSchemas": true,
+        "databases": [
+          {
+            "name": "DEFAULT",
+            "schemas": [
+              {
+                "name": "DEFAULT",
+                "tables": [
+                  {
+                    "columns": [
+                      {
+                        "name": "D_CYCLE_DATE_R",
+                        "coordinates": [
+                          {
+                            "x": 3,
+                            "y": 69,
+                            "hashCode": "0"
+                          },
+                          {
+                            "x": 3,
+                            "y": 83,
+                            "hashCode": "0"
+                          }
+                        ],
+                        "id": "5"
+                      }
+                    ],
+                    "coordinates": [
+                      {
+                        "x": 3,
+                        "y": 32,
+                        "hashCode": "0"
+                      },
+                      {
+                        "x": 3,
+                        "y": 62,
+                        "hashCode": "0"
+                      }
+                    ],
+                    "displayName": "ATOMIC.FCT_RPT_CLAIM_SUMMARY_R",
+                    "id": "4",
+                    "name": "FCT_RPT_CLAIM_SUMMARY_R",
+                    "type": "table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relationships": [],
+  "processes": [],
+  "errors": []
+}
